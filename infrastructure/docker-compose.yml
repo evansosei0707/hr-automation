@@ -1,0 +1,185 @@
+# HR Automation — local & production stack
+# Pin versions explicitly; no `:latest` in production deployments.
+
+name: hr-automation
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  twenty_db_data:
+  twenty_server_data:
+  bookings_db_data:
+  redis_data:
+  n8n_data:
+  nginx_certs:
+
+services:
+
+  # ─────────────────────────────────────────────
+  # Twenty CRM — the system of record
+  # ─────────────────────────────────────────────
+  twenty-db:
+    image: postgres:16
+    container_name: hr-twenty-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${TWENTY_DB_USER}
+      POSTGRES_PASSWORD: ${TWENTY_DB_PASSWORD}
+      POSTGRES_DB: ${TWENTY_DB_NAME}
+    volumes:
+      - twenty_db_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TWENTY_DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  twenty:
+    image: twentycrm/twenty:v0.60
+    container_name: hr-twenty
+    restart: unless-stopped
+    depends_on:
+      twenty-db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      PG_DATABASE_URL: postgres://${TWENTY_DB_USER}:${TWENTY_DB_PASSWORD}@twenty-db:5432/${TWENTY_DB_NAME}
+      SERVER_URL: ${TWENTY_SERVER_URL}
+      FRONT_AUTH_CALLBACK_URL: ${TWENTY_SERVER_URL}/auth/callback
+      APP_SECRET: ${TWENTY_APP_SECRET}
+      STORAGE_TYPE: local
+    volumes:
+      - twenty_server_data:/app/packages/twenty-server/.local-storage
+    networks:
+      - internal
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  # ─────────────────────────────────────────────
+  # Bookings DB — n8n-owned, for slots and locks
+  # ─────────────────────────────────────────────
+  bookings-db:
+    image: postgres:16
+    container_name: hr-bookings-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${BOOKINGS_DB_USER}
+      POSTGRES_PASSWORD: ${BOOKINGS_DB_PASSWORD}
+      POSTGRES_DB: ${BOOKINGS_DB_NAME}
+    volumes:
+      - bookings_db_data:/var/lib/postgresql/data
+      - ./postgres/init-bookings-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BOOKINGS_DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Redis — locks, dedupe keys
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: hr-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # n8n — all workflow orchestration
+  # ─────────────────────────────────────────────
+  n8n:
+    image: n8nio/n8n:1.85.0
+    container_name: hr-n8n
+    restart: unless-stopped
+    depends_on:
+      bookings-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL}
+      GENERIC_TIMEZONE: Africa/Accra
+      TZ: Africa/Accra
+      N8N_LOG_LEVEL: info
+
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: bookings-db
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME}
+      DB_POSTGRESDB_USER: ${N8N_DB_USER}
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD}
+
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_USER_MANAGEMENT_JWT_SECRET: ${N8N_JWT_SECRET}
+
+      QUEUE_BULL_REDIS_HOST: redis
+      QUEUE_BULL_REDIS_PORT: 6379
+
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: "336"   # 14 days in hours
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - internal
+    ports:
+      - "127.0.0.1:5678:5678"
+
+  # ─────────────────────────────────────────────
+  # Nginx — TLS termination, reverse proxy
+  # ─────────────────────────────────────────────
+  nginx:
+    image: nginx:stable-alpine
+    container_name: hr-nginx
+    restart: unless-stopped
+    depends_on:
+      - twenty
+      - n8n
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx_certs:/etc/letsencrypt
+    networks:
+      - internal
+
+  # ─────────────────────────────────────────────
+  # Bookings DB migration runner (one-shot)
+  # Runs on `up`, applies any new migrations, exits.
+  # ─────────────────────────────────────────────
+  migrate-bookings:
+    image: postgres:16
+    container_name: hr-migrate-bookings
+    depends_on:
+      bookings-db:
+        condition: service_healthy
+    volumes:
+      - ../database/migrations:/migrations:ro
+      - ../scripts/run-migrations.sh:/run-migrations.sh:ro
+    environment:
+      PGHOST: bookings-db
+      PGUSER: ${BOOKINGS_DB_USER}
+      PGPASSWORD: ${BOOKINGS_DB_PASSWORD}
+      PGDATABASE: ${BOOKINGS_DB_NAME}
+    networks:
+      - internal
+    command: ["/run-migrations.sh"]
+    restart: "no"

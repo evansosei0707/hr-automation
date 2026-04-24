@@ -1,0 +1,62 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(docker compose ps)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker compose config)",
+      "Bash(node --version)",
+      "Bash(python --version)",
+      "Bash(python3 --version)",
+      "Bash(yarn --version)",
+      "Bash(npm --version)",
+      "Bash(curl -s http://localhost:*)",
+      "Read(**)",
+      "Grep(**)",
+      "Glob(**)"
+    ],
+    "ask": [
+      "Bash(docker compose up:*)",
+      "Bash(docker compose down:*)",
+      "Bash(docker compose restart:*)",
+      "Bash(docker compose pull:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)",
+      "Bash(psql:*)",
+      "Bash(./scripts/*)",
+      "Write(infrastructure/**)",
+      "Write(database/migrations/**)",
+      "Write(twenty-schema/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(docker system prune:*)",
+      "Bash(git push --force:*)",
+      "Bash(curl * api.anthropic.com:*)",
+      "Bash(curl * openai.com:*)",
+      "Bash(curl * graph.facebook.com:*)",
+      "Read(.env)",
+      "Read(**/.env)",
+      "Read(secrets/**)",
+      "Write(.env)",
+      "Write(**/.env)"
+    ]
+  },
+  "env": {
+    "PROJECT_NAME": "hr-automation",
+    "TIMEZONE": "Africa/Accra"
+  }
+}

@@ -723,7 +723,7 @@ Our existing workflows should use `deleteOne` (soft) unless explicit data erasur
 
 ## Open questions (things that could not be verified from source alone)
 
-1. **API key token delivery mechanism**: The `createApiKey` mutation returns the `ApiKeyEntity` but the source tree does not show a resolver that returns the raw JWT string. The `generateApiKeyToken` method in `api-key.service.ts` signs the JWT but it is called internally. It is possible a separate mutation or a response field delivers the token. **Must verify by observing the UI flow or hitting the running instance.** Until confirmed, generate keys via the UI.
+1. ~~**API key token delivery mechanism**~~ **CLOSED 2026-04-26.** Verified by observing the UI flow on Twenty v2.1.0: after creating an API key (`Settings → API & Webhooks → Create API key`), the JWT is shown **inline in a textarea on the keys page**, not in a one-time modal. The token remains recoverable from that page within the same session if you forget to copy it — gentler than typical "shown once" secret flows, but treat it as one-time anyway: rotate if missed. The corresponding programmatic delivery field on the `createApiKey` mutation response is therefore present even if not surfaced in the source files we traced; future agents can introspect against `/metadata` once a working API key exists to confirm the exact field name.
 
 2. **`workspaceMember` object UUID**: Relations to `Interview.interviewer` (a workspace member) require the `objectMetadataId` of the built-in `workspaceMember` object. This UUID is workspace-specific and must be fetched from `GET /rest/metadata/objects` at bootstrap time. It cannot be hardcoded.
 

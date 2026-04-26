@@ -4,7 +4,8 @@
 # against the Twenty Metadata GraphQL API.
 #
 # Prerequisites:
-#   - curl, jq, docker on PATH (psql is invoked inside the bookings-db container via 'docker exec')
+#   - curl, jq, docker, python3 on PATH (psql is invoked inside the bookings-db
+#     container via 'docker exec'; python3 is used by audit-twenty-schema.py)
 #   - infrastructure/.env with TWENTY_API_KEY, TWENTY_API_BASE_URL, and bookings-DB vars
 #   - V004__twenty_schema_tracker.sql must have been applied (twenty_schema_migrations table)
 #
@@ -68,9 +69,19 @@ BOOKINGS_DB_CONTAINER="${BOOKINGS_DB_CONTAINER:-hr-bookings-db}"
 # ─────────────────────────────────────────────
 # Preflight: dependencies
 # ─────────────────────────────────────────────
-for dep in curl jq docker; do
+for dep in curl jq docker python3; do
   command -v "${dep}" >/dev/null 2>&1 || die "Required tool '${dep}' not found on PATH"
 done
+
+# ─────────────────────────────────────────────
+# Preflight: format audit on migration files
+# Local mirror of Twenty's validation rules so we don't discover them via
+# tester round-trips. See scripts/audit-twenty-schema.py for the rule list.
+# ─────────────────────────────────────────────
+log "Running format audit on twenty-schema/migrations/*.json ..."
+if ! "${SCRIPT_DIR}/audit-twenty-schema.py" "${MIGRATIONS_DIR}"/V*.json; then
+  die "Format audit failed. Fix the migration file(s) above before re-running."
+fi
 
 # ─────────────────────────────────────────────
 # Preflight: Twenty reachability
@@ -143,6 +154,25 @@ while IFS=$'\t' read -r name uuid; do
 done < <(echo "${METADATA_RESPONSE}" | jq -r '.data.objects[] | [.nameSingular, .id] | @tsv' 2>/dev/null)
 
 log "Loaded ${#OBJECT_UUID_MAP[@]} objects from Twenty schema."
+
+# ─────────────────────────────────────────────
+# Precondition gate — refuse to apply onto unaccounted-for state
+#
+# If Twenty has custom objects but the tracker is empty, this is partial-apply
+# state from a prior failure (or manual UI work). Belt-and-braces: refuse loudly
+# rather than risk compounding the inconsistency. The codified recovery is
+# scripts/reset-twenty-schema.sh.
+# ─────────────────────────────────────────────
+CUSTOM_OBJECT_COUNT=$(echo "${METADATA_RESPONSE}" | jq -r '[.data.objects.edges[] | select(.node.isCustom)] | length' 2>/dev/null || echo "0")
+TRACKER_ROW_COUNT=$(psql_exec "SELECT COUNT(*) FROM twenty_schema_migrations;" 2>/dev/null || echo "0")
+if [ "${CUSTOM_OBJECT_COUNT}" -gt 0 ] && [ "${TRACKER_ROW_COUNT}" = "0" ]; then
+  err "Precondition failed: Twenty has ${CUSTOM_OBJECT_COUNT} custom object(s) but the tracker is empty."
+  err "This indicates partial-apply state from a prior failure or manual UI work."
+  err "Resolve before applying:"
+  err "    ./scripts/reset-twenty-schema.sh --yes"
+  err "(Reset deletes all custom objects + clears the tracker; workflow_errors is preserved.)"
+  exit 1
+fi
 
 # ─────────────────────────────────────────────
 # Determine pending migrations

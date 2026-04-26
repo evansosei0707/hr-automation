@@ -237,7 +237,7 @@
             "position": 6
           }
         ],
-        "defaultValue": "\"ENGLISH\""
+        "defaultValue": "'ENGLISH'"
       }
     },
     {
@@ -275,7 +275,7 @@
             "position": 3
           }
         ],
-        "defaultValue": "\"PENDING\""
+        "defaultValue": "'PENDING'"
       }
     },
     {
@@ -381,7 +381,7 @@
             "position": 2
           }
         ],
-        "defaultValue": "\"DEFAULT_24MO\""
+        "defaultValue": "'DEFAULT_24MO'"
       }
     },
     {
@@ -567,7 +567,7 @@
             "position": 5
           }
         ],
-        "defaultValue": "\"DRAFT\""
+        "defaultValue": "'DRAFT'"
       }
     },
     {
@@ -760,7 +760,7 @@
             "position": 8
           }
         ],
-        "defaultValue": "\"RECEIVED\""
+        "defaultValue": "'RECEIVED'"
       }
     },
     {
@@ -947,7 +947,7 @@
             "position": 5
           }
         ],
-        "defaultValue": "\"PROPOSED\""
+        "defaultValue": "'PROPOSED'"
       }
     },
     {

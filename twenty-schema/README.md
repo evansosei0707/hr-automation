@@ -68,12 +68,12 @@ Each migration is a single JSON document:
         "label": "Consent Status",
         "type": "SELECT",
         "options": [
-          { "value": "pending", "label": "Pending", "color": "orange", "position": 0 },
-          { "value": "granted", "label": "Granted", "color": "green",  "position": 1 },
-          { "value": "refused", "label": "Refused", "color": "red",    "position": 2 },
-          { "value": "revoked", "label": "Revoked", "color": "gray",   "position": 3 }
+          { "value": "PENDING", "label": "Pending", "color": "orange", "position": 0 },
+          { "value": "GRANTED", "label": "Granted", "color": "green",  "position": 1 },
+          { "value": "REFUSED", "label": "Refused", "color": "red",    "position": 2 },
+          { "value": "REVOKED", "label": "Revoked", "color": "gray",   "position": 3 }
         ],
-        "defaultValue": "\"pending\""
+        "defaultValue": "'PENDING'"
       }
     },
     {
@@ -185,11 +185,11 @@ These mirror `.claude/rules/database-migrations.md` (load that rule when editing
         "label": "Data Retention Policy",
         "type": "SELECT",
         "options": [
-          { "value": "default_24mo",     "label": "Default (24 months)",  "color": "blue",   "position": 0 },
-          { "value": "extended_consent", "label": "Extended (consented)", "color": "green",  "position": 1 },
-          { "value": "pending_deletion", "label": "Pending Deletion",     "color": "red",    "position": 2 }
+          { "value": "DEFAULT_24MO",     "label": "Default (24 months)",  "color": "blue",   "position": 0 },
+          { "value": "EXTENDED_CONSENT", "label": "Extended (consented)", "color": "green",  "position": 1 },
+          { "value": "PENDING_DELETION", "label": "Pending Deletion",     "color": "red",    "position": 2 }
         ],
-        "defaultValue": "\"default_24mo\""
+        "defaultValue": "'DEFAULT_24MO'"
       }
     }
   ]

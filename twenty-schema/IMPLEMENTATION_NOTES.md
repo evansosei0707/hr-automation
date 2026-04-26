@@ -37,11 +37,23 @@ The spec says `JobPosting.category` is "Aligned with SkillTag categories" but do
 
 Source: `packages/twenty-shared/src/types/FieldMetadataSettings.ts` `NumberDataType` enum.
 
-### 6. BOOLEAN `defaultValue` is a JSON boolean, not a string
+### 6. `defaultValue` formats per type — CORRECTED 2026-04-26
 
-`FieldMetadataDefaultValueMapping[BOOLEAN]` is typed as `boolean | null` in the source. Therefore `defaultValue: false` and `defaultValue: true` are used directly (not `"false"` or `"true"`). SELECT defaults remain JSON-encoded strings (e.g. `"\"pending\""`).
+> **Correction note.** The researcher's initial guidance (`reference/twenty-v2.1.0-api.md` open question round) framed SELECT defaults as "JSON-encoded strings" with the example `"\"pending\""`. That was wrong. Verified against Twenty source on 2026-04-26 — specifically `packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-builder/utils/serialize-default-value.util.ts:66-70`, which throws `"Invalid string default value ... should be single quoted"` for any string default that does not start AND end with `'`. Decision #6 originally landed in the apply-script's first cut; tester run on commit 8a6c88c surfaced the format error. Corrected here.
 
-Source: `packages/twenty-shared/src/types/FieldMetadataDefaultValue.ts`
+Authoritative format rules (from `serialize-default-value.util.ts` + DTO types):
+
+| Field type | `defaultValue` format | Example |
+|---|---|---|
+| TEXT, SELECT, MULTI_SELECT, RICH_TEXT | SQL-literal single-quoted string | `"'PENDING'"` |
+| BOOLEAN | bare JSON boolean | `false`, `true` |
+| NUMBER, NUMERIC | bare JSON number | `0`, `3.14` |
+| DATE, DATE_TIME | single-quoted ISO string OR function form `{type:"now"}` | `"'2026-01-01'"` |
+| CURRENCY, PHONES, EMAILS, ADDRESS, LINKS | composite object (or omit) | omitted in V001 |
+
+V001 carries six SELECT defaults — all in single-quoted form post-correction. BOOLEAN defaults (`manualReviewFlag: false`, `reEngagementEligible: false`, `holiday.isActive: true`) were correct as bare booleans from the start.
+
+Source: `packages/twenty-server/src/engine/workspace-manager/workspace-migration/workspace-migration-builder/utils/serialize-default-value.util.ts`; `packages/twenty-shared/src/types/FieldMetadataDefaultValue.ts`
 
 ### 7. `isNullable` defaults and non-nullable fields
 

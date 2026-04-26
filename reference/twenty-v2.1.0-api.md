@@ -395,6 +395,17 @@ Source: `packages/twenty-shared/src/types/FieldMetadataType.ts`
 | `DATE` | `DATE` | OK (new) | separate from DATE_TIME |
 | `URL` | `LINKS` | REPLACED | no bare URL type; use `LINKS` composite |
 
+
+<!-- corrected 2026-04-26 from Twenty source: -->
+<!-- - SELECT option `value` strings must match `^[A-Z][A-Z0-9_]*$` (UPPER_SNAKE_CASE). -->
+<!--   Researcher's initial example used lowercase; verified against Twenty server v2.1.0 -->
+<!--   which rejects lowercase with "Value must be in UPPER_CASE and follow snake_case". -->
+<!-- - SELECT `defaultValue` strings must be SQL-literal single-quoted ('VALUE'), -->
+<!--   not JSON-encoded double-quoted ("VALUE"). Researcher's initial guidance said -->
+<!--   "JSON-encoded strings"; verified against -->
+<!--   packages/twenty-server/src/engine/workspace-manager/workspace-migration/ -->
+<!--   workspace-migration-builder/utils/serialize-default-value.util.ts:66-70 which -->
+<!--   throws "Invalid string default value … should be single quoted" otherwise. -->
 ### SELECT and MULTI_SELECT options
 
 Options are **inline** in the `createOneField` call — not a separate call. Options are passed as a JSON array in the `options` field:
@@ -408,12 +419,12 @@ Options are **inline** in the `createOneField` call — not a separate call. Opt
       "name": "consentStatus",
       "label": "Consent Status",
       "options": [
-        { "value": "pending",  "label": "Pending",  "color": "orange", "position": 0 },
-        { "value": "granted",  "label": "Granted",  "color": "green",  "position": 1 },
-        { "value": "refused",  "label": "Refused",  "color": "red",    "position": 2 },
-        { "value": "revoked",  "label": "Revoked",  "color": "gray",   "position": 3 }
+        { "value": "PENDING",  "label": "Pending",  "color": "orange", "position": 0 },
+        { "value": "GRANTED",  "label": "Granted",  "color": "green",  "position": 1 },
+        { "value": "REFUSED",  "label": "Refused",  "color": "red",    "position": 2 },
+        { "value": "REVOKED",  "label": "Revoked",  "color": "gray",   "position": 3 }
       ],
-      "defaultValue": "\"pending\""
+      "defaultValue": "'PENDING'"
     }
   }
 }
@@ -559,7 +570,7 @@ curl -s -X POST \
       "data": {
         "name": { "firstName": "Akosua", "lastName": "Mensah" },
         "whatsappNumber": "+233244000001",
-        "consentStatus": "pending"
+        "consentStatus": "PENDING"
       }
     }
   }'

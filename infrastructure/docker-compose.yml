@@ -39,25 +39,59 @@ services:
       retries: 5
 
   twenty:
-    image: twentycrm/twenty:v0.60
+    image: twentycrm/twenty:v2.1.0
     container_name: hr-twenty
     restart: unless-stopped
     depends_on:
       twenty-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       PORT: 3000
+      NODE_PORT: 3000
       PG_DATABASE_URL: postgres://${TWENTY_DB_USER}:${TWENTY_DB_PASSWORD}@twenty-db:5432/${TWENTY_DB_NAME}
       SERVER_URL: ${TWENTY_SERVER_URL}
       FRONT_AUTH_CALLBACK_URL: ${TWENTY_SERVER_URL}/auth/callback
       APP_SECRET: ${TWENTY_APP_SECRET}
       STORAGE_TYPE: local
+      REDIS_URL: redis://redis:6379
     volumes:
       - twenty_server_data:/app/packages/twenty-server/.local-storage
     networks:
       - internal
     ports:
       - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+  # ─────────────────────────────────────────────
+  # Twenty worker — background jobs (BullMQ on Redis)
+  # ─────────────────────────────────────────────
+  twenty-worker:
+    image: twentycrm/twenty:v2.1.0
+    container_name: hr-twenty-worker
+    restart: unless-stopped
+    command: ["yarn", "worker:prod"]
+    depends_on:
+      twenty:
+        condition: service_healthy
+    environment:
+      PG_DATABASE_URL: postgres://${TWENTY_DB_USER}:${TWENTY_DB_PASSWORD}@twenty-db:5432/${TWENTY_DB_NAME}
+      SERVER_URL: ${TWENTY_SERVER_URL}
+      APP_SECRET: ${TWENTY_APP_SECRET}
+      STORAGE_TYPE: local
+      REDIS_URL: redis://redis:6379
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+    volumes:
+      - twenty_server_data:/app/packages/twenty-server/.local-storage
+    networks:
+      - internal
 
   # ─────────────────────────────────────────────
   # Bookings DB — n8n-owned, for slots and locks
@@ -70,9 +104,13 @@ services:
       POSTGRES_USER: ${BOOKINGS_DB_USER}
       POSTGRES_PASSWORD: ${BOOKINGS_DB_PASSWORD}
       POSTGRES_DB: ${BOOKINGS_DB_NAME}
+      N8N_DB_USER: ${N8N_DB_USER}
+      N8N_DB_PASSWORD: ${N8N_DB_PASSWORD}
+      N8N_DB_NAME: ${N8N_DB_NAME}
     volumes:
       - bookings_db_data:/var/lib/postgresql/data
       - ./postgres/init-bookings-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./postgres/init-n8n-user.sh:/docker-entrypoint-initdb.d/02-n8n-user.sh:ro
     networks:
       - internal
     healthcheck:
@@ -88,7 +126,7 @@ services:
     image: redis:7-alpine
     container_name: hr-redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "no", "--save", ""]
+    command: ["redis-server", "--appendonly", "no", "--save", "", "--maxmemory-policy", "noeviction"]
     volumes:
       - redis_data:/data
     networks:
@@ -135,6 +173,8 @@ services:
 
       EXECUTIONS_DATA_PRUNE: "true"
       EXECUTIONS_DATA_MAX_AGE: "336"   # 14 days in hours
+
+      N8N_RUNNERS_ENABLED: "true"
     volumes:
       - n8n_data:/home/node/.n8n
     networks:

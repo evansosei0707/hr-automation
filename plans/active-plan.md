@@ -40,14 +40,17 @@ Every week of implementation we do before verifying the stack is a week of work 
 
 ### Phase 1 — Local bring-up (target: day 1)
 
-- [ ] `cd ~/Sandbox/hr-automation`
-- [ ] `cp infrastructure/.env.example infrastructure/.env` and fill in local values
-- [ ] `./scripts/bootstrap.sh` or its manual equivalent
-- [ ] `docker compose -f infrastructure/docker-compose.yml up -d`
-- [ ] Hit Twenty, n8n, and a DB `SELECT 1` — all respond
+- [x] `cd ~/Sandbox/hr-automation`
+- [x] `cp infrastructure/.env.example infrastructure/.env` and fill in local values
+- [x] `./scripts/bootstrap.sh` or its manual equivalent
+- [x] `docker compose -f infrastructure/docker-compose.yml up -d`
+- [x] Hit Twenty, n8n, and a DB `SELECT 1` — all respond
+
+**Phase 1 done 2026-04-26.** All 7 services healthy: hr-twenty-db, hr-bookings-db, hr-redis, hr-twenty, hr-twenty-worker, hr-n8n, hr-nginx. migrate-bookings exited 0; V001 applied. Twenty `/healthz` and `/graphql` return 200; n8n `/healthz` returns 200; bookings DB SELECT 1 returns 1. Scaffolding gaps surfaced and fixed — see decisions.md for the list.
 
 ### Phase 2 — Twenty schema (target: day 2)
 
+- [ ] **Precondition:** dispatch `researcher` to verify the Twenty v2.1.0 GraphQL metadata API (custom object creation, field types, relations). The original spec was written against a v0.60-era assumption set; v2 may have changed the management API shape. Do not dispatch `schema-designer` until this is confirmed or the spec is updated.
 - [ ] Dispatch `schema-designer` with the spec at `docs/01-data-model/twenty-crm-schema.md`
 - [ ] Apply all custom objects
 - [ ] Create one test Candidate, Job, Application via the Twenty UI and via GraphQL — both paths work

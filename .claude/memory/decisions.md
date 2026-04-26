@@ -135,6 +135,15 @@ Tier-2 follow-up items captured for code-reviewer / next plan:
   that have been resolved since they were authored — annotate "RESOLVED
   2026-04-26", don't delete (preserve the journey).
 
+## 2026-04-26 — Phase 3 closed
+
+Bookings-DB concurrency test verified both safety legs (offer-side
+partial unique index, claim-side WHERE-clause guard) across 10 rounds.
+Loser-cleanliness assertion confirms workflow code can rely on plain
+`rowcount == 0` checks without exception handling. V002 struck (no
+separate migration needed; atomic claim is inline). V003 (candidate_facts)
+deferred to Workflow C build per "schema close to workflow" principle.
+
 ---
 
 ## Format for new entries

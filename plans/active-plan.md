@@ -68,10 +68,12 @@ The audit script is the structural antibody: future migration files are format-c
 
 ### Phase 3 — Bookings DB (target: day 2)
 
-- [ ] Dispatch `schema-designer` with the spec at `docs/01-data-model/bookings-db.md`
-- [ ] Generate `V001__create_bookings.sql`, `V002__create_slot_claim.sql`, `V003__candidate_facts.sql`
-- [ ] Apply via `scripts/migrate-bookings-db.sh`
-- [ ] Run the concurrency test: two psql sessions attempt to UPDATE the same offered slot. Exactly one succeeds.
+- [x] V001 (`V001__create_bookings_core.sql`) applied during Phase 1 setup — `interviewer`, `slot` (with `uq_slot_no_double_claim` partial unique index), `booking_event_log`, `workflow_errors`, `system_incident`, `event_log`.
+- [~] ~~Generate `V002__create_slot_claim.sql`~~ — **superseded.** Atomic claim is an inline UPDATE pattern (see `docs/01-data-model/bookings-db.md` "The atomic claim pattern"), not a stored function. V001's table + partial unique index are the only schema artifacts; the SQL pattern lives in workflow D's n8n nodes. No V002 migration artifact needed.
+- [→] ~~Generate `V003__candidate_facts.sql`~~ — **deferred to Workflow C build** (Week 2-3). Per "schema close to workflow" principle: carrying an unused table for two weeks risks the spec evolving and us migrating a shape that doesn't match the final design. Re-attached as a Workflow C precondition; not a Phase 3 deliverable.
+- [x] Run the concurrency test: two psql sessions attempt to UPDATE the same offered slot. Exactly one succeeds. **Done 2026-04-26 via `scripts/test-bookings-concurrency.sh`** — 10/10 rounds (5 offer-race + 5 claim-race), both safety legs verified, loser-cleanliness asserted (no error, no rollback, no serialization noise on the WHERE-guard's loser path).
+
+**Phase 3 done 2026-04-26.** Concurrency-test-only scope per user direction. Test run output shows nondeterministic distributions (offer 2A/3B, claim 4A/1B) — real race, not fixed-order. Closed via `8521fda` (test script) + this commit.
 
 ### Phase 4 — External API vouchers (target: days 3–5)
 

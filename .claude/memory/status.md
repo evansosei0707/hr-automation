@@ -5,8 +5,9 @@ Current build state. Updated at the end of every work session.
 ---
 
 **Last updated:** 2026-04-26
-**Current phase:** Week 0 — Validation Gate (Phase 1 complete; Phase 2 next)
+**Current phase:** Week 0 — Validation Gate (Phases 1 + 2 complete; Phase 3 next)
 **Active plan:** `plans/active-plan.md`
+**Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
 ## What's done
 
@@ -17,11 +18,14 @@ Current build state. Updated at the end of every work session.
 - ✅ All 7 integration specs written
 - ✅ Operations docs written (observability, backup-DR, DPA, calibration, runbook)
 - ✅ **Week 0 / Phase 1 — Local bring-up (2026-04-26).** All 7 services healthy on WSL via Docker Compose. Twenty v2.1.0, n8n 1.85.0, postgres:16 (twenty-db + bookings-db), redis 7, nginx. Bookings DB V001 migration applied. Twenty `/healthz` 200, n8n `/healthz` 200, DB SELECT 1 = 1. Scaffolding fixes captured in decisions.md.
+- ✅ **Week 0 / Phase 2 — Twenty schema (2026-04-26).** Twenty schema applied and verified. 11/11 acceptance criteria green. Local validation surface (`scripts/audit-twenty-schema.py`) prevents recurrence of the four bug classes encountered. ADR-0005 captures the v0.60→v2.1.0 deltas; reference doc + IMPLEMENTATION_NOTES carry source-cited correction markers for the format-rule discoveries. Closing arc: 7 commits from `a532774` through `7ae9083`.
 
 ## What's next
 
-- Week 0 / Phase 2 — Twenty schema. **Precondition:** dispatch `researcher` to verify the v2 GraphQL metadata API before `schema-designer`, since `docs/01-data-model/twenty-crm-schema.md` was written against a v0.60-era assumption set.
-- Week 0 / Phase 3 — Bookings DB migrations V002 (atomic slot-claim) + V003 (candidate_facts). V001 is already in the repo and applied.
+- Week 0 / Phase 3 — Bookings DB migrations V002 (atomic slot-claim) + V003 (candidate_facts). V001 already in repo and applied; concurrency test required (two psql sessions racing the same offered slot, exactly one must win).
+- Week 0 / Phase 4 — External API vouchers (days 3–5).
+- Week 0 / Phase 5 — Cross-cutting patterns (Redis lock heartbeat, observability, backup drill).
+- Week 0 / Phase 6 — Go/no-go review.
 
 ## What's blocked
 

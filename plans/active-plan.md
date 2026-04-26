@@ -50,10 +50,21 @@ Every week of implementation we do before verifying the stack is a week of work 
 
 ### Phase 2 — Twenty schema (target: day 2)
 
-- [ ] **Precondition:** dispatch `researcher` to verify the Twenty v2.1.0 GraphQL metadata API (custom object creation, field types, relations). The original spec was written against a v0.60-era assumption set; v2 may have changed the management API shape. Do not dispatch `schema-designer` until this is confirmed or the spec is updated.
-- [ ] Dispatch `schema-designer` with the spec at `docs/01-data-model/twenty-crm-schema.md`
-- [ ] Apply all custom objects
-- [ ] Create one test Candidate, JobPosting, Application via the Twenty UI and via GraphQL — both paths work
+- [x] **Precondition:** dispatch `researcher` to verify the Twenty v2.1.0 GraphQL metadata API (custom object creation, field types, relations). The original spec was written against a v0.60-era assumption set; v2 may have changed the management API shape. Do not dispatch `schema-designer` until this is confirmed or the spec is updated.
+- [x] Dispatch `schema-designer` with the spec at `docs/01-data-model/twenty-crm-schema.md`
+- [x] Apply all custom objects
+- [x] Create one test Candidate, JobPosting, Application via the Twenty UI and via GraphQL — both paths work
+
+**Phase 2 done 2026-04-26.** 11/11 tester criteria green. Closed via 8 commits (`a532774`..`7ae9083`).
+
+The journey: four RED rounds before tester GREEN, each surfacing a real Twenty enforcement rule we'd been guessing at. One-liner per round:
+
+- **R1 — reserved object name `job` + apply-script networking.** `job`/`jobs` is in Twenty's `RESERVED_METADATA_NAME_KEYWORDS`; apply script also had a wrong REST query param + jq path + assumed-published bookings-db port. Fixed in `54ca502` (rename to `jobPosting`) and `bd05047` (doc rename to match).
+- **R2 — SELECT option values must be UPPER_SNAKE_CASE.** All 16 SELECT fields had lowercase values; fixed via Python rewrite in `8a6c88c` (which also added `scripts/reset-twenty-schema.sh` for partial-state recovery).
+- **R3 — SELECT `defaultValue` must be SQL-literal single-quoted, not JSON-encoded.** Researcher's initial guidance was wrong on this; corrected with explicit markers + verified against `serialize-default-value.util.ts:66-70`. Fixed in `37e7934`, which also introduced `scripts/audit-twenty-schema.py` (the local mirror of Twenty's validation rules) and the apply-script's pre-apply audit + precondition gate.
+- **R4 — code-reviewer round (post-tester-GREEN).** Spec drift on auto-`name` field type (TEXT, not FULL_NAME) and data-API resolver naming (`createCandidate`, NO `One` infix); plus a real bug in the precondition gate jq path that tester missed because tester ran from clean state. Fixed in `c90db9c`. Tier 1.5 audit-coverage extension (NUMERIC + RATING; MULTI_SELECT correctness) shipped in `7ae9083`.
+
+The audit script is the structural antibody: future migration files are format-checked locally before commit and apply, instead of via 15-minute tester round-trips. Tier 2 follow-ups (pre-commit hook wiring, dead-code cleanup, IMPLEMENTATION_NOTES staleness annotations, composite-default validation, README applied_by drift) tracked in `plans/tier-2-followups.md`.
 
 ### Phase 3 — Bookings DB (target: day 2)
 

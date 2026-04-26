@@ -1,0 +1,1606 @@
+{
+  "version": "V001",
+  "description": "Initial custom objects: Candidate, Job, Application, Interview, SkillTag, CandidateSkillTag, Holiday, ReviewTask, SocialPost, WorkflowError — all fields and relations",
+  "author": "schema-designer",
+  "date": "2026-04-26",
+  "operations": [
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "candidate",
+        "namePlural": "candidates",
+        "labelSingular": "Candidate",
+        "labelPlural": "Candidates",
+        "description": "A person the firm has evaluated or communicated with as a potential hire",
+        "icon": "IconUser",
+        "skipNameField": false,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "job",
+        "namePlural": "jobs",
+        "labelSingular": "Job",
+        "labelPlural": "Jobs",
+        "description": "A role the firm is recruiting for, on behalf of a Company",
+        "icon": "IconBriefcase",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "application",
+        "namePlural": "applications",
+        "labelSingular": "Application",
+        "labelPlural": "Applications",
+        "description": "The join between a Candidate and a Job",
+        "icon": "IconClipboard",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "interview",
+        "namePlural": "interviews",
+        "labelSingular": "Interview",
+        "labelPlural": "Interviews",
+        "description": "A scheduled interview slot",
+        "icon": "IconCalendar",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "skillTag",
+        "namePlural": "skillTags",
+        "labelSingular": "Skill Tag",
+        "labelPlural": "Skill Tags",
+        "description": "Structured tags used to match candidates to job roles",
+        "icon": "IconTag",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "candidateSkillTag",
+        "namePlural": "candidateSkillTags",
+        "labelSingular": "Candidate Skill Tag",
+        "labelPlural": "Candidate Skill Tags",
+        "description": "Junction object linking a Candidate to a SkillTag with a confidence weight",
+        "icon": "IconLink",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "holiday",
+        "namePlural": "holidays",
+        "labelSingular": "Holiday",
+        "labelPlural": "Holidays",
+        "description": "Public holiday, mirrored from Google Calendar by a daily sync",
+        "icon": "IconCalendarOff",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "reviewTask",
+        "namePlural": "reviewTasks",
+        "labelSingular": "Review Task",
+        "labelPlural": "Review Tasks",
+        "description": "The Orchestrator inbox — items requiring human review",
+        "icon": "IconCheckbox",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "socialPost",
+        "namePlural": "socialPosts",
+        "labelSingular": "Social Post",
+        "labelPlural": "Social Posts",
+        "description": "Record of each outbound social media post",
+        "icon": "IconShare",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createObject",
+      "input": {
+        "nameSingular": "workflowError",
+        "namePlural": "workflowErrors",
+        "labelSingular": "Workflow Error",
+        "labelPlural": "Workflow Errors",
+        "description": "Operator-facing projection of workflow errors from the bookings DB, maintained by Workflow G",
+        "icon": "IconAlertTriangle",
+        "skipNameField": true,
+        "isLabelSyncedWithName": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "email",
+        "label": "Email",
+        "type": "EMAILS",
+        "icon": "IconMail",
+        "description": "Composite email field (primaryEmail + additionalEmails)",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "primaryEmailAddress",
+        "label": "Primary Email Address",
+        "type": "TEXT",
+        "icon": "IconMail",
+        "description": "Mirrors email.primaryEmail for fast workflow lookup. Unique, indexed.",
+        "isNullable": true,
+        "isUnique": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "whatsappNumber",
+        "label": "WhatsApp Number",
+        "type": "PHONES",
+        "icon": "IconBrandWhatsapp",
+        "description": "Composite phone field (primaryPhone + additionalPhones)",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "whatsappNumberE164",
+        "label": "WhatsApp Number (E.164)",
+        "type": "TEXT",
+        "icon": "IconBrandWhatsapp",
+        "description": "Normalised E.164 form of whatsappNumber. Unique, indexed. Used for fast inbound-message matching.",
+        "isNullable": true,
+        "isUnique": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "preferredLanguage",
+        "label": "Preferred Language",
+        "type": "SELECT",
+        "icon": "IconLanguage",
+        "description": "Language the candidate prefers for communication",
+        "options": [
+          {
+            "value": "english",
+            "label": "English",
+            "color": "blue",
+            "position": 0
+          },
+          {
+            "value": "pidgin",
+            "label": "Pidgin",
+            "color": "turquoise",
+            "position": 1
+          },
+          {
+            "value": "twi",
+            "label": "Twi",
+            "color": "green",
+            "position": 2
+          },
+          {
+            "value": "ga",
+            "label": "Ga",
+            "color": "yellow",
+            "position": 3
+          },
+          {
+            "value": "ewe",
+            "label": "Ewe",
+            "color": "orange",
+            "position": 4
+          },
+          {
+            "value": "dagbani",
+            "label": "Dagbani",
+            "color": "purple",
+            "position": 5
+          },
+          {
+            "value": "other",
+            "label": "Other",
+            "color": "gray",
+            "position": 6
+          }
+        ],
+        "defaultValue": "\"english\""
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "consentStatus",
+        "label": "Consent Status",
+        "type": "SELECT",
+        "icon": "IconShield",
+        "description": "WhatsApp communication consent state",
+        "options": [
+          {
+            "value": "pending",
+            "label": "Pending",
+            "color": "orange",
+            "position": 0
+          },
+          {
+            "value": "granted",
+            "label": "Granted",
+            "color": "green",
+            "position": 1
+          },
+          {
+            "value": "refused",
+            "label": "Refused",
+            "color": "red",
+            "position": 2
+          },
+          {
+            "value": "revoked",
+            "label": "Revoked",
+            "color": "gray",
+            "position": 3
+          }
+        ],
+        "defaultValue": "\"pending\""
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "consentGrantedAt",
+        "label": "Consent Granted At",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarCheck",
+        "description": "Timestamp when the candidate replied YES to the consent request",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "strengthTier",
+        "label": "Strength Tier",
+        "type": "SELECT",
+        "icon": "IconStar",
+        "description": "Candidacy strength tier set by workflow B (white-collar) or C (blue-collar)",
+        "options": [
+          {
+            "value": "top20",
+            "label": "Top 20%",
+            "color": "green",
+            "position": 0
+          },
+          {
+            "value": "solid",
+            "label": "Solid",
+            "color": "blue",
+            "position": 1
+          },
+          {
+            "value": "developing",
+            "label": "Developing",
+            "color": "yellow",
+            "position": 2
+          },
+          {
+            "value": "not_a_fit",
+            "label": "Not a Fit",
+            "color": "red",
+            "position": 3
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "strengthTierReason",
+        "label": "Strength Tier Reason",
+        "type": "TEXT",
+        "icon": "IconNote",
+        "description": "Human-readable rationale for the assigned strength tier",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "lastActivityAt",
+        "label": "Last Activity At",
+        "type": "DATE_TIME",
+        "icon": "IconClock",
+        "description": "Maintained by n8n on any interaction; used for retention calculations",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "dataRetentionPolicy",
+        "label": "Data Retention Policy",
+        "type": "SELECT",
+        "icon": "IconArchive",
+        "description": "Controls how long this candidate's data is retained",
+        "options": [
+          {
+            "value": "default_24mo",
+            "label": "Default (24 months)",
+            "color": "blue",
+            "position": 0
+          },
+          {
+            "value": "extended_consent",
+            "label": "Extended (consented)",
+            "color": "green",
+            "position": 1
+          },
+          {
+            "value": "pending_deletion",
+            "label": "Pending Deletion",
+            "color": "red",
+            "position": 2
+          }
+        ],
+        "defaultValue": "\"default_24mo\""
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "manualReviewFlag",
+        "label": "Manual Review Flag",
+        "type": "BOOLEAN",
+        "icon": "IconFlag",
+        "description": "Set true when the orchestrator's attention is required",
+        "defaultValue": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidate",
+        "name": "manualReviewReason",
+        "label": "Manual Review Reason",
+        "type": "TEXT",
+        "icon": "IconNote",
+        "description": "Reason why this candidate was flagged for manual review",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "title",
+        "label": "Title",
+        "type": "TEXT",
+        "icon": "IconAbc",
+        "description": "Canonical identifier for the job; required",
+        "isNullable": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "category",
+        "label": "Category",
+        "type": "SELECT",
+        "icon": "IconCategory",
+        "description": "Job category, aligned with SkillTag categories",
+        "options": [
+          {
+            "value": "frontend",
+            "label": "Frontend",
+            "color": "sky",
+            "position": 0
+          },
+          {
+            "value": "backend",
+            "label": "Backend",
+            "color": "blue",
+            "position": 1
+          },
+          {
+            "value": "data",
+            "label": "Data",
+            "color": "purple",
+            "position": 2
+          },
+          {
+            "value": "logistics",
+            "label": "Logistics",
+            "color": "orange",
+            "position": 3
+          },
+          {
+            "value": "security",
+            "label": "Security",
+            "color": "red",
+            "position": 4
+          },
+          {
+            "value": "hospitality",
+            "label": "Hospitality",
+            "color": "pink",
+            "position": 5
+          },
+          {
+            "value": "admin",
+            "label": "Admin",
+            "color": "yellow",
+            "position": 6
+          },
+          {
+            "value": "other",
+            "label": "Other",
+            "color": "gray",
+            "position": 7
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "seniority",
+        "label": "Seniority",
+        "type": "SELECT",
+        "icon": "IconStairs",
+        "description": "Seniority level required for the role",
+        "options": [
+          {
+            "value": "entry",
+            "label": "Entry",
+            "color": "green",
+            "position": 0
+          },
+          {
+            "value": "mid",
+            "label": "Mid",
+            "color": "blue",
+            "position": 1
+          },
+          {
+            "value": "senior",
+            "label": "Senior",
+            "color": "purple",
+            "position": 2
+          },
+          {
+            "value": "lead",
+            "label": "Lead",
+            "color": "orange",
+            "position": 3
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "status",
+        "label": "Status",
+        "type": "SELECT",
+        "icon": "IconCircleDot",
+        "description": "Current lifecycle status of the job",
+        "options": [
+          {
+            "value": "draft",
+            "label": "Draft",
+            "color": "gray",
+            "position": 0
+          },
+          {
+            "value": "open",
+            "label": "Open",
+            "color": "green",
+            "position": 1
+          },
+          {
+            "value": "shortlisting",
+            "label": "Shortlisting",
+            "color": "blue",
+            "position": 2
+          },
+          {
+            "value": "closed",
+            "label": "Closed",
+            "color": "orange",
+            "position": 3
+          },
+          {
+            "value": "filled",
+            "label": "Filled",
+            "color": "turquoise",
+            "position": 4
+          },
+          {
+            "value": "cancelled",
+            "label": "Cancelled",
+            "color": "red",
+            "position": 5
+          }
+        ],
+        "defaultValue": "\"draft\""
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "headcount",
+        "label": "Headcount",
+        "type": "NUMBER",
+        "icon": "IconUsers",
+        "description": "Number of open positions for this job",
+        "settings": {
+          "dataType": "int"
+        },
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "postedAt",
+        "label": "Posted At",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarPlus",
+        "description": "When the job was first posted",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "closedAt",
+        "label": "Closed At",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarMinus",
+        "description": "When the job was closed or filled",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "description",
+        "label": "Description",
+        "type": "RICH_TEXT",
+        "icon": "IconFileText",
+        "description": "Job description stored as blocknote/markdown dual format",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "requirements",
+        "label": "Requirements",
+        "type": "RICH_TEXT",
+        "icon": "IconList",
+        "description": "Job requirements stored as blocknote/markdown dual format",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "salaryMinGhs",
+        "label": "Salary Min (GHS)",
+        "type": "CURRENCY",
+        "icon": "IconCurrencyDollar",
+        "description": "Minimum salary composite (amountMicros + currencyCode). Set currencyCode=GHS.",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "salaryMaxGhs",
+        "label": "Salary Max (GHS)",
+        "type": "CURRENCY",
+        "icon": "IconCurrencyDollar",
+        "description": "Maximum salary composite (amountMicros + currencyCode). Set currencyCode=GHS.",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "location",
+        "label": "Location",
+        "type": "TEXT",
+        "icon": "IconMapPin",
+        "description": "Free-form location string, usually a city name or 'Remote'",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "collarType",
+        "label": "Collar Type",
+        "type": "SELECT",
+        "icon": "IconTie",
+        "description": "Routes the job to workflow B (white-collar) or C (blue-collar)",
+        "options": [
+          {
+            "value": "blue",
+            "label": "Blue Collar",
+            "color": "blue",
+            "position": 0
+          },
+          {
+            "value": "white",
+            "label": "White Collar",
+            "color": "gray",
+            "position": 1
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "status",
+        "label": "Status",
+        "type": "SELECT",
+        "icon": "IconCircleDot",
+        "description": "Current status of the application in the hiring pipeline",
+        "options": [
+          {
+            "value": "received",
+            "label": "Received",
+            "color": "gray",
+            "position": 0
+          },
+          {
+            "value": "screening",
+            "label": "Screening",
+            "color": "yellow",
+            "position": 1
+          },
+          {
+            "value": "screened",
+            "label": "Screened",
+            "color": "blue",
+            "position": 2
+          },
+          {
+            "value": "shortlisted",
+            "label": "Shortlisted",
+            "color": "turquoise",
+            "position": 3
+          },
+          {
+            "value": "interviewing",
+            "label": "Interviewing",
+            "color": "sky",
+            "position": 4
+          },
+          {
+            "value": "offered",
+            "label": "Offered",
+            "color": "purple",
+            "position": 5
+          },
+          {
+            "value": "placed",
+            "label": "Placed",
+            "color": "green",
+            "position": 6
+          },
+          {
+            "value": "not_selected",
+            "label": "Not Selected",
+            "color": "red",
+            "position": 7
+          },
+          {
+            "value": "withdrawn",
+            "label": "Withdrawn",
+            "color": "orange",
+            "position": 8
+          }
+        ],
+        "defaultValue": "\"received\""
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "score",
+        "label": "Score",
+        "type": "NUMBER",
+        "icon": "IconPercentage",
+        "description": "Screening score 0–100 (integer)",
+        "settings": {
+          "dataType": "int"
+        },
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "scoreBreakdown",
+        "label": "Score Breakdown",
+        "type": "RAW_JSON",
+        "icon": "IconChartBar",
+        "description": "Per-criterion scoring detail from the CV screening workflow",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "notSelectedReason",
+        "label": "Not Selected Reason",
+        "type": "SELECT",
+        "icon": "IconX",
+        "description": "Reason code when status=not_selected",
+        "options": [
+          {
+            "value": "position_filled",
+            "label": "Position Filled",
+            "color": "blue",
+            "position": 0
+          },
+          {
+            "value": "not_a_match",
+            "label": "Not a Match",
+            "color": "red",
+            "position": 1
+          },
+          {
+            "value": "candidate_withdrew",
+            "label": "Candidate Withdrew",
+            "color": "orange",
+            "position": 2
+          },
+          {
+            "value": "other",
+            "label": "Other",
+            "color": "gray",
+            "position": 3
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "reEngagementEligible",
+        "label": "Re-Engagement Eligible",
+        "type": "BOOLEAN",
+        "icon": "IconRefresh",
+        "description": "Set true by n8n when status=not_selected AND notSelectedReason=position_filled",
+        "defaultValue": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "reEngagedAt",
+        "label": "Re-Engaged At",
+        "type": "DATE_TIME",
+        "icon": "IconRefreshAlert",
+        "description": "Timestamp when workflow H re-engaged this candidate",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "submittedToClientAt",
+        "label": "Submitted to Client At",
+        "type": "DATE_TIME",
+        "icon": "IconSend",
+        "description": "When the candidate's profile was submitted to the client company",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "scheduledAt",
+        "label": "Scheduled At",
+        "type": "DATE_TIME",
+        "icon": "IconCalendar",
+        "description": "Date and time the interview is scheduled for",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "location",
+        "label": "Location",
+        "type": "TEXT",
+        "icon": "IconMapPin",
+        "description": "Physical address or 'Online — link below'",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "meetingLink",
+        "label": "Meeting Link",
+        "type": "TEXT",
+        "icon": "IconLink",
+        "description": "Plain URL for video call. TEXT not LINKS as we do not need composite UI rendering.",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "status",
+        "label": "Status",
+        "type": "SELECT",
+        "icon": "IconCircleDot",
+        "description": "Current status of the interview slot",
+        "options": [
+          {
+            "value": "proposed",
+            "label": "Proposed",
+            "color": "yellow",
+            "position": 0
+          },
+          {
+            "value": "confirmed",
+            "label": "Confirmed",
+            "color": "green",
+            "position": 1
+          },
+          {
+            "value": "completed",
+            "label": "Completed",
+            "color": "blue",
+            "position": 2
+          },
+          {
+            "value": "no_show",
+            "label": "No Show",
+            "color": "red",
+            "position": 3
+          },
+          {
+            "value": "rescheduled",
+            "label": "Rescheduled",
+            "color": "orange",
+            "position": 4
+          },
+          {
+            "value": "cancelled",
+            "label": "Cancelled",
+            "color": "gray",
+            "position": 5
+          }
+        ],
+        "defaultValue": "\"proposed\""
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "bookingId",
+        "label": "Booking ID",
+        "type": "TEXT",
+        "icon": "IconId",
+        "description": "Foreign key into bookings_db.slot.id (UUID as text). Indexed.",
+        "isNullable": true,
+        "isUnique": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "outcomeNote",
+        "label": "Outcome Note",
+        "type": "RICH_TEXT",
+        "icon": "IconNote",
+        "description": "Interviewer notes on the interview outcome",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "skillTag",
+        "name": "name",
+        "label": "Name",
+        "type": "TEXT",
+        "icon": "IconTag",
+        "description": "Canonical skill name. Unique, indexed.",
+        "isNullable": false,
+        "isUnique": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "skillTag",
+        "name": "category",
+        "label": "Category",
+        "type": "SELECT",
+        "icon": "IconCategory",
+        "description": "Skill category for job-matching",
+        "options": [
+          {
+            "value": "frontend",
+            "label": "Frontend",
+            "color": "sky",
+            "position": 0
+          },
+          {
+            "value": "backend",
+            "label": "Backend",
+            "color": "blue",
+            "position": 1
+          },
+          {
+            "value": "data",
+            "label": "Data",
+            "color": "purple",
+            "position": 2
+          },
+          {
+            "value": "logistics",
+            "label": "Logistics",
+            "color": "orange",
+            "position": 3
+          },
+          {
+            "value": "security",
+            "label": "Security",
+            "color": "red",
+            "position": 4
+          },
+          {
+            "value": "hospitality",
+            "label": "Hospitality",
+            "color": "pink",
+            "position": 5
+          },
+          {
+            "value": "admin",
+            "label": "Admin",
+            "color": "yellow",
+            "position": 6
+          },
+          {
+            "value": "other",
+            "label": "Other",
+            "color": "gray",
+            "position": 7
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "skillTag",
+        "name": "aliases",
+        "label": "Aliases",
+        "type": "ARRAY",
+        "icon": "IconList",
+        "description": "Alternative names for this skill, used for fuzzy matching (e.g. 'FE developer' matches 'Frontend')",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidateSkillTag",
+        "name": "weight",
+        "label": "Weight",
+        "type": "NUMBER",
+        "icon": "IconWeight",
+        "description": "Confidence 0.0–1.0 that the skill applies to this candidate",
+        "settings": {
+          "dataType": "float",
+          "decimals": 2
+        },
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidateSkillTag",
+        "name": "source",
+        "label": "Source",
+        "type": "SELECT",
+        "icon": "IconDatabase",
+        "description": "How this skill association was established",
+        "options": [
+          {
+            "value": "cv_parse",
+            "label": "CV Parse",
+            "color": "blue",
+            "position": 0
+          },
+          {
+            "value": "screening",
+            "label": "Screening",
+            "color": "green",
+            "position": 1
+          },
+          {
+            "value": "manual",
+            "label": "Manual",
+            "color": "orange",
+            "position": 2
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "holiday",
+        "name": "date",
+        "label": "Date",
+        "type": "DATE",
+        "icon": "IconCalendar",
+        "description": "Date of the public holiday",
+        "isNullable": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "holiday",
+        "name": "name",
+        "label": "Name",
+        "type": "TEXT",
+        "icon": "IconAbc",
+        "description": "Name of the holiday, e.g. 'Independence Day'",
+        "isNullable": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "holiday",
+        "name": "source",
+        "label": "Source",
+        "type": "SELECT",
+        "icon": "IconDatabase",
+        "description": "Where this holiday record came from",
+        "options": [
+          {
+            "value": "google",
+            "label": "Google Calendar",
+            "color": "blue",
+            "position": 0
+          },
+          {
+            "value": "manual_override",
+            "label": "Manual Override",
+            "color": "orange",
+            "position": 1
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "holiday",
+        "name": "isActive",
+        "label": "Is Active",
+        "type": "BOOLEAN",
+        "icon": "IconToggleRight",
+        "description": "Whether this holiday is currently active (can be deactivated without deletion)",
+        "defaultValue": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "reviewTask",
+        "name": "kind",
+        "label": "Kind",
+        "type": "SELECT",
+        "icon": "IconCategory",
+        "description": "Type of review required",
+        "options": [
+          {
+            "value": "low_confidence_score",
+            "label": "Low Confidence Score",
+            "color": "yellow",
+            "position": 0
+          },
+          {
+            "value": "voice_note_manual_review",
+            "label": "Voice Note Manual Review",
+            "color": "orange",
+            "position": 1
+          },
+          {
+            "value": "compliance_flag",
+            "label": "Compliance Flag",
+            "color": "red",
+            "position": 2
+          },
+          {
+            "value": "workflow_error",
+            "label": "Workflow Error",
+            "color": "pink",
+            "position": 3
+          },
+          {
+            "value": "other",
+            "label": "Other",
+            "color": "gray",
+            "position": 4
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "reviewTask",
+        "name": "dueBy",
+        "label": "Due By",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarTime",
+        "description": "Deadline by which this review task should be resolved",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "reviewTask",
+        "name": "resolvedAt",
+        "label": "Resolved At",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarCheck",
+        "description": "Timestamp when the review task was resolved",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "reviewTask",
+        "name": "resolution",
+        "label": "Resolution",
+        "type": "TEXT",
+        "icon": "IconNote",
+        "description": "Human-readable description of how the task was resolved",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "socialPost",
+        "name": "body",
+        "label": "Body",
+        "type": "RICH_TEXT",
+        "icon": "IconFileText",
+        "description": "Post body content stored as blocknote/markdown dual format",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "socialPost",
+        "name": "platform",
+        "label": "Platform",
+        "type": "SELECT",
+        "icon": "IconShare",
+        "description": "Social media platform this post was or will be published on",
+        "options": [
+          {
+            "value": "facebook",
+            "label": "Facebook",
+            "color": "blue",
+            "position": 0
+          },
+          {
+            "value": "instagram",
+            "label": "Instagram",
+            "color": "pink",
+            "position": 1
+          },
+          {
+            "value": "x",
+            "label": "X",
+            "color": "gray",
+            "position": 2
+          },
+          {
+            "value": "telegram",
+            "label": "Telegram",
+            "color": "sky",
+            "position": 3
+          }
+        ],
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "socialPost",
+        "name": "scheduledFor",
+        "label": "Scheduled For",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarClock",
+        "description": "When this post is scheduled to be published",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "socialPost",
+        "name": "publishedAt",
+        "label": "Published At",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarCheck",
+        "description": "Actual publication timestamp from the social platform",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "socialPost",
+        "name": "externalPostId",
+        "label": "External Post ID",
+        "type": "TEXT",
+        "icon": "IconId",
+        "description": "The platform's post ID. Indexed.",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "socialPost",
+        "name": "engagementSnapshot",
+        "label": "Engagement Snapshot",
+        "type": "RAW_JSON",
+        "icon": "IconChartBar",
+        "description": "Sampled engagement metrics (likes, replies, reach) from the platform",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "workflowError",
+        "name": "workflowName",
+        "label": "Workflow Name",
+        "type": "TEXT",
+        "icon": "IconWorkflow",
+        "description": "Name of the n8n workflow that produced this error. Indexed.",
+        "isNullable": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "workflowError",
+        "name": "executionId",
+        "label": "Execution ID",
+        "type": "TEXT",
+        "icon": "IconId",
+        "description": "n8n execution ID for cross-referencing the n8n UI",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "workflowError",
+        "name": "errorMessage",
+        "label": "Error Message",
+        "type": "TEXT",
+        "icon": "IconAlertCircle",
+        "description": "Human-readable error message from the n8n workflow",
+        "isNullable": false
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "workflowError",
+        "name": "errorContext",
+        "label": "Error Context",
+        "type": "RAW_JSON",
+        "icon": "IconBug",
+        "description": "Full error context including stack trace and input data",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "workflowError",
+        "name": "occurredAt",
+        "label": "Occurred At",
+        "type": "DATE_TIME",
+        "icon": "IconClock",
+        "description": "Timestamp when the error occurred in n8n",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "workflowError",
+        "name": "acknowledgedAt",
+        "label": "Acknowledged At",
+        "type": "DATE_TIME",
+        "icon": "IconCalendarCheck",
+        "description": "When the operator marked this error handled. Workflow G mirrors this back to bookings_db.workflow_errors.",
+        "isNullable": true
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "job",
+        "name": "client",
+        "label": "Client",
+        "type": "RELATION",
+        "icon": "IconBuilding",
+        "description": "The company this job is being recruited for",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "company",
+          "targetFieldLabel": "Jobs",
+          "targetFieldIcon": "IconBriefcase"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "candidate",
+        "label": "Candidate",
+        "type": "RELATION",
+        "icon": "IconUser",
+        "description": "The candidate who submitted this application",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "candidate",
+          "targetFieldLabel": "Applications",
+          "targetFieldIcon": "IconClipboard"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "application",
+        "name": "job",
+        "label": "Job",
+        "type": "RELATION",
+        "icon": "IconBriefcase",
+        "description": "The job this application is for",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "job",
+          "targetFieldLabel": "Applications",
+          "targetFieldIcon": "IconClipboard"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "application",
+        "label": "Application",
+        "type": "RELATION",
+        "icon": "IconClipboard",
+        "description": "The application this interview is associated with",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "application",
+          "targetFieldLabel": "Interviews",
+          "targetFieldIcon": "IconCalendar"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "interview",
+        "name": "interviewer",
+        "label": "Interviewer",
+        "type": "RELATION",
+        "icon": "IconUser",
+        "description": "The workspace member conducting this interview. UUID resolved at apply time.",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "workspaceMember",
+          "targetFieldLabel": "Interviews",
+          "targetFieldIcon": "IconCalendar"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidateSkillTag",
+        "name": "candidate",
+        "label": "Candidate",
+        "type": "RELATION",
+        "icon": "IconUser",
+        "description": "The candidate this skill tag is associated with",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "candidate",
+          "targetFieldLabel": "Skills",
+          "targetFieldIcon": "IconTag"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "candidateSkillTag",
+        "name": "skillTag",
+        "label": "Skill Tag",
+        "type": "RELATION",
+        "icon": "IconTag",
+        "description": "The skill tag being associated with this candidate",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "skillTag",
+          "targetFieldLabel": "Candidates",
+          "targetFieldIcon": "IconUser"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "reviewTask",
+        "name": "subjectCandidate",
+        "label": "Subject Candidate",
+        "type": "RELATION",
+        "icon": "IconUser",
+        "description": "Set when the review task subject is a Candidate. Exactly one of subjectCandidate/subjectApplication must be set (enforced by n8n).",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "candidate",
+          "targetFieldLabel": "Review Tasks",
+          "targetFieldIcon": "IconCheckbox"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "reviewTask",
+        "name": "subjectApplication",
+        "label": "Subject Application",
+        "type": "RELATION",
+        "icon": "IconClipboard",
+        "description": "Set when the review task subject is an Application. Exactly one of subjectCandidate/subjectApplication must be set (enforced by n8n).",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "application",
+          "targetFieldLabel": "Review Tasks",
+          "targetFieldIcon": "IconCheckbox"
+        }
+      }
+    },
+    {
+      "kind": "createField",
+      "input": {
+        "objectName": "socialPost",
+        "name": "job",
+        "label": "Job",
+        "type": "RELATION",
+        "icon": "IconBriefcase",
+        "description": "Optional — the job this social post is advertising. Some posts are general.",
+        "isNullable": true,
+        "relationCreationPayload": {
+          "type": "MANY_TO_ONE",
+          "targetObjectName": "job",
+          "targetFieldLabel": "Social Posts",
+          "targetFieldIcon": "IconShare"
+        }
+      }
+    }
+  ]
+}

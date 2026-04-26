@@ -80,8 +80,22 @@ RESERVED_NAMES = {
 
 OPTION_VALUE_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
-STRING_DEFAULT_TYPES = {"TEXT", "SELECT", "MULTI_SELECT", "RICH_TEXT"}
-NUMERIC_DEFAULT_TYPES = {"NUMBER", "NUMERIC"}
+# Field types whose `defaultValue`, when set as a string, must be a SQL-literal
+# single-quoted string (e.g. "'PENDING'"). Source:
+#   ~/Sandbox/twenty/packages/twenty-shared/src/types/FieldMetadataDefaultValue.ts
+#   FieldMetadataDefaultValueMapping members typed `string | null`:
+#     [TEXT]=string|null, [SELECT]=string|null, [NUMERIC]=string|null,
+#     [RATING]=string|null
+#   Plus RICH_TEXT — typed as a composite object {blocknote, markdown} but
+#   if a string default is ever set on it, the same single-quote rule applies
+#   per serialize-default-value.util.ts:66-70 (the check is on `typeof string`,
+#   not field type).
+#   MULTI_SELECT is INTENTIONALLY EXCLUDED — its default is `string[] | null`
+#   (an array), not a single string. Audit doesn't validate array defaults.
+STRING_DEFAULT_TYPES = {"TEXT", "SELECT", "RICH_TEXT", "NUMERIC", "RATING"}
+
+# NUMBER is `number | null` (bare numeric); NUMERIC is string-typed (above).
+NUMERIC_DEFAULT_TYPES = {"NUMBER"}
 DATE_DEFAULT_TYPES = {"DATE", "DATE_TIME"}
 
 

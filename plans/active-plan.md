@@ -16,7 +16,7 @@ Every week of implementation we do before verifying the stack is a week of work 
 ## Acceptance criteria — go to Week 1
 
 - [ ] Local stack (Twenty + n8n + Postgres + Redis + Nginx) running on WSL via Docker Compose, all health checks green.
-- [ ] Twenty custom objects (Candidate, Job, Application, Interview, SkillTag, CandidateSkillTag, Holiday, ReviewTask, SocialPost, WorkflowError) created and verified via GraphQL.
+- [ ] Twenty custom objects (Candidate, JobPosting, Application, Interview, SkillTag, CandidateSkillTag, Holiday, ReviewTask, SocialPost, WorkflowError) created and verified via GraphQL.
 - [ ] Bookings DB migrations V001–V003 applied successfully; atomic slot-claim SQL tested with two concurrent inserts (one must fail).
 - [ ] WhatsApp Cloud API test: verify phone number registered, webhook receives a test message, `consent_request` template submitted for approval.
 - [ ] Claude API test: Sonnet + Haiku both respond; cost logged to `ai_call_log`.
@@ -53,7 +53,7 @@ Every week of implementation we do before verifying the stack is a week of work 
 - [ ] **Precondition:** dispatch `researcher` to verify the Twenty v2.1.0 GraphQL metadata API (custom object creation, field types, relations). The original spec was written against a v0.60-era assumption set; v2 may have changed the management API shape. Do not dispatch `schema-designer` until this is confirmed or the spec is updated.
 - [ ] Dispatch `schema-designer` with the spec at `docs/01-data-model/twenty-crm-schema.md`
 - [ ] Apply all custom objects
-- [ ] Create one test Candidate, Job, Application via the Twenty UI and via GraphQL — both paths work
+- [ ] Create one test Candidate, JobPosting, Application via the Twenty UI and via GraphQL — both paths work
 
 ### Phase 3 — Bookings DB (target: day 2)
 

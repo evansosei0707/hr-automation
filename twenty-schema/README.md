@@ -34,7 +34,7 @@ Each migration is a single JSON document:
 ```json
 {
   "version": "V001",
-  "description": "Initial custom objects: Candidate, Job, Application",
+  "description": "Initial custom objects: Candidate, JobPosting, Application",
   "author": "schema-designer",
   "date": "2026-04-26",
   "operations": [

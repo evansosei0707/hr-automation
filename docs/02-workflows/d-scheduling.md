@@ -13,7 +13,7 @@ When the Operations Lead moves an Application to `status=shortlisted`, we offer 
 
 ## Inputs
 
-- `applicationId`, linked candidate/job/interviewer
+- `applicationId`, linked candidate/jobPosting/interviewer
 - Interviewer availability (from Google Calendar or manual slots in `slot` table with `status=available`)
 
 ## Outputs

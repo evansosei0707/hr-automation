@@ -14,37 +14,37 @@ This is one of the highest-leverage features in the whole system. It is cheap to
 
 ## Triggers
 
-- New `Job` row in Twenty transitioning to `status=open`
+- New `JobPosting` row in Twenty transitioning to `status=open`
 - Manual "find candidates for this job" trigger in Twenty (for back-filling old jobs)
 
 ## Inputs
 
-- `jobId`
+- `jobPostingId`
 - Linked `category`, `seniority`, `location`, `salaryMinGhs`
-- Candidate pool: all Candidates with an Application where `reEngagementEligible=true AND job.category=<match>` created within the last 6 months
+- Candidate pool: all Candidates with an Application where `reEngagementEligible=true AND jobPosting.category=<match>` created within the last 6 months
 
 ## Outputs
 
-- `Application` rows (new, linking matched candidates to this new Job) with `status=re_engagement_offered`
+- `Application` rows (new, linking matched candidates to this new JobPosting) with `status=re_engagement_offered`
 - WhatsApp messages to matched candidates
 - On YES reply: Application advances to `status=re_engagement_accepted`, `ReviewTask` created for Operations Lead, priority=high
 - On NO or timeout: Application closed with `status=not_interested` or `withdrawn`
 
 ## Eligibility criteria (the match rules)
 
-A candidate is eligible for re-engagement on a new Job when **all** of:
+A candidate is eligible for re-engagement on a new JobPosting when **all** of:
 
 1. They have a previous Application with `reEngagementEligible=true`. This flag is set by Workflows B and C when `status=not_selected AND notSelectedReason=position_filled`. Candidates who were `not_a_match` do not qualify.
-2. The previous Application's Job shared at least one `SkillTag` (via `CandidateSkillTag`) with the new Job's category or required skills.
+2. The previous Application's JobPosting shared at least one `SkillTag` (via `CandidateSkillTag`) with the new JobPosting's category or required skills.
 3. Previous Application is less than 6 months old.
 4. Candidate's `consentStatus=granted` and `dataRetentionPolicy` is not `pending_deletion`.
 5. Candidate has not been re-engaged in the past 14 days (anti-spam).
-6. The new Job's salary range is within ±30% of what we inferred the candidate was seeking, if we know it.
+6. The new JobPosting's salary range is within ±30% of what we inferred the candidate was seeking, if we know it.
 7. Candidate's `lastActivityAt` is within the last 90 days (they are still warm — not someone we have lost touch with).
 
 ## Step sequence
 
-1. On Job open, query the candidate pool with the criteria above. Limit to top 20 matches by `strengthTier` then by recency.
+1. On JobPosting open, query the candidate pool with the criteria above. Limit to top 20 matches by `strengthTier` then by recency.
 2. For each match:
    - Create an `Application` row with `status=re_engagement_offered`.
    - Compose a personalised WhatsApp message using the candidate's first name, the previous role reference ("last month you applied for Frontend Developer"), and the new role. Claude Haiku drafts this; the template is strict to prevent over-promising.
@@ -77,24 +77,24 @@ Example output (for reference, do not hard-code):
 
 ## Invariants
 
-- No candidate gets a re-engagement message from more than one open job on the same day. If multiple matches fire, pick the best-matching Job and queue the others for later.
+- No candidate gets a re-engagement message from more than one open job on the same day. If multiple matches fire, pick the best-matching JobPosting and queue the others for later.
 - Never mention the previous client by name without confirmed disclosure consent.
 - Never include salary figures in the opening message.
-- If the candidate has an open Application on any other Job in `interviewing`, `offered`, or `placed` status, skip them — they are busy.
+- If the candidate has an open Application on any other JobPosting in `interviewing`, `offered`, or `placed` status, skip them — they are busy.
 - Anti-spam: 14-day cooldown per candidate, independent of jobs. Max 4 re-engagement messages per candidate per year.
 
 ## Acceptance criteria
 
-- **Happy path:** Job opens, 8 candidates match, 8 messages fire within 5 minutes. 3 reply YES within 24h, 2 reply NO, 3 don't reply. After 72h, states are: 3 re_engagement_accepted (ReviewTasks created), 2 not_interested, 3 withdrawn.
-- **Anti-spam cooldown:** candidate was re-engaged 10 days ago. New Job opens that matches. Candidate is NOT contacted this round.
-- **Busy candidate:** candidate is `interviewing` on Job X. Job Y opens that matches. Skipped.
-- **Category mismatch:** Job is for a Security Guard; candidates who previously applied for Delivery Driver are NOT contacted even though both are "blue-collar." Category match is required.
+- **Happy path:** JobPosting opens, 8 candidates match, 8 messages fire within 5 minutes. 3 reply YES within 24h, 2 reply NO, 3 don't reply. After 72h, states are: 3 re_engagement_accepted (ReviewTasks created), 2 not_interested, 3 withdrawn.
+- **Anti-spam cooldown:** candidate was re-engaged 10 days ago. New JobPosting opens that matches. Candidate is NOT contacted this round.
+- **Busy candidate:** candidate is `interviewing` on JobPosting X. JobPosting Y opens that matches. Skipped.
+- **Category mismatch:** JobPosting is for a Security Guard; candidates who previously applied for Delivery Driver are NOT contacted even though both are "blue-collar." Category match is required.
 - **Personalisation:** message correctly uses the candidate's first name and correctly describes the previous role type.
 - **Privacy:** message does not reveal previous client name.
 
 ## Monitoring
 
-- `workflow_h_matched_candidates_total`, labelled by `job.category`
+- `workflow_h_matched_candidates_total`, labelled by `jobPosting.category`
 - `workflow_h_messages_sent_total`
 - `workflow_h_yes_rate` (yes / (yes+no+timeout))
 - `workflow_h_cooldown_skips_total`

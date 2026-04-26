@@ -28,7 +28,7 @@ Publishing a new role is currently manual and repetitive: copy-paste the same te
 ## Inputs
 
 - `socialPostId` and the full `SocialPost` record
-- Linked `Job` (optional — posts can be general content, not just jobs)
+- Linked `JobPosting` (optional — posts can be general content, not just job postings)
 - Configured accounts per platform (from `.env`, not from Twenty)
 
 ## Outputs
@@ -69,7 +69,7 @@ Publishing a new role is currently manual and repetitive: copy-paste the same te
 - **Partial failure:** X credentials expired, others succeed. Twenty shows three platforms with IDs and one with error; `workflow_errors` has the X failure.
 - **Rate limit:** hitting X's daily cap returns a 429; workflow logs it, retries with backoff up to 3 times, then creates a `ReviewTask`.
 - **Engagement sampling:** 24h after a post, engagement snapshot is present in Twenty.
-- **Image handling:** Job with an attached hero image publishes correctly to FB and IG; X falls back to text-only if no image fits; Telegram uses markdown-embedded image.
+- **Image handling:** JobPosting with an attached hero image publishes correctly to FB and IG; X falls back to text-only if no image fits; Telegram uses markdown-embedded image.
 - **Unicode and Pidgin:** posts with non-ASCII characters render correctly on all platforms.
 
 ## Monitoring

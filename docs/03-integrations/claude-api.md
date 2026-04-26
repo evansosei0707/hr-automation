@@ -15,7 +15,7 @@ The default is: cheap where you can, smart where it matters.
 | Intent classification (Workflow A router) | Haiku | Narrow 5-way classification |
 | Re-engagement message personalisation (Workflow H) | Haiku | Template-guided, short output |
 | Social post drafting (Workflow E) | Sonnet | Tone, brevity, platform-awareness |
-| Rubric generation from a Job description | Sonnet | Higher-stakes, one-shot |
+| Rubric generation from a JobPosting description | Sonnet | Higher-stakes, one-shot |
 
 Models are resolved through a central `claude.ts` wrapper, never hand-coded. The wrapper:
 

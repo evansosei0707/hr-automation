@@ -85,14 +85,14 @@ Explicit fields:
 | `manualReviewFlag` | BOOLEAN | Default: false. Orchestrator's attention required. |
 | `manualReviewReason` | TEXT | |
 
-### `Job`
+### `JobPosting`
 
 A role the firm is recruiting for, on behalf of a Company. `skipNameField: true`; `title` is the canonical identifier.
 
 | Field | Type | Notes |
 |---|---|---|
 | `title` | TEXT | Canonical identifier; required. |
-| `client` | RELATION (MANY_TO_ONE → built-in `company`) | Reverse field on Company: `Jobs`. |
+| `client` | RELATION (MANY_TO_ONE → built-in `company`) | Reverse field on Company: `jobPostings` (label: "Job Postings"). |
 | `category` | SELECT | Aligned with `SkillTag` categories. |
 | `seniority` | SELECT | Options: `entry`, `mid`, `senior`, `lead`. |
 | `status` | SELECT | Options: `draft`, `open`, `shortlisting`, `closed`, `filled`, `cancelled`. Default: `draft`. |
@@ -108,12 +108,12 @@ A role the firm is recruiting for, on behalf of a Company. `skipNameField: true`
 
 ### `Application`
 
-The join between a Candidate and a Job. `skipNameField: true`; no canonical name (referenced by ID).
+The join between a Candidate and a JobPosting. `skipNameField: true`; no canonical name (referenced by ID).
 
 | Field | Type | Notes |
 |---|---|---|
 | `candidate` | RELATION (MANY_TO_ONE → Candidate) | Reverse on Candidate: `Applications`. |
-| `job` | RELATION (MANY_TO_ONE → Job) | Reverse on Job: `Applications`. |
+| `jobPosting` | RELATION (MANY_TO_ONE → JobPosting) | Reverse on JobPosting: `Applications`. |
 | `status` | SELECT | Options: `received`, `screening`, `screened`, `shortlisted`, `interviewing`, `offered`, `placed`, `not_selected`, `withdrawn`. Default: `received`. |
 | `score` | NUMBER | 0–100; integer. |
 | `scoreBreakdown` | RAW_JSON | Per-criterion detail. |
@@ -190,7 +190,7 @@ A record of each outbound social post. `skipNameField: true`.
 
 | Field | Type | Notes |
 |---|---|---|
-| `job` | RELATION (MANY_TO_ONE → Job, nullable) | Optional — some posts are general, not job-specific. |
+| `jobPosting` | RELATION (MANY_TO_ONE → JobPosting, nullable) | Optional — some posts are general, not specific to a job posting. |
 | `body` | RICH_TEXT | |
 | `platform` | SELECT | Options: `facebook`, `instagram`, `x`, `telegram`. |
 | `scheduledFor` | DATE_TIME | |
@@ -223,8 +223,8 @@ Twenty does not support formula fields or rollups natively. Any computed field i
 |---|---|---|
 | `Candidate.lastActivityAt` | max of Application.updatedAt + WhatsApp inbound timestamp | Workflow A on every inbound; nightly sweep covers gaps |
 | `Application.reEngagementEligible` | rules above (status + notSelectedReason) | Computed on status change |
-| `Job.applicationCount` | COUNT(Application WHERE job = this) | Nightly sweep |
-| `Company.openJobCount` | COUNT(Job WHERE client = this AND status = 'open') | Nightly sweep |
+| `JobPosting.applicationCount` | COUNT(Application WHERE jobPosting = this) | Nightly sweep |
+| `Company.openJobPostingCount` | COUNT(JobPosting WHERE client = this AND status = 'open') | Nightly sweep |
 
 Do not be tempted to add a "just this one" formula field. Either it goes here, or the `schema-designer` subagent declines the change.
 

@@ -1,6 +1,6 @@
 # Workflow B — White-Collar Screening
 
-AI-assisted CV review and scoring for office / professional roles. Triggered when a candidate submits a CV against a `Job` with `collarType=white`.
+AI-assisted CV review and scoring for office / professional roles. Triggered when a candidate submits a CV against a `JobPosting` with `collarType=white`.
 
 ## Purpose
 
@@ -10,15 +10,15 @@ The system never contacts the client directly with a shortlist. The Operations L
 
 ## Triggers
 
-- New `Application` row in Twenty with `status=received` and the linked `Job.collarType=white`
-- Scheduled re-score when a Job's requirements are materially edited (architect must approve this change path)
+- New `Application` row in Twenty with `status=received` and the linked `JobPosting.collarType=white`
+- Scheduled re-score when a JobPosting's requirements are materially edited (architect must approve this change path)
 
 ## Inputs
 
 - `applicationId`
-- Linked `candidateId`, `jobId`
+- Linked `candidateId`, `jobPostingId`
 - Candidate's CV (attached to the Candidate record as a Document)
-- Job's requirements and description
+- JobPosting's requirements and description
 
 ## Outputs
 
@@ -33,7 +33,7 @@ The system never contacts the client directly with a shortlist. The Operations L
 
 1. Parse CV. PDF/DOCX via a dedicated parser skill; extract plain text + basic structure (sections, bullets).
 2. Ask Claude Sonnet to extract structured facts into JSON (years of experience, current role, key skills, education). Store to `candidate_facts` and mirror updates to Twenty.
-3. Build a rubric from the Job. Rubric items come from the Job's `requirements` field, each weighted.
+3. Build a rubric from the JobPosting. Rubric items come from the JobPosting's `requirements` field, each weighted.
 4. Ask Claude Sonnet to score the CV against the rubric. Strict JSON output with per-criterion score, evidence quote, and a bounded rationale.
 5. Compute the weighted total.
 6. Map score to `strengthTier`: >=80 → `top20`, 60–79 → `solid`, 40–59 → `developing`, <40 → `not_a_fit`.

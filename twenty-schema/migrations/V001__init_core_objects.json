@@ -37,7 +37,7 @@
         "namePlural": "applications",
         "labelSingular": "Application",
         "labelPlural": "Applications",
-        "description": "The join between a Candidate and a Job",
+        "description": "The join between a Candidate and a JobPosting",
         "icon": "IconClipboard",
         "skipNameField": true,
         "isLabelSyncedWithName": false
@@ -428,7 +428,7 @@
         "label": "Category",
         "type": "SELECT",
         "icon": "IconCategory",
-        "description": "Job category, aligned with SkillTag categories",
+        "description": "JobPosting category, aligned with SkillTag categories",
         "options": [
           {
             "value": "frontend",
@@ -617,7 +617,7 @@
         "label": "Description",
         "type": "RICH_TEXT",
         "icon": "IconFileText",
-        "description": "Job description stored as blocknote/markdown dual format",
+        "description": "JobPosting description stored as blocknote/markdown dual format",
         "isNullable": true
       }
     },
@@ -629,7 +629,7 @@
         "label": "Requirements",
         "type": "RICH_TEXT",
         "icon": "IconList",
-        "description": "Job requirements stored as blocknote/markdown dual format",
+        "description": "JobPosting requirements stored as blocknote/markdown dual format",
         "isNullable": true
       }
     },

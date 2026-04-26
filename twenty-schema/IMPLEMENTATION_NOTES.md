@@ -26,13 +26,13 @@ The invariant "exactly one of the two fields is set" is enforced in n8n on every
 
 The spec explicitly says `TEXT` (not the `LINKS` composite) because "we do not need composite UI rendering here." Implemented as TEXT. Tester should verify the Twenty UI does not present this as a hyperlink — it will be plain text.
 
-### 4. `Job.category` SELECT options inferred from `SkillTag.category`
+### 4. `JobPosting.category` SELECT options inferred from `SkillTag.category`
 
-The spec says `Job.category` is "Aligned with SkillTag categories" but does not enumerate the options inline. I used the SkillTag category list directly: `frontend, backend, data, logistics, security, hospitality, admin, other`. These are identical across both objects, which is the intent.
+The spec says `JobPosting.category` is "Aligned with SkillTag categories" but does not enumerate the options inline. I used the SkillTag category list directly: `frontend, backend, data, logistics, security, hospitality, admin, other`. These are identical across both objects, which is the intent.
 
 ### 5. NUMBER field `settings` for integer vs. float
 
-- `Job.headcount`, `Application.score`: `settings: { "dataType": "int" }` — integer, no decimals.
+- `JobPosting.headcount`, `Application.score`: `settings: { "dataType": "int" }` — integer, no decimals.
 - `CandidateSkillTag.weight`: `settings: { "dataType": "float", "decimals": 2 }` — float 0.0–1.0.
 
 Source: `packages/twenty-shared/src/types/FieldMetadataSettings.ts` `NumberDataType` enum.
@@ -45,7 +45,7 @@ Source: `packages/twenty-shared/src/types/FieldMetadataDefaultValue.ts`
 
 ### 7. `isNullable` defaults and non-nullable fields
 
-The spec marks some fields as "required" without a `DEFAULT`. In Twenty's metadata API, a field with `isNullable: false` and no `defaultValue` will reject creates that omit the field. I set `isNullable: false` only where the spec clearly intends a required field with deterministic content at create time (e.g. `job.title`, `skillTag.name`, `holiday.date`, `holiday.name`, `workflowError.workflowName`, `workflowError.errorMessage`). All other fields are nullable. This is conservative — it is easier to add a NOT NULL constraint later than to add a default to an existing required field.
+The spec marks some fields as "required" without a `DEFAULT`. In Twenty's metadata API, a field with `isNullable: false` and no `defaultValue` will reject creates that omit the field. I set `isNullable: false` only where the spec clearly intends a required field with deterministic content at create time (e.g. `jobPosting.title`, `skillTag.name`, `holiday.date`, `holiday.name`, `workflowError.workflowName`, `workflowError.errorMessage`). All other fields are nullable. This is conservative — it is easier to add a NOT NULL constraint later than to add a default to an existing required field.
 
 ### 8. `Interview.bookingId` `isUnique: false` — explicit
 
@@ -57,7 +57,7 @@ The field cross-references `bookings_db.slot.id` and will be unique in practice 
 
 ### 10. Rate-limit pacing and operation count
 
-V001 has 10 createObject + ~70 createField + 11 RELATION createField = ~91 total operations. At 1.2s each this is ~109 seconds (~1.8 minutes). The RELATION operations each also trigger the reverse field on the target, which is handled server-side — those do not count as separate API calls from our side.
+V001 has 10 createObject + 53 non-relation createField + 21 RELATION createField = 84 total operations. At 1.2s each this is ~101 seconds (~1.7 minutes). The RELATION operations each also trigger the reverse field on the target, which is handled server-side — those do not count as separate API calls from our side.
 
 ---
 
@@ -85,7 +85,7 @@ The spec and API reference agree this must be resolved at runtime via `GET /rest
 
 **Tester verification point:** Before running the apply script, check `GET /rest/metadata/objects | jq '.objects[] | .nameSingular' | grep -i member` to confirm the exact name.
 
-### Ambiguity E: `company` built-in object name for `Job.client`
+### Ambiguity E: `company` built-in object name for `jobPosting.client`
 
 Same as above: assumed `nameSingular` is `"company"` (standard Twenty built-in). Verify with the same introspection query.
 
@@ -126,7 +126,7 @@ The conflict detection checks only the first `createObject` operation's `nameSin
 When the apply script processes a `createField` with `type: RELATION`, Twenty creates two fields: the forward field (on `objectName`) and the reverse field (on `targetObjectName`). The reverse field label and icon come from `targetFieldLabel` and `targetFieldIcon`. Tester should verify:
 
 - The reverse `Applications` field appears on `Candidate` after creating `application.candidate`.
-- The reverse `Jobs` field appears on the built-in `company` object after creating `job.client`.
+- The reverse `jobPostings` field (label: "Job Postings") appears on the built-in `company` object after creating `jobPosting.client`.
 
 ### Gotcha 4: `workflowError.workflowName` and `errorMessage` are `isNullable: false`
 

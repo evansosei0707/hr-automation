@@ -8,12 +8,12 @@ Blue-collar candidates rarely have CVs. Scoring by structured questions over Wha
 
 ## Triggers
 
-- New `Application` row with `Job.collarType=blue`
+- New `Application` row with `JobPosting.collarType=blue`
 - A candidate reply in an in-progress screening conversation — Workflow A routes these to C's inbox table
 
 ## Inputs
 
-- `applicationId`, `candidateId`, `jobId`
+- `applicationId`, `candidateId`, `jobPostingId`
 - The screening script for this job category (see below)
 - The candidate's current screening state (which question are we on, previous answers)
 

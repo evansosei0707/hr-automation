@@ -4,7 +4,7 @@
 # against the Twenty Metadata GraphQL API.
 #
 # Prerequisites:
-#   - curl, jq, psql on PATH
+#   - curl, jq, docker on PATH (psql is invoked inside the bookings-db container via 'docker exec')
 #   - infrastructure/.env with TWENTY_API_KEY, TWENTY_API_BASE_URL, and bookings-DB vars
 #   - V004__twenty_schema_tracker.sql must have been applied (twenty_schema_migrations table)
 #
@@ -35,6 +35,18 @@ die()  { err "$*"; exit 1; }
 # Rate-limit pacer: sleep ~1.2s between mutations (~50 req/min)
 pace() { sleep 1.2; }
 
+# Run a SQL command against the bookings DB via 'docker exec'.
+# The bookings-db port is intentionally NOT published to the host — the internal
+# DB stays internal (CLAUDE.md invariant #1), and the production path is identical
+# to local since the script will eventually run as a one-shot container alongside
+# the stack. Container name is configurable via BOOKINGS_DB_CONTAINER.
+# Usage: psql_exec "SQL"
+# Returns: psql stdout in -t -A format (tuples-only, unaligned, quiet).
+psql_exec() {
+  docker exec -e PGPASSWORD="${BOOKINGS_DB_PASSWORD}" "${BOOKINGS_DB_CONTAINER}" \
+    psql -U "${BOOKINGS_DB_USER}" -d "${BOOKINGS_DB_NAME}" -t -A -q -c "$1"
+}
+
 # ─────────────────────────────────────────────
 # Preflight: env file
 # ─────────────────────────────────────────────
@@ -51,13 +63,12 @@ for var in TWENTY_API_KEY TWENTY_API_BASE_URL BOOKINGS_DB_USER BOOKINGS_DB_PASSW
 done
 
 TWENTY_BASE="${TWENTY_API_BASE_URL%/}"   # strip trailing slash
-BOOKINGS_HOST="${BOOKINGS_DB_HOST:-bookings-db}"
-BOOKINGS_PORT="${BOOKINGS_DB_PORT:-5432}"
+BOOKINGS_DB_CONTAINER="${BOOKINGS_DB_CONTAINER:-hr-bookings-db}"
 
 # ─────────────────────────────────────────────
 # Preflight: dependencies
 # ─────────────────────────────────────────────
-for dep in curl jq psql; do
+for dep in curl jq docker; do
   command -v "${dep}" >/dev/null 2>&1 || die "Required tool '${dep}' not found on PATH"
 done
 
@@ -95,17 +106,13 @@ log "Auth verified (typename: ${AUTH_TYPENAME})."
 # ─────────────────────────────────────────────
 # Preflight: bookings DB reachability
 # ─────────────────────────────────────────────
-log "Checking bookings DB reachability ..."
-export PGPASSWORD="${BOOKINGS_DB_PASSWORD}"
-PSQL_OPTS="-h ${BOOKINGS_HOST} -p ${BOOKINGS_PORT} -U ${BOOKINGS_DB_USER} -d ${BOOKINGS_DB_NAME} -t -A -q"
-
-if ! psql ${PSQL_OPTS} -c "SELECT 1;" >/dev/null 2>&1; then
-  die "Cannot connect to bookings DB at ${BOOKINGS_HOST}:${BOOKINGS_PORT}. Is it running?"
+log "Checking bookings DB reachability via 'docker exec ${BOOKINGS_DB_CONTAINER}' ..."
+if ! psql_exec "SELECT 1;" >/dev/null 2>&1; then
+  die "Cannot connect to bookings DB via 'docker exec ${BOOKINGS_DB_CONTAINER}'. Is the container running and healthy? Try: docker compose -f infrastructure/docker-compose.yml ps"
 fi
 
 # Check that the tracker table exists
-TRACKER_EXISTS=$(psql ${PSQL_OPTS} -c \
-  "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='twenty_schema_migrations';" 2>/dev/null || echo "0")
+TRACKER_EXISTS=$(psql_exec "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='twenty_schema_migrations';" 2>/dev/null || echo "0")
 if [ "${TRACKER_EXISTS}" != "1" ]; then
   die "Table 'twenty_schema_migrations' does not exist in bookings DB. Run './scripts/migrate-bookings-db.sh' first (V004__twenty_schema_tracker.sql must be applied)."
 fi
@@ -119,7 +126,7 @@ log "Bookings DB reachable; tracker table exists."
 log "Loading existing Twenty schema state from ${TWENTY_BASE}/rest/metadata/objects ..."
 METADATA_RESPONSE=$(curl -s --max-time 30 \
   -H "Authorization: Bearer ${TWENTY_API_KEY}" \
-  "${TWENTY_BASE}/rest/metadata/objects?includeStandardObjects=true")
+  "${TWENTY_BASE}/rest/metadata/objects")
 
 METADATA_ERROR=$(echo "${METADATA_RESPONSE}" | jq -r '.error // empty' 2>/dev/null || true)
 if [ -n "${METADATA_ERROR}" ]; then
@@ -133,14 +140,14 @@ fi
 declare -A OBJECT_UUID_MAP
 while IFS=$'\t' read -r name uuid; do
   OBJECT_UUID_MAP["${name}"]="${uuid}"
-done < <(echo "${METADATA_RESPONSE}" | jq -r '.objects[] | [.nameSingular, .id] | @tsv' 2>/dev/null)
+done < <(echo "${METADATA_RESPONSE}" | jq -r '.data.objects[] | [.nameSingular, .id] | @tsv' 2>/dev/null)
 
 log "Loaded ${#OBJECT_UUID_MAP[@]} objects from Twenty schema."
 
 # ─────────────────────────────────────────────
 # Determine pending migrations
 # ─────────────────────────────────────────────
-APPLIED_VERSIONS=$(psql ${PSQL_OPTS} -c "SELECT version FROM twenty_schema_migrations ORDER BY version;" 2>/dev/null || true)
+APPLIED_VERSIONS=$(psql_exec "SELECT version FROM twenty_schema_migrations ORDER BY version;" 2>/dev/null || true)
 
 # Collect and sort migration files
 declare -a PENDING_FILES=()
@@ -281,7 +288,7 @@ record_error() {
   # Escape single quotes in strings for psql
   local safe_message="${error_message//\'/\'\'}"
   local safe_context="${context_json//\'/\'\'}"
-  psql ${PSQL_OPTS} -c "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, context) VALUES ('${workflow_name}', '${execution_id}', '${node_name}', '${safe_message}', '${safe_context}'::jsonb);" >/dev/null 2>&1 || true
+  psql_exec "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, context) VALUES ('${workflow_name}', '${execution_id}', '${node_name}', '${safe_message}', '${safe_context}'::jsonb);" >/dev/null 2>&1 || true
 }
 
 # ─────────────────────────────────────────────
@@ -316,7 +323,7 @@ for mig_file in "${PENDING_FILES[@]}"; do
     err "  Option A: Remove the already-applied operations from ${mig_file} and re-run."
     err "  Option B: Delete the partial objects in the Twenty UI and re-run cleanly."
     err "  Option C: If this migration is fully applied, insert a tracker row manually:"
-    err "    psql ... -c \"INSERT INTO twenty_schema_migrations (version, description, operations_count, applied_by, applied_against) VALUES ('${mig_version}', '${mig_description}', ${mig_op_count}, 'manual', '${TWENTY_BASE}');\""
+    err "    docker exec -e PGPASSWORD=<pwd> ${BOOKINGS_DB_CONTAINER} psql -U ${BOOKINGS_DB_USER} -d ${BOOKINGS_DB_NAME} -c \"INSERT INTO twenty_schema_migrations (version, description, operations_count, applied_by, applied_against) VALUES ('${mig_version}', '${mig_description}', ${mig_op_count}, 'manual', '${TWENTY_BASE}');\""
     err ""
     err "Script will not attempt automatic recovery. Exiting."
     record_error "${RUN_ID}" "${mig_version}" \
@@ -432,7 +439,7 @@ GQLEOF
   done < <(echo "${mig_json}" | jq -c '.operations[]')
 
   # All operations succeeded — record in tracker
-  psql ${PSQL_OPTS} -c "
+  psql_exec "
     INSERT INTO twenty_schema_migrations (version, description, operations_count, applied_by, applied_against)
     VALUES ('${mig_version}', '${mig_description//\'/\'\'}', ${mig_op_count}, '${RUN_ID}', '${TWENTY_BASE}')
     ON CONFLICT (version) DO NOTHING;
@@ -459,7 +466,7 @@ else
   log " Applied:  (none)"
 fi
 
-FINAL_APPLIED=$(psql ${PSQL_OPTS} -c "SELECT version, applied_at::text FROM twenty_schema_migrations ORDER BY version;" 2>/dev/null || true)
+FINAL_APPLIED=$(psql_exec "SELECT version, applied_at::text FROM twenty_schema_migrations ORDER BY version;" 2>/dev/null || true)
 log ""
 log " Current tracker state:"
 while IFS='|' read -r ver ts; do

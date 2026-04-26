@@ -1,6 +1,6 @@
 {
   "version": "V001",
-  "description": "Initial custom objects: Candidate, Job, Application, Interview, SkillTag, CandidateSkillTag, Holiday, ReviewTask, SocialPost, WorkflowError — all fields and relations",
+  "description": "Initial custom objects: Candidate, JobPosting, Application, Interview, SkillTag, CandidateSkillTag, Holiday, ReviewTask, SocialPost, WorkflowError — all fields and relations",
   "author": "schema-designer",
   "date": "2026-04-26",
   "operations": [
@@ -20,10 +20,10 @@
     {
       "kind": "createObject",
       "input": {
-        "nameSingular": "job",
-        "namePlural": "jobs",
-        "labelSingular": "Job",
-        "labelPlural": "Jobs",
+        "nameSingular": "jobPosting",
+        "namePlural": "jobPostings",
+        "labelSingular": "Job Posting",
+        "labelPlural": "Job Postings",
         "description": "A role the firm is recruiting for, on behalf of a Company",
         "icon": "IconBriefcase",
         "skipNameField": true,
@@ -411,7 +411,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "title",
         "label": "Title",
         "type": "TEXT",
@@ -423,7 +423,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "category",
         "label": "Category",
         "type": "SELECT",
@@ -485,7 +485,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "seniority",
         "label": "Seniority",
         "type": "SELECT",
@@ -523,7 +523,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "status",
         "label": "Status",
         "type": "SELECT",
@@ -573,7 +573,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "headcount",
         "label": "Headcount",
         "type": "NUMBER",
@@ -588,7 +588,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "postedAt",
         "label": "Posted At",
         "type": "DATE_TIME",
@@ -600,7 +600,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "closedAt",
         "label": "Closed At",
         "type": "DATE_TIME",
@@ -612,7 +612,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "description",
         "label": "Description",
         "type": "RICH_TEXT",
@@ -624,7 +624,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "requirements",
         "label": "Requirements",
         "type": "RICH_TEXT",
@@ -636,7 +636,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "salaryMinGhs",
         "label": "Salary Min (GHS)",
         "type": "CURRENCY",
@@ -648,7 +648,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "salaryMaxGhs",
         "label": "Salary Max (GHS)",
         "type": "CURRENCY",
@@ -660,7 +660,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "location",
         "label": "Location",
         "type": "TEXT",
@@ -672,7 +672,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "collarType",
         "label": "Collar Type",
         "type": "SELECT",
@@ -1425,7 +1425,7 @@
     {
       "kind": "createField",
       "input": {
-        "objectName": "job",
+        "objectName": "jobPosting",
         "name": "client",
         "label": "Client",
         "type": "RELATION",
@@ -1435,7 +1435,7 @@
         "relationCreationPayload": {
           "type": "MANY_TO_ONE",
           "targetObjectName": "company",
-          "targetFieldLabel": "Jobs",
+          "targetFieldLabel": "Job Postings",
           "targetFieldIcon": "IconBriefcase"
         }
       }
@@ -1462,15 +1462,15 @@
       "kind": "createField",
       "input": {
         "objectName": "application",
-        "name": "job",
-        "label": "Job",
+        "name": "jobPosting",
+        "label": "Job Posting",
         "type": "RELATION",
         "icon": "IconBriefcase",
         "description": "The job this application is for",
         "isNullable": true,
         "relationCreationPayload": {
           "type": "MANY_TO_ONE",
-          "targetObjectName": "job",
+          "targetObjectName": "jobPosting",
           "targetFieldLabel": "Applications",
           "targetFieldIcon": "IconClipboard"
         }
@@ -1588,15 +1588,15 @@
       "kind": "createField",
       "input": {
         "objectName": "socialPost",
-        "name": "job",
-        "label": "Job",
+        "name": "jobPosting",
+        "label": "Job Posting",
         "type": "RELATION",
         "icon": "IconBriefcase",
         "description": "Optional — the job this social post is advertising. Some posts are general.",
         "isNullable": true,
         "relationCreationPayload": {
           "type": "MANY_TO_ONE",
-          "targetObjectName": "job",
+          "targetObjectName": "jobPosting",
           "targetFieldLabel": "Social Posts",
           "targetFieldIcon": "IconShare"
         }

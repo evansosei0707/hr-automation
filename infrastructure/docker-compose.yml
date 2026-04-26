@@ -48,6 +48,7 @@ services:
       redis:
         condition: service_healthy
     environment:
+      NODE_ENV: production
       PORT: 3000
       NODE_PORT: 3000
       PG_DATABASE_URL: postgres://${TWENTY_DB_USER}:${TWENTY_DB_PASSWORD}@twenty-db:5432/${TWENTY_DB_NAME}
@@ -81,6 +82,7 @@ services:
       twenty:
         condition: service_healthy
     environment:
+      NODE_ENV: production
       PG_DATABASE_URL: postgres://${TWENTY_DB_USER}:${TWENTY_DB_PASSWORD}@twenty-db:5432/${TWENTY_DB_NAME}
       SERVER_URL: ${TWENTY_SERVER_URL}
       APP_SECRET: ${TWENTY_APP_SECRET}

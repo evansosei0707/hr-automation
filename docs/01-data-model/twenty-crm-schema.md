@@ -41,6 +41,12 @@ Twenty auto-creates a composite `name` field (FULL_NAME = firstName + lastName) 
 - **Candidate** — accept the auto-`name`. Candidates are people; FULL_NAME is the natural identifier.
 - **All other custom objects** — pass `skipNameField: true`. They aren't people; we define our own canonical identifier per object below.
 
+## SELECT / MULTI_SELECT option values: UPPER_SNAKE_CASE
+
+Twenty v2.1.0 rejects SELECT option `value` strings that aren't UPPER_SNAKE_CASE. Display labels (`label`) stay mixed-case; only the programmatic `value` is uppercased. When migrating a value with bare-camel digit adjacency (`top20`), insert an underscore between letters and digits: `TOP_20`. Values whose source already has an explicit underscore (`default_24mo`) keep that structure: `DEFAULT_24MO`.
+
+n8n workflows, GraphQL queries, and this doc all reference SELECT values in their UPPER form. Discovered the hard way during V001 apply (2026-04-26); see ADR-0005 follow-ups.
+
 ## Composite + flat field pattern
 
 For frequently-queried composite fields (PHONES, EMAILS), we store the canonical Twenty composite **and** a flat indexed scalar for fast workflow lookups. Slight redundancy, real query simplicity.
@@ -75,13 +81,13 @@ Explicit fields:
 | `primaryEmailAddress` | TEXT | Unique, indexed. Mirrors `email.primaryEmail` for fast lookup. |
 | `whatsappNumber` | PHONES | Composite. |
 | `whatsappNumberE164` | TEXT | Unique, indexed. Normalised E.164 form. |
-| `preferredLanguage` | SELECT | Options: `english`, `pidgin`, `twi`, `ga`, `ewe`, `dagbani`, `other`. Default: `english`. |
-| `consentStatus` | SELECT | Options: `pending`, `granted`, `refused`, `revoked`. Default: `pending`. |
+| `preferredLanguage` | SELECT | Options: `ENGLISH`, `PIDGIN`, `TWI`, `GA`, `EWE`, `DAGBANI`, `OTHER`. Default: `ENGLISH`. |
+| `consentStatus` | SELECT | Options: `PENDING`, `GRANTED`, `REFUSED`, `REVOKED`. Default: `PENDING`. |
 | `consentGrantedAt` | DATE_TIME | When YES was received. |
-| `strengthTier` | SELECT | Options: `top20`, `solid`, `developing`, `not_a_fit`. Set by workflow B (white-collar) or C (blue-collar). |
+| `strengthTier` | SELECT | Options: `TOP_20`, `SOLID`, `DEVELOPING`, `NOT_A_FIT`. Set by workflow B (white-collar) or C (blue-collar). |
 | `strengthTierReason` | TEXT | Human-readable rationale. |
 | `lastActivityAt` | DATE_TIME | Maintained by n8n on any interaction; used for retention. |
-| `dataRetentionPolicy` | SELECT | Options: `default_24mo`, `extended_consent`, `pending_deletion`. Default: `default_24mo`. |
+| `dataRetentionPolicy` | SELECT | Options: `DEFAULT_24MO`, `EXTENDED_CONSENT`, `PENDING_DELETION`. Default: `DEFAULT_24MO`. |
 | `manualReviewFlag` | BOOLEAN | Default: false. Orchestrator's attention required. |
 | `manualReviewReason` | TEXT | |
 
@@ -94,8 +100,8 @@ A role the firm is recruiting for, on behalf of a Company. `skipNameField: true`
 | `title` | TEXT | Canonical identifier; required. |
 | `client` | RELATION (MANY_TO_ONE → built-in `company`) | Reverse field on Company: `jobPostings` (label: "Job Postings"). |
 | `category` | SELECT | Aligned with `SkillTag` categories. |
-| `seniority` | SELECT | Options: `entry`, `mid`, `senior`, `lead`. |
-| `status` | SELECT | Options: `draft`, `open`, `shortlisting`, `closed`, `filled`, `cancelled`. Default: `draft`. |
+| `seniority` | SELECT | Options: `ENTRY`, `MID`, `SENIOR`, `LEAD`. |
+| `status` | SELECT | Options: `DRAFT`, `OPEN`, `SHORTLISTING`, `CLOSED`, `FILLED`, `CANCELLED`. Default: `DRAFT`. |
 | `headcount` | NUMBER | Integer. |
 | `postedAt` | DATE_TIME | |
 | `closedAt` | DATE_TIME | |
@@ -104,7 +110,7 @@ A role the firm is recruiting for, on behalf of a Company. `skipNameField: true`
 | `salaryMinGhs` | CURRENCY | Composite: `amountMicros` + `currencyCode` (`GHS`). |
 | `salaryMaxGhs` | CURRENCY | |
 | `location` | TEXT | Free-form, usually city or `Remote`. |
-| `collarType` | SELECT | Options: `blue`, `white`. Routes to workflow B or C. |
+| `collarType` | SELECT | Options: `BLUE`, `WHITE`. Routes to workflow B or C. |
 
 ### `Application`
 
@@ -114,11 +120,11 @@ The join between a Candidate and a JobPosting. `skipNameField: true`; no canonic
 |---|---|---|
 | `candidate` | RELATION (MANY_TO_ONE → Candidate) | Reverse on Candidate: `Applications`. |
 | `jobPosting` | RELATION (MANY_TO_ONE → JobPosting) | Reverse on JobPosting: `Applications`. |
-| `status` | SELECT | Options: `received`, `screening`, `screened`, `shortlisted`, `interviewing`, `offered`, `placed`, `not_selected`, `withdrawn`. Default: `received`. |
+| `status` | SELECT | Options: `RECEIVED`, `SCREENING`, `SCREENED`, `SHORTLISTED`, `INTERVIEWING`, `OFFERED`, `PLACED`, `NOT_SELECTED`, `WITHDRAWN`. Default: `RECEIVED`. |
 | `score` | NUMBER | 0–100; integer. |
 | `scoreBreakdown` | RAW_JSON | Per-criterion detail. |
-| `notSelectedReason` | SELECT | Options: `position_filled`, `not_a_match`, `candidate_withdrew`, `other`. |
-| `reEngagementEligible` | BOOLEAN | Default: false. Maintained by n8n on status change: true when `status=not_selected AND notSelectedReason=position_filled`. |
+| `notSelectedReason` | SELECT | Options: `POSITION_FILLED`, `NOT_A_MATCH`, `CANDIDATE_WITHDREW`, `OTHER`. |
+| `reEngagementEligible` | BOOLEAN | Default: false. Maintained by n8n on status change: true when `status=NOT_SELECTED AND notSelectedReason=POSITION_FILLED`. |
 | `reEngagedAt` | DATE_TIME | Set by workflow H. |
 | `submittedToClientAt` | DATE_TIME | |
 
@@ -133,7 +139,7 @@ A scheduled interview slot. `skipNameField: true`.
 | `interviewer` | RELATION (MANY_TO_ONE → built-in `workspaceMember`) | UUID of the `workspaceMember` object resolved at apply-time via `GET /rest/metadata/objects` — do not hard-code. |
 | `location` | TEXT | E.g. office address, or `Online — link below`. |
 | `meetingLink` | TEXT | Plain URL string. (Not LINKS — we do not need composite UI rendering here.) |
-| `status` | SELECT | Options: `proposed`, `confirmed`, `completed`, `no_show`, `rescheduled`, `cancelled`. Default: `proposed`. |
+| `status` | SELECT | Options: `PROPOSED`, `CONFIRMED`, `COMPLETED`, `NO_SHOW`, `RESCHEDULED`, `CANCELLED`. Default: `PROPOSED`. |
 | `bookingId` | TEXT | Foreign key into `bookings_db.slot.id` (UUID as text). Indexed. |
 | `outcomeNote` | RICH_TEXT | |
 
@@ -144,7 +150,7 @@ Structured tags used by workflow H (job alerts) to match candidates to similar n
 | Field | Type | Notes |
 |---|---|---|
 | `name` | TEXT | Unique, indexed. |
-| `category` | SELECT | Options: `frontend`, `backend`, `data`, `logistics`, `security`, `hospitality`, `admin`, `other`. Extend as needed. |
+| `category` | SELECT | Options: `FRONTEND`, `BACKEND`, `DATA`, `LOGISTICS`, `SECURITY`, `HOSPITALITY`, `ADMIN`, `OTHER`. Extend as needed. |
 | `aliases` | ARRAY | List of plain strings. So "FE developer" matches "Frontend". |
 
 ### `CandidateSkillTag` (junction)
@@ -156,7 +162,7 @@ Junction object between Candidate and SkillTag, with a weight. `skipNameField: t
 | `candidate` | RELATION (MANY_TO_ONE → Candidate) | Reverse on Candidate: `Skills`. |
 | `skillTag` | RELATION (MANY_TO_ONE → SkillTag) | Reverse on SkillTag: `Candidates`. |
 | `weight` | NUMBER | 0.0–1.0; float. Confidence the skill applies. |
-| `source` | SELECT | Options: `cv_parse`, `screening`, `manual`. |
+| `source` | SELECT | Options: `CV_PARSE`, `SCREENING`, `MANUAL`. |
 
 ### `Holiday`
 
@@ -166,7 +172,7 @@ Mirrored from Google Calendar by a daily sync. See `docs/03-integrations/google-
 |---|---|---|
 | `date` | DATE | |
 | `name` | TEXT | E.g. "Independence Day". |
-| `source` | SELECT | Options: `google`, `manual_override`. |
+| `source` | SELECT | Options: `GOOGLE`, `MANUAL_OVERRIDE`. |
 | `isActive` | BOOLEAN | Default: true. |
 
 ### `ReviewTask`
@@ -177,7 +183,7 @@ The Orchestrator's inbox. `skipNameField: true`.
 
 | Field | Type | Notes |
 |---|---|---|
-| `kind` | SELECT | Options: `low_confidence_score`, `voice_note_manual_review`, `compliance_flag`, `workflow_error`, `other`. |
+| `kind` | SELECT | Options: `LOW_CONFIDENCE_SCORE`, `VOICE_NOTE_MANUAL_REVIEW`, `COMPLIANCE_FLAG`, `WORKFLOW_ERROR`, `OTHER`. |
 | `subjectCandidate` | RELATION (MANY_TO_ONE → Candidate, nullable) | Set when the subject is a Candidate. |
 | `subjectApplication` | RELATION (MANY_TO_ONE → Application, nullable) | Set when the subject is an Application. |
 | `dueBy` | DATE_TIME | |
@@ -192,7 +198,7 @@ A record of each outbound social post. `skipNameField: true`.
 |---|---|---|
 | `jobPosting` | RELATION (MANY_TO_ONE → JobPosting, nullable) | Optional — some posts are general, not specific to a job posting. |
 | `body` | RICH_TEXT | |
-| `platform` | SELECT | Options: `facebook`, `instagram`, `x`, `telegram`. |
+| `platform` | SELECT | Options: `FACEBOOK`, `INSTAGRAM`, `X`, `TELEGRAM`. |
 | `scheduledFor` | DATE_TIME | |
 | `publishedAt` | DATE_TIME | |
 | `externalPostId` | TEXT | The platform's post ID. Indexed. |
@@ -224,7 +230,7 @@ Twenty does not support formula fields or rollups natively. Any computed field i
 | `Candidate.lastActivityAt` | max of Application.updatedAt + WhatsApp inbound timestamp | Workflow A on every inbound; nightly sweep covers gaps |
 | `Application.reEngagementEligible` | rules above (status + notSelectedReason) | Computed on status change |
 | `JobPosting.applicationCount` | COUNT(Application WHERE jobPosting = this) | Nightly sweep |
-| `Company.openJobPostingCount` | COUNT(JobPosting WHERE client = this AND status = 'open') | Nightly sweep |
+| `Company.openJobPostingCount` | COUNT(JobPosting WHERE client = this AND status = 'OPEN') | Nightly sweep |
 
 Do not be tempted to add a "just this one" formula field. Either it goes here, or the `schema-designer` subagent declines the change.
 

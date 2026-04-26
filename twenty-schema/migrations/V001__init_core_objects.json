@@ -195,49 +195,49 @@
         "description": "Language the candidate prefers for communication",
         "options": [
           {
-            "value": "english",
+            "value": "ENGLISH",
             "label": "English",
             "color": "blue",
             "position": 0
           },
           {
-            "value": "pidgin",
+            "value": "PIDGIN",
             "label": "Pidgin",
             "color": "turquoise",
             "position": 1
           },
           {
-            "value": "twi",
+            "value": "TWI",
             "label": "Twi",
             "color": "green",
             "position": 2
           },
           {
-            "value": "ga",
+            "value": "GA",
             "label": "Ga",
             "color": "yellow",
             "position": 3
           },
           {
-            "value": "ewe",
+            "value": "EWE",
             "label": "Ewe",
             "color": "orange",
             "position": 4
           },
           {
-            "value": "dagbani",
+            "value": "DAGBANI",
             "label": "Dagbani",
             "color": "purple",
             "position": 5
           },
           {
-            "value": "other",
+            "value": "OTHER",
             "label": "Other",
             "color": "gray",
             "position": 6
           }
         ],
-        "defaultValue": "\"english\""
+        "defaultValue": "\"ENGLISH\""
       }
     },
     {
@@ -251,31 +251,31 @@
         "description": "WhatsApp communication consent state",
         "options": [
           {
-            "value": "pending",
+            "value": "PENDING",
             "label": "Pending",
             "color": "orange",
             "position": 0
           },
           {
-            "value": "granted",
+            "value": "GRANTED",
             "label": "Granted",
             "color": "green",
             "position": 1
           },
           {
-            "value": "refused",
+            "value": "REFUSED",
             "label": "Refused",
             "color": "red",
             "position": 2
           },
           {
-            "value": "revoked",
+            "value": "REVOKED",
             "label": "Revoked",
             "color": "gray",
             "position": 3
           }
         ],
-        "defaultValue": "\"pending\""
+        "defaultValue": "\"PENDING\""
       }
     },
     {
@@ -301,25 +301,25 @@
         "description": "Candidacy strength tier set by workflow B (white-collar) or C (blue-collar)",
         "options": [
           {
-            "value": "top20",
+            "value": "TOP_20",
             "label": "Top 20%",
             "color": "green",
             "position": 0
           },
           {
-            "value": "solid",
+            "value": "SOLID",
             "label": "Solid",
             "color": "blue",
             "position": 1
           },
           {
-            "value": "developing",
+            "value": "DEVELOPING",
             "label": "Developing",
             "color": "yellow",
             "position": 2
           },
           {
-            "value": "not_a_fit",
+            "value": "NOT_A_FIT",
             "label": "Not a Fit",
             "color": "red",
             "position": 3
@@ -363,25 +363,25 @@
         "description": "Controls how long this candidate's data is retained",
         "options": [
           {
-            "value": "default_24mo",
+            "value": "DEFAULT_24MO",
             "label": "Default (24 months)",
             "color": "blue",
             "position": 0
           },
           {
-            "value": "extended_consent",
+            "value": "EXTENDED_CONSENT",
             "label": "Extended (consented)",
             "color": "green",
             "position": 1
           },
           {
-            "value": "pending_deletion",
+            "value": "PENDING_DELETION",
             "label": "Pending Deletion",
             "color": "red",
             "position": 2
           }
         ],
-        "defaultValue": "\"default_24mo\""
+        "defaultValue": "\"DEFAULT_24MO\""
       }
     },
     {
@@ -431,49 +431,49 @@
         "description": "JobPosting category, aligned with SkillTag categories",
         "options": [
           {
-            "value": "frontend",
+            "value": "FRONTEND",
             "label": "Frontend",
             "color": "sky",
             "position": 0
           },
           {
-            "value": "backend",
+            "value": "BACKEND",
             "label": "Backend",
             "color": "blue",
             "position": 1
           },
           {
-            "value": "data",
+            "value": "DATA",
             "label": "Data",
             "color": "purple",
             "position": 2
           },
           {
-            "value": "logistics",
+            "value": "LOGISTICS",
             "label": "Logistics",
             "color": "orange",
             "position": 3
           },
           {
-            "value": "security",
+            "value": "SECURITY",
             "label": "Security",
             "color": "red",
             "position": 4
           },
           {
-            "value": "hospitality",
+            "value": "HOSPITALITY",
             "label": "Hospitality",
             "color": "pink",
             "position": 5
           },
           {
-            "value": "admin",
+            "value": "ADMIN",
             "label": "Admin",
             "color": "yellow",
             "position": 6
           },
           {
-            "value": "other",
+            "value": "OTHER",
             "label": "Other",
             "color": "gray",
             "position": 7
@@ -493,25 +493,25 @@
         "description": "Seniority level required for the role",
         "options": [
           {
-            "value": "entry",
+            "value": "ENTRY",
             "label": "Entry",
             "color": "green",
             "position": 0
           },
           {
-            "value": "mid",
+            "value": "MID",
             "label": "Mid",
             "color": "blue",
             "position": 1
           },
           {
-            "value": "senior",
+            "value": "SENIOR",
             "label": "Senior",
             "color": "purple",
             "position": 2
           },
           {
-            "value": "lead",
+            "value": "LEAD",
             "label": "Lead",
             "color": "orange",
             "position": 3
@@ -531,43 +531,43 @@
         "description": "Current lifecycle status of the job",
         "options": [
           {
-            "value": "draft",
+            "value": "DRAFT",
             "label": "Draft",
             "color": "gray",
             "position": 0
           },
           {
-            "value": "open",
+            "value": "OPEN",
             "label": "Open",
             "color": "green",
             "position": 1
           },
           {
-            "value": "shortlisting",
+            "value": "SHORTLISTING",
             "label": "Shortlisting",
             "color": "blue",
             "position": 2
           },
           {
-            "value": "closed",
+            "value": "CLOSED",
             "label": "Closed",
             "color": "orange",
             "position": 3
           },
           {
-            "value": "filled",
+            "value": "FILLED",
             "label": "Filled",
             "color": "turquoise",
             "position": 4
           },
           {
-            "value": "cancelled",
+            "value": "CANCELLED",
             "label": "Cancelled",
             "color": "red",
             "position": 5
           }
         ],
-        "defaultValue": "\"draft\""
+        "defaultValue": "\"DRAFT\""
       }
     },
     {
@@ -680,13 +680,13 @@
         "description": "Routes the job to workflow B (white-collar) or C (blue-collar)",
         "options": [
           {
-            "value": "blue",
+            "value": "BLUE",
             "label": "Blue Collar",
             "color": "blue",
             "position": 0
           },
           {
-            "value": "white",
+            "value": "WHITE",
             "label": "White Collar",
             "color": "gray",
             "position": 1
@@ -706,61 +706,61 @@
         "description": "Current status of the application in the hiring pipeline",
         "options": [
           {
-            "value": "received",
+            "value": "RECEIVED",
             "label": "Received",
             "color": "gray",
             "position": 0
           },
           {
-            "value": "screening",
+            "value": "SCREENING",
             "label": "Screening",
             "color": "yellow",
             "position": 1
           },
           {
-            "value": "screened",
+            "value": "SCREENED",
             "label": "Screened",
             "color": "blue",
             "position": 2
           },
           {
-            "value": "shortlisted",
+            "value": "SHORTLISTED",
             "label": "Shortlisted",
             "color": "turquoise",
             "position": 3
           },
           {
-            "value": "interviewing",
+            "value": "INTERVIEWING",
             "label": "Interviewing",
             "color": "sky",
             "position": 4
           },
           {
-            "value": "offered",
+            "value": "OFFERED",
             "label": "Offered",
             "color": "purple",
             "position": 5
           },
           {
-            "value": "placed",
+            "value": "PLACED",
             "label": "Placed",
             "color": "green",
             "position": 6
           },
           {
-            "value": "not_selected",
+            "value": "NOT_SELECTED",
             "label": "Not Selected",
             "color": "red",
             "position": 7
           },
           {
-            "value": "withdrawn",
+            "value": "WITHDRAWN",
             "label": "Withdrawn",
             "color": "orange",
             "position": 8
           }
         ],
-        "defaultValue": "\"received\""
+        "defaultValue": "\"RECEIVED\""
       }
     },
     {
@@ -801,25 +801,25 @@
         "description": "Reason code when status=not_selected",
         "options": [
           {
-            "value": "position_filled",
+            "value": "POSITION_FILLED",
             "label": "Position Filled",
             "color": "blue",
             "position": 0
           },
           {
-            "value": "not_a_match",
+            "value": "NOT_A_MATCH",
             "label": "Not a Match",
             "color": "red",
             "position": 1
           },
           {
-            "value": "candidate_withdrew",
+            "value": "CANDIDATE_WITHDREW",
             "label": "Candidate Withdrew",
             "color": "orange",
             "position": 2
           },
           {
-            "value": "other",
+            "value": "OTHER",
             "label": "Other",
             "color": "gray",
             "position": 3
@@ -911,43 +911,43 @@
         "description": "Current status of the interview slot",
         "options": [
           {
-            "value": "proposed",
+            "value": "PROPOSED",
             "label": "Proposed",
             "color": "yellow",
             "position": 0
           },
           {
-            "value": "confirmed",
+            "value": "CONFIRMED",
             "label": "Confirmed",
             "color": "green",
             "position": 1
           },
           {
-            "value": "completed",
+            "value": "COMPLETED",
             "label": "Completed",
             "color": "blue",
             "position": 2
           },
           {
-            "value": "no_show",
+            "value": "NO_SHOW",
             "label": "No Show",
             "color": "red",
             "position": 3
           },
           {
-            "value": "rescheduled",
+            "value": "RESCHEDULED",
             "label": "Rescheduled",
             "color": "orange",
             "position": 4
           },
           {
-            "value": "cancelled",
+            "value": "CANCELLED",
             "label": "Cancelled",
             "color": "gray",
             "position": 5
           }
         ],
-        "defaultValue": "\"proposed\""
+        "defaultValue": "\"PROPOSED\""
       }
     },
     {
@@ -999,49 +999,49 @@
         "description": "Skill category for job-matching",
         "options": [
           {
-            "value": "frontend",
+            "value": "FRONTEND",
             "label": "Frontend",
             "color": "sky",
             "position": 0
           },
           {
-            "value": "backend",
+            "value": "BACKEND",
             "label": "Backend",
             "color": "blue",
             "position": 1
           },
           {
-            "value": "data",
+            "value": "DATA",
             "label": "Data",
             "color": "purple",
             "position": 2
           },
           {
-            "value": "logistics",
+            "value": "LOGISTICS",
             "label": "Logistics",
             "color": "orange",
             "position": 3
           },
           {
-            "value": "security",
+            "value": "SECURITY",
             "label": "Security",
             "color": "red",
             "position": 4
           },
           {
-            "value": "hospitality",
+            "value": "HOSPITALITY",
             "label": "Hospitality",
             "color": "pink",
             "position": 5
           },
           {
-            "value": "admin",
+            "value": "ADMIN",
             "label": "Admin",
             "color": "yellow",
             "position": 6
           },
           {
-            "value": "other",
+            "value": "OTHER",
             "label": "Other",
             "color": "gray",
             "position": 7
@@ -1089,19 +1089,19 @@
         "description": "How this skill association was established",
         "options": [
           {
-            "value": "cv_parse",
+            "value": "CV_PARSE",
             "label": "CV Parse",
             "color": "blue",
             "position": 0
           },
           {
-            "value": "screening",
+            "value": "SCREENING",
             "label": "Screening",
             "color": "green",
             "position": 1
           },
           {
-            "value": "manual",
+            "value": "MANUAL",
             "label": "Manual",
             "color": "orange",
             "position": 2
@@ -1145,13 +1145,13 @@
         "description": "Where this holiday record came from",
         "options": [
           {
-            "value": "google",
+            "value": "GOOGLE",
             "label": "Google Calendar",
             "color": "blue",
             "position": 0
           },
           {
-            "value": "manual_override",
+            "value": "MANUAL_OVERRIDE",
             "label": "Manual Override",
             "color": "orange",
             "position": 1
@@ -1183,31 +1183,31 @@
         "description": "Type of review required",
         "options": [
           {
-            "value": "low_confidence_score",
+            "value": "LOW_CONFIDENCE_SCORE",
             "label": "Low Confidence Score",
             "color": "yellow",
             "position": 0
           },
           {
-            "value": "voice_note_manual_review",
+            "value": "VOICE_NOTE_MANUAL_REVIEW",
             "label": "Voice Note Manual Review",
             "color": "orange",
             "position": 1
           },
           {
-            "value": "compliance_flag",
+            "value": "COMPLIANCE_FLAG",
             "label": "Compliance Flag",
             "color": "red",
             "position": 2
           },
           {
-            "value": "workflow_error",
+            "value": "WORKFLOW_ERROR",
             "label": "Workflow Error",
             "color": "pink",
             "position": 3
           },
           {
-            "value": "other",
+            "value": "OTHER",
             "label": "Other",
             "color": "gray",
             "position": 4
@@ -1275,25 +1275,25 @@
         "description": "Social media platform this post was or will be published on",
         "options": [
           {
-            "value": "facebook",
+            "value": "FACEBOOK",
             "label": "Facebook",
             "color": "blue",
             "position": 0
           },
           {
-            "value": "instagram",
+            "value": "INSTAGRAM",
             "label": "Instagram",
             "color": "pink",
             "position": 1
           },
           {
-            "value": "x",
+            "value": "X",
             "label": "X",
             "color": "gray",
             "position": 2
           },
           {
-            "value": "telegram",
+            "value": "TELEGRAM",
             "label": "Telegram",
             "color": "sky",
             "position": 3

@@ -158,6 +158,10 @@ OQ #1 and OQ #7 are not relevant to this migration.
 
 ---
 
+### Confirmed v2.1.0 enforcement: SELECT option `value` must be UPPER_SNAKE_CASE
+
+Discovered during the V001 apply attempt on 2026-04-26: Twenty v2.1.0 rejects lowercase SELECT option values with `Value must be in UPPER_CASE and follow snake_case "{sanitizedValue}"`. All V001 SELECT options + defaults were converted to UPPER form. **MULTI_SELECT not yet exercised — same rule presumed but unverified.** Anyone adding a MULTI_SELECT field in a future migration: assume UPPER_SNAKE_CASE and verify.
+
 ## Confidence level on apply script working first-try
 
 **Medium.**

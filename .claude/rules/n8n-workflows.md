@@ -32,6 +32,8 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
 10. **Credentials in JSON exports:** NEVER committed. The export process in `n8n-workflows/README.md` uses n8n's export-without-credentials option; if the JSON contains a credential field with a non-empty value, the pre-commit hook blocks the commit.
 
+11. **`ReviewTask.subject` polymorphic invariant.** `ReviewTask` uses two optional `MANY_TO_ONE` fields — `subjectCandidate` and `subjectApplication` — instead of a single MORPH_RELATION (see ADR-0005). On every write path that creates or updates a `ReviewTask`, the workflow MUST assert exactly one of those two fields is set: never both, never neither. The DB does not enforce this; n8n is the only line of defence. Read paths must defensively check both fields and treat "neither set" or "both set" as a data-integrity error → log to `workflow_errors` and skip.
+
 ## Before committing an n8n workflow
 
 Run the validator:

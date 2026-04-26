@@ -50,7 +50,7 @@ The raw JWT string returned at API-key creation is not traceable to a specific r
 
 - We adopt a current, supported version with active development rather than chasing a tag that never existed.
 - RBAC gives us a clean way to scope the n8n service account narrowly, vs. the v0.60 model's blanket access.
-- The new generated-resolver naming (`createOneCandidate` etc.) makes n8n workflows more readable than a generic `createRecord(objectName: ...)` would.
+- The new generated-resolver naming (`createCandidate`, `candidates`, `updateCandidate` etc.) makes n8n workflows more readable than a generic `createRecord(objectName: ...)` would. Note: data-API resolver names do NOT include a `One`/`Many` infix — that pattern is exclusive to `/metadata` mutations (`createOneObject`, `updateOneField` etc.). Verified against `~/Sandbox/twenty/packages/twenty-server/src/engine/utils/get-resolver-name.util.ts` and tester run 2026-04-26.
 - The reference snapshot at `reference/twenty-v2.1.0-api.md` is dense and source-cited, so future agents can self-serve without re-researching.
 
 **Negative / trade-offs accepted:**

@@ -113,7 +113,7 @@ Same as above: assumed `nameSingular` is `"company"` (standard Twenty built-in).
 
 4. **Whether `PHONES`/`EMAILS` fields accept `isNullable: false`** — these are composite types; the nullability semantics for composite sub-fields vs. the composite root are not fully documented in source.
 
-5. **`skipNameField: true` exact effect** — verified the field exists in `CreateObjectInput` DTO, but whether it suppresses only the `name` composite field or other auto-created fields (like `createdAt`, `updatedAt`, `id`) is not confirmed. Expected: only suppresses `name` (FULL_NAME).
+5. **`skipNameField: true` exact effect** — verified the field exists in `CreateObjectInput` DTO, but whether it suppresses only the `name` field or other auto-created fields (like `createdAt`, `updatedAt`, `id`) is not confirmed. Expected: only suppresses `name` (TEXT — verified 2026-04-26 by tester via `createCandidate(data:{name:"..."})`).
 
 6. **REST endpoint returns `includeStandardObjects` query param** — the apply script sends `?includeStandardObjects=true` to ensure built-in objects like `company` and `workspaceMember` appear in the response. The REST metadata controller param name needs verification; if it is different, the built-in object resolution will fail.
 

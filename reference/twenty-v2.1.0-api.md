@@ -526,19 +526,32 @@ Source: `packages/twenty-shared/src/types/FieldMetadataSettings.ts`
 
 ### Key architectural point: generated per-object resolver names
 
-v2 generates per-object resolver names from the object's `nameSingular`/`namePlural` using the patterns:
-- `findOne<ObjectNameSingularCapitalized>` — e.g. `findOneCandidate`
-- `findMany<ObjectNamePluralCapitalized>` — e.g. `findManyCandidates`
-- `createOne<ObjectNameSingularCapitalized>` — e.g. `createOneCandidate`
-- `createMany<ObjectNamePluralCapitalized>` — e.g. `createManyCandidates`
-- `updateOne<ObjectNameSingularCapitalized>` — e.g. `updateOneCandidate`
-- `deleteOne<ObjectNameSingularCapitalized>` — e.g. `deleteOneCandidate`
-- `destroyOne<ObjectNameSingularCapitalized>` — hard delete (bypasses soft-delete)
-- `restoreOne<ObjectNameSingularCapitalized>` — restore from soft delete
+<!-- corrected 2026-04-26 from Twenty source: -->
+<!-- packages/twenty-server/src/engine/utils/get-resolver-name.util.ts -->
+<!-- - findOne returns the bare `nameSingular` (e.g. `candidate`), no prefix. -->
+<!-- - findMany returns the bare `namePlural` (e.g. `candidates`), no prefix. -->
+<!-- - createOne / updateOne / deleteOne / destroyOne / restoreOne / createMany -->
+<!--   PascalCase the object name and use NO `One`/`Many` infix on the data API. -->
+<!-- The `One`/`Many` infix is exclusive to METADATA mutations (createOneObject, -->
+<!-- createOneField, etc.) on /metadata. Verified by tester on 2026-04-26 via -->
+<!-- working createCandidate / createJobPosting / createApplication calls. -->
+
+v2 generates per-object resolver names on the **data API** (`/graphql`) from the object's `nameSingular`/`namePlural`:
+
+- `<objectNameSingular>` — e.g. `candidate` (findOne)
+- `<objectNamePlural>` — e.g. `candidates` (findMany)
+- `create<ObjectNameSingularPascalCase>` — e.g. `createCandidate`
+- `create<ObjectNamePluralPascalCase>` — e.g. `createCandidates` (batch)
+- `update<ObjectNameSingularPascalCase>` — e.g. `updateCandidate`
+- `delete<ObjectNameSingularPascalCase>` — e.g. `deleteCandidate` (soft delete)
+- `destroy<ObjectNameSingularPascalCase>` — e.g. `destroyCandidate` (hard delete; bypasses soft-delete)
+- `restore<ObjectNameSingularPascalCase>` — e.g. `restoreCandidate` (undo soft delete)
 
 There is NO generic `createRecord(objectName: ...)` shape. Each object gets its own typed resolver. These are served from `/graphql`.
 
-Source: `packages/twenty-server/src/engine/api/graphql/workspace-resolver-builder/factories/factories.ts`, `packages/twenty-server/src/engine/api/graphql/workspace-resolver-builder/constants/resolver-method-names.ts`
+**Important:** the metadata API (`/metadata`) keeps its `One` infix — `createOneObject`, `createOneField`, `updateOneObject`, `deleteOneObject`. Different API, different naming convention.
+
+Source: `packages/twenty-server/src/engine/utils/get-resolver-name.util.ts`
 
 ### Find one record by filter
 
@@ -548,7 +561,7 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   http://localhost:3000/graphql \
   -d '{
-    "query": "query FindCandidate($filter: CandidateFilterInput) { findOneCandidate(filter: $filter) { id name { firstName lastName } whatsappNumber consentStatus } }",
+    "query": "query FindCandidate($filter: CandidateFilterInput) { candidate(filter: $filter) { id name whatsappNumber consentStatus } }",
     "variables": {
       "filter": {
         "whatsappNumber": { "like": "+233%" }
@@ -565,10 +578,10 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   http://localhost:3000/graphql \
   -d '{
-    "query": "mutation CreateCandidate($data: CandidateCreateInput!) { createOneCandidate(data: $data) { id name { firstName lastName } whatsappNumber createdAt } }",
+    "query": "mutation CreateCandidate($data: CandidateCreateInput!) { createCandidate(data: $data) { id name whatsappNumber createdAt } }",
     "variables": {
       "data": {
-        "name": { "firstName": "Akosua", "lastName": "Mensah" },
+        "name": "Akosua Mensah",
         "whatsappNumber": "+233244000001",
         "consentStatus": "PENDING"
       }
@@ -586,11 +599,11 @@ curl -s -X POST \
   -H "Content-Type: application/json" \
   http://localhost:3000/graphql \
   -d '{
-    "query": "mutation UpdateCandidate($id: ID!, $data: CandidateUpdateInput!) { updateOneCandidate(id: $id, data: $data) { id consentStatus consentGrantedAt } }",
+    "query": "mutation UpdateCandidate($id: ID!, $data: CandidateUpdateInput!) { updateCandidate(id: $id, data: $data) { id consentStatus consentGrantedAt } }",
     "variables": {
       "id": "0d4389ef-ea9c-4ae8-ada1-1cddc440fb56",
       "data": {
-        "consentStatus": "granted",
+        "consentStatus": "GRANTED",
         "consentGrantedAt": "2026-04-26T09:30:00Z"
       }
     }
@@ -610,14 +623,14 @@ curl -s -X POST \
   -H "Authorization: Bearer eyJ..." \
   -H "Content-Type: application/json" \
   http://localhost:3000/rest/candidates \
-  -d '{"name":{"firstName":"Akosua","lastName":"Mensah"},"whatsappNumber":"+233244000001"}'
+  -d '{"name":"Akosua Mensah","whatsappNumber":"+233244000001"}'
 
 # Batch create — POST /rest/batch/{objectNamePlural}
 curl -s -X POST \
   -H "Authorization: Bearer eyJ..." \
   -H "Content-Type: application/json" \
   http://localhost:3000/rest/batch/candidates \
-  -d '[{"name":{"firstName":"A"}}, {"name":{"firstName":"B"}}]'
+  -d '[{"name":"Candidate A"},{"name":"Candidate B"}]'
 ```
 
 Batch limit is 60 records per request.

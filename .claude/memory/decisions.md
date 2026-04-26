@@ -100,6 +100,41 @@ tenants (Twenty BullMQ, n8n BullMQ, our app's locks) share one Redis with no
 key-prefix isolation. Acceptable for Phase 1; needs an architect ADR before
 production if collisions are observed in workflow testing.
 
+## 2026-04-26 — Local audit mirror for Twenty schema migrations
+
+Phase 2 cost four tester rounds (~15 min each) discovering Twenty
+v2.1.0 validation rules empirically:
+
+1. `RESERVED_METADATA_NAME_KEYWORDS` (the `job` collision; surfaced run 1)
+2. SELECT option values must match `^[A-Z][A-Z0-9_]*$` (run 2)
+3. SELECT/TEXT/RICH_TEXT `defaultValue` must be SQL-literal single-quoted,
+   not JSON-encoded — researcher's initial guidance was wrong on this; the
+   correction marker in `reference/twenty-v2.1.0-api.md` cites
+   `serialize-default-value.util.ts:66-70` (run 3)
+4. (REST) `?includeStandardObjects=true` is rejected — use bare path (run 1)
+5. (script) bookings-db port is intentionally unpublished — psql via
+   `docker exec`, not direct connect (run 1)
+
+Codified rules 1–3 as `scripts/audit-twenty-schema.py`, each rule citing
+the Twenty source file/line that enforces it. Wired as both a pre-apply
+check in `apply-twenty-schema.sh` (verified live by tester section K) and
+queued for code-reviewer to also wire as a `.claude/hooks/` pre-commit
+gate. Rules 4 + 5 are encoded in the apply script directly.
+
+This is the local mirror of Twenty's enforcement that we'd been missing.
+Next migration file we add to `twenty-schema/migrations/` is format-checked
+locally before commit and before apply — not via 15-minute tester
+round-trips. The audit script is the structural antibody to a class of bug
+that cost us most of a day.
+
+Tier-2 follow-up items captured for code-reviewer / next plan:
+- Wire audit as `.claude/hooks/` pre-commit gate (belt + braces)
+- Remove dead `sed` comment-stripping in apply script (now redundant
+  since JSON is strict per pre-apply audit)
+- Refresh stale `IMPLEMENTATION_NOTES.md` decisions/gotchas/open-questions
+  that have been resolved since they were authored — annotate "RESOLVED
+  2026-04-26", don't delete (preserve the journey).
+
 ---
 
 ## Format for new entries

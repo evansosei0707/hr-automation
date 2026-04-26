@@ -15,7 +15,7 @@ Twenty v2 exposes three endpoints from one process:
 
 | Endpoint | Purpose |
 |---|---|
-| `POST /graphql` | Per-workspace data CRUD. Per-object generated resolvers like `createOneCandidate`, `findManyJobs`. |
+| `POST /graphql` | Per-workspace data CRUD. Per-object generated resolvers like `createCandidate`, `candidates` (findMany), `updateCandidate`. See `reference/twenty-v2.1.0-api.md` for the full naming pattern. |
 | `POST /metadata` | Schema management (creating/updating custom objects and fields). |
 | `/rest/*` | REST proxy to the same operations — used for introspection (`GET /rest/metadata/objects`) and as an n8n-friendly fallback. |
 
@@ -36,9 +36,9 @@ Twenty v2 does not support formula fields, rollups, or server-side action-button
 
 ## Naming convention: when to use Twenty's auto-`name` field
 
-Twenty auto-creates a composite `name` field (FULL_NAME = firstName + lastName) on every custom object unless `skipNameField: true` is passed at object-create time.
+Twenty auto-creates a flat `name` field (type: TEXT — a plain string) on every custom object unless `skipNameField: true` is passed at object-create time. (Verified against Twenty v2.1.0 by tester on 2026-04-26: `createCandidate(data:{name:"Akosua Mensah"})` accepts a flat string. The `FULL_NAME` enum value exists but is not what `skipNameField: false` produces; it would be set explicitly via `createOneField` if needed.)
 
-- **Candidate** — accept the auto-`name`. Candidates are people; FULL_NAME is the natural identifier.
+- **Candidate** — accept the auto-`name`. Candidates are people; the plain-text full name is the natural identifier.
 - **All other custom objects** — pass `skipNameField: true`. They aren't people; we define our own canonical identifier per object below.
 
 ## SELECT / MULTI_SELECT option values: UPPER_SNAKE_CASE
@@ -71,7 +71,7 @@ A person the firm has evaluated or communicated with as a potential hire. Indepe
 Auto-created by Twenty (`skipNameField` not passed):
 | Field | Type |
 |---|---|
-| `name` | FULL_NAME (composite: firstName + lastName) |
+| `name` | TEXT (auto-created by Twenty; plain string — e.g. "Akosua Mensah") |
 
 Explicit fields:
 
@@ -118,7 +118,7 @@ The join between a Candidate and a JobPosting. `skipNameField: true`; no canonic
 
 | Field | Type | Notes |
 |---|---|---|
-| `candidate` | RELATION (MANY_TO_ONE → Candidate) | Reverse on Candidate: `Applications`. |
+| `candidate` | RELATION (MANY_TO_ONE → Candidate) | Reverse on Candidate: `Applications`. v2 create payload example: `{ "type": "RELATION", "name": "candidate", "relationCreationPayload": { "type": "MANY_TO_ONE", "targetObjectName": "candidate", "targetFieldLabel": "Applications", "targetFieldIcon": "IconClipboard" } }` — see `twenty-schema/migrations/V001__init_core_objects.json` for all 10 relation examples. |
 | `jobPosting` | RELATION (MANY_TO_ONE → JobPosting) | Reverse on JobPosting: `Applications`. |
 | `status` | SELECT | Options: `RECEIVED`, `SCREENING`, `SCREENED`, `SHORTLISTED`, `INTERVIEWING`, `OFFERED`, `PLACED`, `NOT_SELECTED`, `WITHDRAWN`. Default: `RECEIVED`. |
 | `score` | NUMBER | 0–100; integer. |

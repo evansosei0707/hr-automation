@@ -163,7 +163,7 @@ log "Loaded ${#OBJECT_UUID_MAP[@]} objects from Twenty schema."
 # rather than risk compounding the inconsistency. The codified recovery is
 # scripts/reset-twenty-schema.sh.
 # ─────────────────────────────────────────────
-CUSTOM_OBJECT_COUNT=$(echo "${METADATA_RESPONSE}" | jq -r '[.data.objects.edges[] | select(.node.isCustom)] | length' 2>/dev/null || echo "0")
+CUSTOM_OBJECT_COUNT=$(echo "${METADATA_RESPONSE}" | jq -r '[.data.objects[] | select(.isCustom)] | length' 2>/dev/null || echo "0")
 TRACKER_ROW_COUNT=$(psql_exec "SELECT COUNT(*) FROM twenty_schema_migrations;" 2>/dev/null || echo "0")
 if [ "${CUSTOM_OBJECT_COUNT}" -gt 0 ] && [ "${TRACKER_ROW_COUNT}" = "0" ]; then
   err "Precondition failed: Twenty has ${CUSTOM_OBJECT_COUNT} custom object(s) but the tracker is empty."

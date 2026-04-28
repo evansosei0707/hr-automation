@@ -51,7 +51,7 @@ The map of all project knowledge. **Open files from here only when a specific ta
 | [`03-integrations/telegram-bot.md`](03-integrations/telegram-bot.md) | Posting to Telegram or receiving Telegram commands |
 | [`03-integrations/google-calendar.md`](03-integrations/google-calendar.md) | Pulling holidays or syncing interviewer availability |
 | [`03-integrations/claude-api.md`](03-integrations/claude-api.md) | Any Claude call, model selection, cost control |
-| [`03-integrations/openai-transcribe.md`](03-integrations/openai-transcribe.md) | Voice-note transcription |
+| [`03-integrations/groq-whisper.md`](03-integrations/groq-whisper.md) | Voice-note transcription (Groq Whisper; supersedes OpenAI per ADR-0006) |
 
 ## 04 — Operations
 

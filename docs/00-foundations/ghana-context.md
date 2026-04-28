@@ -7,7 +7,7 @@ Everything Ghana-specific in one place. If a spec anywhere else contradicts this
 Candidates in Ghana use a mix of English, Ghanaian Pidgin, Twi (Akan), Ga, Ewe, Dagbani, and others. We handle them as follows:
 
 - **Typed text, any language:** passed directly to Claude. Claude reads Twi, Ga, Ewe, Dagbani meaningfully well when they are typed. No transcription step, no quality degradation.
-- **Voice notes in English or Ghanaian Pidgin:** transcribed with `gpt-4o-mini-transcribe`. Cost: ~$0.003/minute. Accuracy is acceptable for our use case.
+- **Voice notes in English or Ghanaian Pidgin:** transcribed with `whisper-large-v3-turbo` via Groq (per ADR-0006; superseded the earlier OpenAI choice). Cost: ~$0.000667/minute on the paid tier; the free tier covers our forecast volume. Real-Pidgin accuracy is verified during the 2-week post-launch calibration window.
 - **Voice notes in any other Ghanaian language:** we do NOT attempt automated transcription. No currently available ASR handles these reliably (confirmed in the v3 research round — including GhanaNLP's Khaya API, which is still alpha). The system sends a polite retry request. If the candidate still sends a local-language voice note, the message is routed to a human-review queue in Twenty, tagged `voice_note_manual_review`.
 
 See `docs/05-decisions/ADR-0004-drop-khaya.md` for the full rationale.

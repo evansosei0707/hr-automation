@@ -5,7 +5,7 @@ Current build state. Updated at the end of every work session.
 ---
 
 **Last updated:** 2026-04-28
-**Current phase:** Week 0 — Validation Gate (Phases 1+2+3 complete; Phase 4 in progress: 3/7 vouchers green, 1 parked, 1 in motion)
+**Current phase:** Week 0 — Validation Gate (Phases 1+2+3 complete; Phase 4 in progress: 5 vouchers green, 1 parked, 1 skip-gated, 2 unstarted)
 **Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -23,18 +23,20 @@ Current build state. Updated at the end of every work session.
 
 ## What's next
 
-- Week 0 / Phase 4 — External API vouchers. **Status: 3 green, 1 parked, 3 active/queued, 1 blocked.**
+- Week 0 / Phase 4 — External API vouchers. **Status: 5 green, 1 parked, 1 skip-gated, 2 unstarted.**
   - ✅ Telegram (`scripts/voucher/telegram.sh`, commit `79a93d2`)
   - ✅ Google Calendar (`scripts/voucher/google-calendar.sh`, commit `79a93d2`)
   - ✅ Anthropic Sonnet + Haiku (`scripts/voucher/anthropic.sh` + V005 `ai_call_log` table, commit `68210bd`)
-  - ⏸ OpenAI Whisper — script committed, run blocked on billing (see What's blocked). Pivoting to Groq Whisper as alternative; researcher in flight, ADR-0006 forthcoming.
-  - 🔄 Meta Graph FB — voucher in progress (Page token verified)
-  - 🔄 Groq Whisper — researcher dispatched; voucher follows ADR-0006 + signup
+  - ⏸ OpenAI Whisper — script committed (`scripts/voucher/openai-transcribe.sh`, commit `e5a9b16`), run BLOCKED on billing. **Superseded by Groq per ADR-0006**; OpenAI script kept as historical artifact.
+  - ✅ Meta Graph FB (`scripts/voucher/meta-fb.sh`, commit `d561219`)
+  - ⏸ Meta Graph IG — script committed (`scripts/voucher/meta-ig.sh`, commit `d561219`), SKIP-GATED on `META_IG_USER_ID` (Meta soft-hold)
+  - ✅ Groq Whisper (`scripts/voucher/groq-transcribe.sh`, this commit)
   - ⏳ WhatsApp full webhook — needs ngrok
   - ⏳ X — blocked on developer access (application fire-and-forget)
-  - ⏳ Instagram — blocked on Meta soft-hold (~48h account hold, retry 2026-04-28/29)
 - Week 0 / Phase 5 — Cross-cutting patterns (Redis lock heartbeat with 45s synthetic Claude call, observability via event_log, backup drill).
 - Week 0 / Phase 6 — Go/no-go review.
+
+**Pidgin quality testing for Groq Whisper:** deferred to Workflow A build (Week 2/3) per Tier 2 item T2-6. Voucher proves wire shape; real Pidgin samples required before auto-handling ships.
 
 ## What's blocked
 

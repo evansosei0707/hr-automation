@@ -39,7 +39,7 @@ And always:
 3. **Start Lua heartbeat.** Every 15 seconds, a Lua script extends the lock TTL if and only if the lock value still matches this execution. See `03-integrations/claude-api.md` for the heartbeat script.
 4. **Resolve candidate.** Look up by `whatsappNumber`. If new, create a Candidate with `consentStatus=pending`.
 5. **Handle consent.** If `consentStatus=pending` and this is the first message, the outbound is the consent request — not a Claude reply.
-6. **Transcribe if voice note.** See `03-integrations/openai-transcribe.md` for the rules on which voice notes get transcribed.
+6. **Transcribe if voice note.** See `03-integrations/groq-whisper.md` for the rules on which voice notes get transcribed (Groq Whisper, post ADR-0006 pivot).
 7. **Store inbound message.** `conversation_message` row with transcript if applicable.
 8. **Classify intent.** Claude Haiku on the last 5 turns answers: is this (a) a reply to an ongoing workflow (B/C/D), (b) a DATA/DELETE request, (c) an open conversation, (d) a distress signal, (e) spam?
 9. **Route.**

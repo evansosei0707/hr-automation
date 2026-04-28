@@ -115,7 +115,7 @@ The runbook (`runbook.md` §9) has the operational steps.
 We share candidate data, as a data controller, with these processors. Each has a DPA (data processing agreement) in place — verify in Week 0:
 
 - Anthropic (Claude API) — message content, CV text
-- OpenAI (transcribe) — audio content (voice notes in English/Pidgin)
+- Groq (transcribe) — audio content (voice notes in English/Pidgin), per ADR-0006
 - Meta (WhatsApp Cloud, Facebook, Instagram) — messages, contact numbers
 - X Corp (X API) — public post content only, no candidate PII
 - Google (Calendar, Telegram-as-applicable) — interview calendar events; no candidate PII in Telegram posts

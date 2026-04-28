@@ -39,7 +39,7 @@ Any failure → alert to staff WhatsApp channel once per 30min (dedupe), write `
 
 ### Cost budget watch
 
-- Sum Claude + OpenAI costs for today. If > $5, alert. If > $10, alert and gate the heaviest workflows (B full re-screens) until midnight.
+- Sum AI costs for today (Claude + Groq Whisper). If > $5, alert. If > $10, alert and gate the heaviest workflows (B full re-screens) until midnight.
 - Weekly total > $25 warning; > $50 gate.
 
 ### Maintenance jobs (once per day, not every 5 minutes)

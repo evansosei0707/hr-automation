@@ -58,6 +58,14 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Target window:** **Week 0 close** OR **at first need** — whichever comes first. If we add a CURRENCY default in V002/V003 for the bookings DB schema (unlikely; bookings DB defaults are SQL-side), or in a future Twenty migration, do this first.
 - **Owner:** schema-designer or workflow-builder.
 
+### T2-6. Pidgin transcription quality sanity-check (Groq Whisper)
+
+- **Description:** The Groq Whisper voucher uses an espeak-ng-synthesised English fixture, which proves the wire shape but not transcript quality on real Ghanaian Pidgin. Before Workflow A ships voice-note auto-handling, record ~5–10 short Pidgin voice notes from the firm's Operations Lead (or any Ghanaian Pidgin speaker) and run them through `whisper-large-v3-turbo`. Document observed WER, common error patterns, and recommended starting confidence-gate thresholds (`avg_logprob`, `no_speech_prob`, `compression_ratio`) for `docs/03-integrations/groq-whisper.md`. **Not a voucher concern; a workflow-build precondition.**
+- **Files affected:** new `reference/groq-whisper-pidgin-samples/` (WAV files) + a short markdown report referenced from `docs/03-integrations/groq-whisper.md`'s Confidence-gating section. The thresholds in that section are currently initial guesses; this work converts them to evidence-backed defaults.
+- **Blocking:** No — but Workflow A's auto-handling of voice notes IS gated on this. So it's a "must do before Workflow A's Phase-2 implementation" item, not a "must do before Phase 4 close."
+- **Target window:** **Pre-Workflow-A build** (Week 2 or 3). User noted at Phase 4 dispatch (2026-04-28): "I'll record a real Ghanaian Pidgin sample later for a quality sanity check before we ship Workflow A."
+- **Owner:** HRA Project Lead (audio recording) + workflow-builder (run + write up).
+
 ---
 
 ## How to use this plan

@@ -40,7 +40,7 @@ No-one should have to run a report. The system pushes the numbers. Operators see
 - Workflow error count
 
 **AI cost:**
-- Total Claude + OpenAI cost this week
+- Total AI cost this week (Claude + Groq Whisper)
 - Per-workflow cost breakdown
 - Trend vs. prior week
 

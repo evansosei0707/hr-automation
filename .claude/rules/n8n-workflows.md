@@ -34,6 +34,47 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
 11. **`ReviewTask.subject` polymorphic invariant.** `ReviewTask` uses two optional `MANY_TO_ONE` fields — `subjectCandidate` and `subjectApplication` — instead of a single MORPH_RELATION (see ADR-0005). On every write path that creates or updates a `ReviewTask`, the workflow MUST assert exactly one of those two fields is set: never both, never neither. The DB does not enforce this; n8n is the only line of defence. Read paths must defensively check both fields and treat "neither set" or "both set" as a data-integrity error → log to `workflow_errors` and skip.
 
+12. **Code nodes: stdlib access is gated by `NODE_FUNCTION_ALLOW_BUILTIN`.** n8n's Code node runs in a sandbox that BY DEFAULT blocks `require()` of Node.js stdlib modules. To enable a module, add it to the comma-separated env var on the n8n service:
+    
+    ```yaml
+    NODE_FUNCTION_ALLOW_BUILTIN: "crypto,url,querystring"   # explicit allowlist
+    NODE_FUNCTION_ALLOW_BUILTIN: "*"                          # permit all (broader attack surface)
+    ```
+    
+    Currently set on this project: `crypto` (for HMAC validation in webhook handlers). Adding more modules: edit `infrastructure/docker-compose.yml` n8n service env, recreate the container.
+    
+    **What's available WITHOUT allowlisting:**
+    - `Buffer` — Node.js default global (e.g. `Buffer.from(...)`, no require)
+    - `JSON`, `Math`, `Date`, regex, `URL`, `URLSearchParams` — standard JS globals
+    - `process.env` — NOT directly accessible; use `$env.VAR_NAME` (n8n's expression sugar) instead
+    - n8n-specific: `$input`, `$json`, `$env`, `$execution`, `$workflow`, `$node`
+    
+    **What needs allowlisting + require():**
+    - `crypto` — HMAC, hashing, sign/verify, randomBytes
+    - `buffer` — only the buffer module's named exports beyond the global Buffer (rarely needed)
+    - `url`, `querystring`, `path`, `os`, `util` — standard stdlib
+    
+    Third-party npm packages need `NODE_FUNCTION_ALLOW_EXTERNAL` (different env var) AND the package available in the n8n container's node_modules (usually requires a custom Dockerfile or a volume mount). Non-trivial; needs an architect ADR before adoption. For Workflow A through H, prefer Postgres functions or subflows over Code-node-with-external-deps.
+    
+    **Surfaced 2026-04-28** during Phase 4 voucher work — initial guess that `crypto` was a sandbox global (it isn't); WhatsApp webhook handler's HMAC validator threw "crypto is not defined" until the env var was set.
+
+13. **Postgres nodes writing to project audit/log tables MUST bind every NOT NULL column from the destination table's V-migration.** Cross-check against the migration file BEFORE generation, not after. n8n's Test Setup against a malformed Postgres INSERT trips the NOT NULL constraint at the DB and produces a confusing failure mode (the node "succeeds" through query construction but the DB rejects).
+    
+    Common runtime-supplied bindings:
+    - `$execution.id` — n8n's expression for current execution ID. Works in normal-flow nodes.
+    - `$json.execution.id` — Error Trigger downstream. The execution context here is the FAILED execution surfaced via `$json` from the Error Trigger output, NOT the current Error Trigger execution.
+    - `$workflow.name`, `$workflow.id` — workflow metadata as expression variables.
+    - `NOW()` or column DEFAULT — let the DB fill timestamps; don't synthesise client-side.
+    
+    Cross-cut against the project schema:
+    - **`workflow_errors`** NOT NULL: `workflow_name`, `execution_id`, `error_message`. (V001)
+    - **`event_log`** NOT NULL: `workflow_name`, `level`, `event`. (V001) `execution_id` is nullable but bind it anyway for traceability.
+    - **`system_incident`** NOT NULL: `kind`, `severity` (CHECK ∈ info/warning/critical), `summary`. (V001)
+    - **`twenty_schema_migrations`** NOT NULL: `version`, `description`, `operations_count`, `applied_by`, `applied_against`. (V004) — apply-script-owned, not workflow-touched.
+    - **`ai_call_log`** NOT NULL: `workflow_name`, `model`. (V005)
+    
+    **Surfaced 2026-04-28** by an INSERT into workflow_errors omitting execution_id — n8n's Test Setup tripped the NOT NULL constraint; row 27 in workflow_errors is the artefact.
+
 ## Before committing an n8n workflow
 
 Run the validator:

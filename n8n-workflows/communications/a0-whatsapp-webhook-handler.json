@@ -1,0 +1,314 @@
+{
+  "name": "Workflow A — WhatsApp Webhook Handler (Phase 4 voucher)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a0000001-0001-0001-0001-000000000001",
+      "name": "WhatsApp Webhook (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 100],
+      "webhookId": "a0-whatsapp-get"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-mode",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a0000002-0002-0002-0002-000000000002",
+      "name": "Verify Token Matches",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('WhatsApp Webhook (GET)').item.json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a0000003-0003-0003-0003-000000000003",
+      "name": "Respond 200 Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "a0000004-0004-0004-0004-000000000004",
+      "name": "Respond 403 Verify Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "a0000005-0005-0005-0005-000000000005",
+      "name": "WhatsApp Webhook (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 480],
+      "webhookId": "a0-whatsapp-post"
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "// Validate Meta WhatsApp webhook signature.\n// X-Hub-Signature-256 = sha256=<hex>; HMAC of raw body with WHATSAPP_APP_SECRET.\n// CRITICAL: signature is over RAW BYTES Meta sent. JSON re-serialisation breaks it.\n// Webhook node must have options.rawBody=true so the bytes survive.\n//\n// Failure modes returned (in this order of precedence):\n//   1. reason='raw_body_unavailable'  — neither raw-body path was populated by the\n//                                       Webhook node. Distinct diagnostic — fix the\n//                                       webhook config, don't chase HMAC math.\n//   2. valid=false  (no `reason` set) — HMAC mismatch on a body we DID read.\n//                                       Real signature failure (spoof or wrong secret).\n//   3. valid=true                     — body authenticated.\n//\n// NOTE on n8n stdlib access: n8n's Code node sandbox blocks `require()` of\n// stdlib modules BY DEFAULT. The n8n service must be started with env var\n// NODE_FUNCTION_ALLOW_BUILTIN including 'crypto' (or '*') for the require\n// below to resolve. See .claude/rules/n8n-workflows.md rule #12 and the\n// n8n service env block in infrastructure/docker-compose.yml.\n//   - `Buffer` IS a default Node.js global (no require, no allowlist needed)\n//   - `crypto` is NOT a default global — must be require()'d AND allowlisted\n\nconst crypto = require('crypto');\nconst item = $input.item;\nconst headers = (item.json && item.json.headers) || {};\nconst sigHeader = headers['x-hub-signature-256'] || headers['X-Hub-Signature-256'] || '';\nconst secret = $env.WHATSAPP_APP_SECRET || '';\n\n// Two raw-body access paths only. NO third re-serialisation fallback —\n// silent fall-through to a known-broken path would obscure debugging.\n// If neither path matches, we surface a distinct 'raw_body_unavailable'\n// diagnostic so the operator fixes the webhook config rather than chasing\n// a phantom HMAC mismatch.\nlet rawBody = null;\nif (item.binary && item.binary.data && item.binary.data.data) {\n  // Webhook node with options.rawBody=true → body in binary.data as base64\n  rawBody = Buffer.from(item.binary.data.data, 'base64');\n} else if (typeof item.json.body === 'string') {\n  // Some n8n versions surface raw body as a string on json.body\n  rawBody = Buffer.from(item.json.body, 'utf8');\n}\n\nif (rawBody === null) {\n  // Fail closed with a distinct signal. Downstream Postgres node uses\n  // `reason` to write a clear error_message='raw_body_unavailable' row\n  // to workflow_errors instead of the (misleading) HMAC-mismatch text.\n  return [{\n    json: {\n      valid: false,\n      reason: 'raw_body_unavailable',\n      received_signature_prefix: sigHeader.slice(0, 24),\n      raw_body_length: 0,\n      body_parsed: null\n    }\n  }];\n}\n\nconst computed = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\n\nlet valid = false;\nconst prefix = 'sha256=';\nif (sigHeader.startsWith(prefix) && secret.length > 0) {\n  const received = sigHeader.slice(prefix.length);\n  if (received.length === computed.length) {\n    try {\n      valid = crypto.timingSafeEqual(\n        Buffer.from(received, 'hex'),\n        Buffer.from(computed, 'hex')\n      );\n    } catch (e) {\n      valid = false;\n    }\n  }\n}\n\nlet bodyParsed = null;\ntry {\n  bodyParsed = JSON.parse(rawBody.toString('utf8'));\n} catch (e) {\n  bodyParsed = item.json.body || null;\n}\n\nreturn [{\n  json: {\n    valid,\n    body_parsed: bodyParsed,\n    received_signature_prefix: sigHeader.slice(0, 24),\n    raw_body_length: rawBody.length\n  }\n}];\n"
+      },
+      "id": "a0000006-0006-0006-0006-000000000006",
+      "name": "Validate HMAC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 480]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a0000007-0007-0007-0007-000000000007",
+      "name": "HMAC Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 480]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message, data) VALUES ('workflow_a_inbound_whatsapp', $1, 'info', 'webhook_received', LEFT($2, 200), $3::jsonb);",
+        "options": {
+          "queryReplacement": "={{ $execution.id }},={{ JSON.stringify($json.body_parsed) }},={{ JSON.stringify($json.body_parsed) }}"
+        }
+      },
+      "id": "a0000008-0008-0008-0008-000000000008",
+      "name": "Log Inbound Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 380],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "a0000009-0009-0009-0009-000000000009",
+      "name": "Respond 200 Event Received",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1160, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, context) VALUES ('workflow_a_inbound_whatsapp', $1, 'Validate HMAC', $2, $3::jsonb);",
+        "options": {
+          "queryReplacement": "={{ $execution.id }},={{ $json.reason ? $json.reason : 'X-Hub-Signature-256 mismatch — refused' }},={{ JSON.stringify({received_signature_prefix: $json.received_signature_prefix, raw_body_length: $json.raw_body_length, reason: $json.reason || null}) }}"
+        }
+      },
+      "id": "a0000010-0010-0010-0010-000000000010",
+      "name": "Log POST Validation Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 580],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "a0000011-0011-0011-0011-000000000011",
+      "name": "Respond 403 HMAC Failed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1160, 580]
+    },
+    {
+      "parameters": {},
+      "id": "a0000012-0012-0012-0012-000000000012",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [200, 820]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ('workflow_a_inbound_whatsapp', $1, $2, $3, $4, $5::jsonb);",
+        "options": {
+          "queryReplacement": "={{ $json.execution.id }},={{ $json.execution.lastNodeExecuted }},={{ $json.execution.error.message }},={{ $json.execution.error.stack }},={{ JSON.stringify($json.execution || {}) }}"
+        }
+      },
+      "id": "a0000013-0013-0013-0013-000000000013",
+      "name": "Log Unhandled Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [440, 820],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook (GET)": {
+      "main": [
+        [
+          { "node": "Verify Token Matches", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Verify Token Matches": {
+      "main": [
+        [
+          { "node": "Respond 200 Challenge", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Respond 403 Verify Failed", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "WhatsApp Webhook (POST)": {
+      "main": [
+        [
+          { "node": "Validate HMAC", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Validate HMAC": {
+      "main": [
+        [
+          { "node": "HMAC Valid", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "HMAC Valid": {
+      "main": [
+        [
+          { "node": "Log Inbound Event", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Log POST Validation Failure", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Inbound Event": {
+      "main": [
+        [
+          { "node": "Respond 200 Event Received", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log POST Validation Failure": {
+      "main": [
+        [
+          { "node": "Respond 403 HMAC Failed", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          { "node": "Log Unhandled Error", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "hr-automation" },
+    { "name": "workflow-a" },
+    { "name": "phase-4-voucher" },
+    { "name": "version-1.0" }
+  ],
+  "pinData": {},
+  "meta": {}
+}

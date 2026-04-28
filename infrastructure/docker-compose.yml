@@ -177,6 +177,23 @@ services:
       EXECUTIONS_DATA_MAX_AGE: "336"   # 14 days in hours
 
       N8N_RUNNERS_ENABLED: "true"
+
+      # Allowlist Node.js stdlib modules accessible to Code nodes via require().
+      # Default n8n sandbox blocks ALL require() of stdlib. We need crypto for
+      # HMAC validation in webhook handlers (Workflow A). Add comma-separated
+      # modules here as more workflows need them. Use '*' to permit all
+      # (broader attack surface — only if a workflow genuinely needs unrestricted
+      # access). See .claude/rules/n8n-workflows.md rule #12.
+      NODE_FUNCTION_ALLOW_BUILTIN: "crypto"
+
+      # WhatsApp Cloud API integration (Workflow A and beyond).
+      # Full cluster propagated now to avoid recycling the n8n container twice
+      # (once for verify/HMAC handlers, again later for outbound send).
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_BUSINESS_ACCOUNT_ID: ${WHATSAPP_BUSINESS_ACCOUNT_ID}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET}
     volumes:
       - n8n_data:/home/node/.n8n
     networks:

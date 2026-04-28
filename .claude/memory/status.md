@@ -4,8 +4,8 @@ Current build state. Updated at the end of every work session.
 
 ---
 
-**Last updated:** 2026-04-26
-**Current phase:** Week 0 — Validation Gate (Phases 1+2+3 complete; Phase 4 next)
+**Last updated:** 2026-04-28
+**Current phase:** Week 0 — Validation Gate (Phases 1+2+3 complete; Phase 4 in progress: 3/7 vouchers green, 1 parked, 1 in motion)
 **Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -23,13 +23,25 @@ Current build state. Updated at the end of every work session.
 
 ## What's next
 
-- Week 0 / Phase 4 — External API vouchers (days 3–5). WhatsApp / Claude / OpenAI transcribe / Meta Graph (FB+IG) / X / Telegram / Google Calendar — minimal voucher tests proving each API is callable from our environment. **Blocked on API keys for: Anthropic, OpenAI, Telegram, Google, X, Meta Graph (see What's blocked).**
+- Week 0 / Phase 4 — External API vouchers. **Status: 3 green, 1 parked, 3 active/queued, 1 blocked.**
+  - ✅ Telegram (`scripts/voucher/telegram.sh`, commit `79a93d2`)
+  - ✅ Google Calendar (`scripts/voucher/google-calendar.sh`, commit `79a93d2`)
+  - ✅ Anthropic Sonnet + Haiku (`scripts/voucher/anthropic.sh` + V005 `ai_call_log` table, commit `68210bd`)
+  - ⏸ OpenAI Whisper — script committed, run blocked on billing (see What's blocked). Pivoting to Groq Whisper as alternative; researcher in flight, ADR-0006 forthcoming.
+  - 🔄 Meta Graph FB — voucher in progress (Page token verified)
+  - 🔄 Groq Whisper — researcher dispatched; voucher follows ADR-0006 + signup
+  - ⏳ WhatsApp full webhook — needs ngrok
+  - ⏳ X — blocked on developer access (application fire-and-forget)
+  - ⏳ Instagram — blocked on Meta soft-hold (~48h account hold, retry 2026-04-28/29)
 - Week 0 / Phase 5 — Cross-cutting patterns (Redis lock heartbeat with 45s synthetic Claude call, observability via event_log, backup drill).
 - Week 0 / Phase 6 — Go/no-go review.
 
 ## What's blocked
 
-- **API keys for Phase 4** (target days 3–5): Anthropic (sorting payment, ETA 1–2 days from 2026-04-26), OpenAI, Telegram, Google, X, Meta Graph (FB+IG). To be batch-acquired before Phase 4. WhatsApp creds are already in `.env`.
+- **OpenAI billing** — card declined twice (same card that worked on Anthropic; region-specific card-acceptance issue). Pivoting to Groq Whisper as alternative path. ADR-0006 forthcoming. The OpenAI voucher script + WAV fixture are committed (`scripts/voucher/openai-transcribe.sh`, `scripts/voucher/fixtures/voucher_sample.wav`) and runnable if access is ever resolved; not deleted.
+- **X developer access** — application submitted, fire-and-forget; voucher waits on approval.
+- **Instagram (Meta soft-hold)** — IG link attempts return "Unable to add Instagram account — unknown error" likely due to ~48h soft-hold on new accounts. `META_IG_USER_ID` empty. Retry 2026-04-28 or 2026-04-29; companion `meta-ig.sh` voucher will skip-gate gracefully on empty env.
+- **WhatsApp full webhook** — needs ngrok for inbound webhook reachability; voucher this week.
 
 ## Last backup drill
 

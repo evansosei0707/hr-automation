@@ -76,6 +76,7 @@ Immutable records of *why* we made a choice. Do not edit an ADR after it is acce
 | [ADR-0005](05-decisions/ADR-0005-twenty-v2-migration.md) | Adopt Twenty v2.1.0 API surface; retire v0.60-era assumptions | Accepted |
 | [ADR-0006](05-decisions/ADR-0006-groq-whisper-pivot.md) | Pivot transcription provider — OpenAI Whisper → Groq Whisper | Accepted |
 | [ADR-0007](05-decisions/ADR-0007-defer-instagram.md) | Defer Instagram integration | Accepted |
+| [ADR-0008](05-decisions/ADR-0008-defer-x.md) | Defer X integration | Accepted |
 | [ADR template](05-decisions/ADR-template.md) | — | — |
 
 ---

@@ -2,6 +2,35 @@
 
 "What do I do when X breaks?" Short procedures, numbered for direct reference from alerts.
 
+## §0 — How to look at what's happening
+
+Before any specific procedure below, the operator's first move is usually "what does the system currently say?". Two queries answer that without leaving the terminal — copy-paste straight into psql:
+
+```bash
+source infrastructure/.env
+docker exec -it -e PGPASSWORD="$BOOKINGS_DB_PASSWORD" hr-bookings-db \
+  psql -U "$BOOKINGS_DB_USER" -d "$BOOKINGS_DB_NAME"
+```
+
+```sql
+-- 1. What's happened in the last hour
+SELECT ts, workflow_name, level, event,
+       LEFT(COALESCE(message, ''), 60) AS msg
+FROM event_log
+WHERE ts > NOW() - INTERVAL '1 hour'
+ORDER BY ts DESC;
+
+-- 2. Anything broken right now (unacknowledged)
+SELECT id, occurred_at, workflow_name, node_name,
+       LEFT(error_message, 70) AS err
+FROM workflow_errors
+WHERE acknowledged_at IS NULL
+ORDER BY occurred_at DESC
+LIMIT 20;
+```
+
+For deeper investigation — execution traces, throughput, AI cost, open incidents, acknowledging errors after action — see the **"Operational queries"** section in [`observability.md`](./observability.md#operational-queries--looking-at-whats-happening). Every query there is copy-pasteable and shipped with sample output from real data.
+
 ## §1 — n8n unreachable
 
 **Symptom:** Orchestration alert `n8n_health_failed`, or no workflows executing.

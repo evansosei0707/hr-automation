@@ -126,6 +126,15 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** doc-gardener.
 - **Reference:** Phase 6 reconnaissance §"Spec drift findings" item SD8.
 
+### T2-12. Implement true conv-lock heartbeat (Lua PEXPIRE-CAS every 15s)
+
+- **Description:** CLAUDE.md invariant #3 specifies a 60s TTL with a Lua CAS PEXPIRE heartbeat every 15s. Workflow A v1 uses a 180s flat TTL instead (no active heartbeat) because n8n 1.85.0 in regular execution mode has no mechanism for a background timer to fire independently while the main execution chain is blocked on a long HTTP call (Groq Whisper + Claude Sonnet can together take 10–40s). Options A (parallel branch) and B (self-webhook fire-and-forget) are non-viable in n8n 1.85.0 regular mode — see `a-communications-NOTES.md` §"Conv-lock implementation" for the full analysis. The v1 safety property is preserved by Lua CAS DEL on all six exit paths; 180s is the crash-scenario orphaned-lock window. Once n8n moves to queue mode or a task-runner-based parallel execution model, implement the proper heartbeat and restore invariant #3's 60s TTL.
+- **Files affected:** `n8n-workflows/communications/a-communications.json` (change lock TTL back to 60000), new `n8n-workflows/communications/conv-lock-heartbeat.json`, update CLAUDE.md invariant #3 annotation, update `docs/02-workflows/a-communications-design-v1.md` §3.
+- **Blocking:** No. The 180s flat TTL provides equivalent safety to 60s + heartbeat in crash scenarios; it merely increases the orphan-lock window from ~60s to ~180s.
+- **Target window:** **Post-Week-1** — revisit when n8n execution model is better understood or if lock contention becomes a measurable problem in production. Natural trigger: switching n8n to `EXECUTIONS_MODE=queue` (see ADR-0009 §Claim 3).
+- **Owner:** workflow-builder.
+- **Reference:** Workflow A v1 build (2026-04-29); `docs/02-workflows/a-communications-design-v1.md` §3; `n8n-workflows/communications/a-communications-NOTES.md` §"Conv-lock implementation".
+
 ---
 
 ## How to use this plan

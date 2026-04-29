@@ -1,0 +1,213 @@
+{
+  "name": "Subflow — DPA Handler",
+  "nodes": [
+    {
+      "id": "dpa00001-0001-0001-0001-000000000001",
+      "name": "DPA Handler Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {}
+    },
+    {
+      "id": "dpa00002-0002-0002-0002-000000000002",
+      "name": "Classify DPA Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [440, 300],
+      "parameters": {
+        "mode": "expression",
+        "output": "single",
+        "rules": {
+          "rules": [
+            {
+              "outputKey": "data_access",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "id": "cond-data",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "DATA",
+                    "operator": { "type": "string", "operation": "equals" }
+                  },
+                  {
+                    "id": "cond-access",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "ACCESS",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "deletion",
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "strict" },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "id": "cond-delete",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "DELETE",
+                    "operator": { "type": "string", "operation": "equals" }
+                  },
+                  {
+                    "id": "cond-forget",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "FORGET",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "fallbackOutput": "extra"
+      }
+    },
+    {
+      "id": "dpa00003-0003-0003-0003-000000000003",
+      "name": "Send Data Access Ack",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [680, 200],
+      "parameters": {
+        "source": "database",
+        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "options": {},
+        "fields": {
+          "values": [
+            { "name": "to", "stringValue": "={{ $json.phoneE164 }}" },
+            { "name": "body", "stringValue": "={{ 'Hi ' + ($json.firstName || 'there') + \", we received your data access request. Our team will prepare and send your personal data within 30 days as required by data protection law. Thank you for reaching out.\" }}" },
+            { "name": "conversationId", "stringValue": "={{ $json.conversationId }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dpa00004-0004-0004-0004-000000000004",
+      "name": "Send Deletion Ack",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [680, 400],
+      "parameters": {
+        "source": "database",
+        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "options": {},
+        "fields": {
+          "values": [
+            { "name": "to", "stringValue": "={{ $json.phoneE164 }}" },
+            { "name": "body", "stringValue": "={{ 'Hi ' + ($json.firstName || 'there') + ', we have received your deletion request. Your personal data will be removed from our systems within 30 days. We will confirm once completed.' }}" },
+            { "name": "conversationId", "stringValue": "={{ $json.conversationId }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dpa00005-0005-0005-0005-000000000005",
+      "name": "Mark Candidate for Deletion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/metadata",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ query: 'mutation UpdateCandidate($id: ID!) { updateCandidate(id: $id, data: { dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $json.candidateId } }) }}",
+        "options": { "timeout": 15000 }
+      }
+    },
+    {
+      "id": "dpa00006-0006-0006-0006-000000000006",
+      "name": "Log DPA Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1160, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('subflow_dpa_handler', $1, 'info', 'dpa_request_received', $2, $3)",
+        "options": {
+          "queryReplacement": "={{ $execution.id }},={{ $('DPA Handler Trigger').item.json.candidateId }},={{ $('DPA Handler Trigger').item.json.intent }}"
+        }
+      }
+    },
+    {
+      "id": "dpa00007-0007-0007-0007-000000000007",
+      "name": "Release Lock — DPA",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1400, 300],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('DPA Handler Trigger').item.json.candidateId + ' ' + $('DPA Handler Trigger').item.json.lockValue }}"
+      }
+    }
+  ],
+  "connections": {
+    "DPA Handler Trigger": {
+      "main": [
+        [{ "node": "Classify DPA Intent", "type": "main", "index": 0 }]
+      ]
+    },
+    "Classify DPA Intent": {
+      "main": [
+        [{ "node": "Send Data Access Ack", "type": "main", "index": 0 }],
+        [{ "node": "Send Deletion Ack", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Data Access Ack": {
+      "main": [
+        [{ "node": "Log DPA Event", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Deletion Ack": {
+      "main": [
+        [{ "node": "Mark Candidate for Deletion", "type": "main", "index": 0 }]
+      ]
+    },
+    "Mark Candidate for Deletion": {
+      "main": [
+        [{ "node": "Log DPA Event", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log DPA Event": {
+      "main": [
+        [{ "node": "Release Lock — DPA", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [
+    { "name": "hr-automation" },
+    { "name": "workflow-a" },
+    { "name": "subflow" },
+    { "name": "version-1.0" }
+  ],
+  "pinData": {},
+  "meta": {}
+}

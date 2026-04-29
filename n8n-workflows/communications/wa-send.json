@@ -1,0 +1,217 @@
+{
+  "name": "Subflow — WA Send",
+  "nodes": [
+    {
+      "id": "was00001-0001-0001-0001-000000000001",
+      "name": "WA Send Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {}
+    },
+    {
+      "id": "was00002-0002-0002-0002-000000000002",
+      "name": "Fetch Last Inbound Time",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [440, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(EXTRACT(EPOCH FROM (NOW() - MAX(occurred_at))), 0) AS seconds_since_last_inbound FROM conversation_message WHERE conversation_id = $1 AND direction = 'inbound'",
+        "options": {
+          "queryReplacement": "={{ $json.conversationId ?? '' }}"
+        }
+      }
+    },
+    {
+      "id": "was00003-0003-0003-0003-000000000003",
+      "name": "Route Free-Form vs Template",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-window",
+              "leftValue": "={{ $json.seconds_since_last_inbound }}",
+              "rightValue": 86400,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "cond-no-template",
+              "leftValue": "={{ $('WA Send Trigger').item.json.templateName ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "was00004-0004-0004-0004-000000000004",
+      "name": "Send Free-Form Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'text', text: { body: $('WA Send Trigger').item.json.body } }) }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "was00005-0005-0005-0005-000000000005",
+      "name": "Check Error 131047",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1160, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-131047",
+              "leftValue": "={{ ($json.error && $json.error.code) === 131047 || ($json.errors && $json.errors[0] && $json.errors[0].code) === 131047 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "was00006-0006-0006-0006-000000000006",
+      "name": "Send Template Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1400, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName, language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
+        "options": {
+          "timeout": 20000
+        }
+      }
+    },
+    {
+      "id": "was00007-0007-0007-0007-000000000007",
+      "name": "Force Template — Window Expired",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 400],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName || 'still_interested_10d', language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
+        "options": {
+          "timeout": 20000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "WA Send Trigger": {
+      "main": [
+        [{ "node": "Fetch Last Inbound Time", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Last Inbound Time": {
+      "main": [
+        [{ "node": "Route Free-Form vs Template", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route Free-Form vs Template": {
+      "main": [
+        [{ "node": "Send Free-Form Message", "type": "main", "index": 0 }],
+        [{ "node": "Force Template — Window Expired", "type": "main", "index": 0 }]
+      ]
+    },
+    "Send Free-Form Message": {
+      "main": [
+        [{ "node": "Check Error 131047", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Error 131047": {
+      "main": [
+        [{ "node": "Send Template Message", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [
+    { "name": "hr-automation" },
+    { "name": "workflow-a" },
+    { "name": "subflow" },
+    { "name": "version-1.0" }
+  ],
+  "pinData": {},
+  "meta": {}
+}

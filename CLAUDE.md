@@ -23,7 +23,7 @@ These five rules came from a v2 stress-test and a round of implementation resear
 
 1. **Never write directly to Twenty's Postgres database.** All Twenty reads and writes go through Twenty's GraphQL API. Bookings live in a separate n8n-owned Postgres database.
 2. **Never assume Twenty has rollups, formula fields, or action-button webhooks.** Compute derived fields from n8n. Trigger server-side logic with Manual-triggered workflows, not action buttons.
-3. **Redis conversation locks are 60 seconds, with a Lua heartbeat every 15 seconds and a Lua CAS release.** 30-second TTLs break under real Claude latency.
+3. **Redis conversation locks are 60 seconds, with a Lua heartbeat every 15 seconds and a Lua CAS release.** 30-second TTLs break under real Claude latency. v1 implementation uses 180s flat TTL (no active heartbeat) due to n8n 1.85.0 sequential execution model; true Lua CAS PEXPIRE heartbeat deferred to T2-12. CAS release on all six exit paths preserves the orphan-lock safety property.
 4. **Social posting uses free native APIs only.** Meta Graph API (Facebook + Instagram), X API free tier, Telegram Bot API. LinkedIn is deferred. Blotato is not used.
 5. **Ghanaian local-language voice notes are not auto-transcribed.** Groq's `whisper-large-v3-turbo` (per [ADR-0006](docs/05-decisions/ADR-0006-groq-whisper-pivot.md), which superseded the original `gpt-4o-mini-transcribe` choice during Phase 4 voucher work) handles English and Ghanaian Pidgin only. Unclear audio triggers a polite retry. Local-language voice notes go to a human review queue. Typed local-language text is passed directly to Claude.
 

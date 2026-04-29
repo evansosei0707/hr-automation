@@ -1,0 +1,219 @@
+{
+  "name": "Subflow — Claude Call",
+  "nodes": [
+    {
+      "id": "cc000001-0001-0001-0001-000000000001",
+      "name": "Claude Call Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "parameters": {}
+    },
+    {
+      "id": "cc000002-0002-0002-0002-000000000002",
+      "name": "Check Daily Budget",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [440, 300],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(SUM(cost_usd), 0) AS daily_spend_usd FROM ai_call_log WHERE ts >= CURRENT_DATE",
+        "options": {}
+      }
+    },
+    {
+      "id": "cc000003-0003-0003-0003-000000000003",
+      "name": "Budget Gate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "cond-under-gate",
+              "leftValue": "={{ $json.daily_spend_usd }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "cond-workflow-a",
+              "leftValue": "={{ $('Claude Call Trigger').item.json.workflowName }}",
+              "rightValue": "workflow_a_communications",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cc000004-0004-0004-0004-000000000004",
+      "name": "Budget Exceeded — Return Empty",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [920, 420],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "budget-skip",
+              "name": "content",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "budget-skip-flag",
+              "name": "budget_exceeded",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cc000005-0005-0005-0005-000000000005",
+      "name": "Call Claude API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "string",
+        "body": "={{ JSON.stringify({ model: $('Claude Call Trigger').item.json.model, max_tokens: $('Claude Call Trigger').item.json.maxTokens || 1000, system: $('Claude Call Trigger').item.json.systemPrompt, messages: $('Claude Call Trigger').item.json.messages }) }}",
+        "options": {
+          "timeout": 60000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "cc000006-0006-0006-0006-000000000006",
+      "name": "Write AI Call Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1160, 200],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO ai_call_log (workflow_name, model, input_tokens, output_tokens, cost_usd, prompt_excerpt) VALUES ($1, $2, $3, $4, $5, $6)",
+        "options": {
+          "queryReplacement": "={{ $('Claude Call Trigger').item.json.workflowName }},={{ $('Claude Call Trigger').item.json.model }},={{ $json.usage && $json.usage.input_tokens }},={{ $json.usage && $json.usage.output_tokens }},={{ $json.usage ? (($json.usage.input_tokens * ($('Claude Call Trigger').item.json.model === 'claude-haiku-4-5' ? 0.80 : 3.00) + $json.usage.output_tokens * ($('Claude Call Trigger').item.json.model === 'claude-haiku-4-5' ? 4.00 : 15.00)) / 1000000) : 0 }},={{ LEFT($('Claude Call Trigger').item.json.messages[($('Claude Call Trigger').item.json.messages.length - 1)].content, 200) }}"
+        }
+      }
+    },
+    {
+      "id": "cc000007-0007-0007-0007-000000000007",
+      "name": "Return Claude Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1400, 200],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "resp-content",
+              "name": "content",
+              "value": "={{ $json.content && $json.content[0] && $json.content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "resp-input-tokens",
+              "name": "input_tokens",
+              "value": "={{ $json.usage && $json.usage.input_tokens }}",
+              "type": "number"
+            },
+            {
+              "id": "resp-output-tokens",
+              "name": "output_tokens",
+              "value": "={{ $json.usage && $json.usage.output_tokens }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Claude Call Trigger": {
+      "main": [
+        [{ "node": "Check Daily Budget", "type": "main", "index": 0 }]
+      ]
+    },
+    "Check Daily Budget": {
+      "main": [
+        [{ "node": "Budget Gate", "type": "main", "index": 0 }]
+      ]
+    },
+    "Budget Gate": {
+      "main": [
+        [{ "node": "Call Claude API", "type": "main", "index": 0 }],
+        [{ "node": "Budget Exceeded — Return Empty", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call Claude API": {
+      "main": [
+        [{ "node": "Write AI Call Log", "type": "main", "index": 0 }]
+      ]
+    },
+    "Write AI Call Log": {
+      "main": [
+        [{ "node": "Return Claude Response", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "tags": [
+    { "name": "hr-automation" },
+    { "name": "workflow-a" },
+    { "name": "subflow" },
+    { "name": "version-1.0" }
+  ],
+  "pinData": {},
+  "meta": {}
+}

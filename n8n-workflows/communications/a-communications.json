@@ -956,7 +956,7 @@
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
-        "options": { "timeout": 15000 }
+        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
       },
       "id": "ac00032-0032-ac32-0032-000000000032",
       "name": "Route Local Language to Review",

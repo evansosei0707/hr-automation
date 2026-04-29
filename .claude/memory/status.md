@@ -45,7 +45,7 @@ If a Phase 5 task surfaces an external blocker, log it here.
 
 ## Last backup drill
 
-Not yet run. Scheduled for first Monday after Week 1 completes.
+Last backup drill: superficial 2026-04-29 (script execution + dump output verification only). Production-grade script + full restore drill scheduled per `plans/tier-2-followups.md` (T2-7 Week 4, T2-8 first Monday of Week 2).
 
 ## Last credential rotation
 

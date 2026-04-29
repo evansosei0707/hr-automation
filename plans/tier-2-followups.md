@@ -58,6 +58,33 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Target window:** **Week 0 close** OR **at first need** — whichever comes first. If we add a CURRENCY default in V002/V003 for the bookings DB schema (unlikely; bookings DB defaults are SQL-side), or in a future Twenty migration, do this first.
 - **Owner:** schema-designer or workflow-builder.
 
+### T2-7. Production-grade backup script (cron + B2 + rotation + alerting)
+
+- **Description:** Today's local drill (`scripts/backup-databases.sh`, 2026-04-29) proves the bones — three pg_dumps from our containers produce real, restorable artifacts. The production version takes the same shape and adds: cron schedule (nightly 02:00 Accra per spec), `rclone` sync to Backblaze B2 with server-side encryption, retention rotation matching the 14-daily / 8-weekly / 6-monthly policy in `backup-dr.md`, lockfile to prevent overlapping runs, paging on failure (Workflow G integration), and a sane `.env` config-path strategy for production deployments. Eventually replaces or supersedes the drill script; the drill version stays callable on-demand for local verification.
+- **Files affected:** `scripts/backup-databases.sh` (rewrite or split into local-drill + production), new `scripts/restore-from-backup.sh` (referenced from runbook §8 but not yet written), cron entry in `infrastructure/`, B2 bucket setup notes.
+- **Blocking:** No (for v1 readiness — single-VPS local backups are sufficient until launch). Yes (before any production go-live). The drill artifact at `scripts/backup-databases.sh` is the bones.
+- **Target window:** **Week 4** per `backup-dr.md` ("workflow-builder will write it properly in Week 4"). Re-evaluate at the Week-3 close-out.
+- **Owner:** workflow-builder.
+- **Reference:** today's local drill at `scripts/backup-databases.sh` and the corrected inventory in `backup-dr.md` (post-2026-04-29 audit, including the n8n DB that the original spec missed).
+
+### T2-8. Full backup-restore drill (live RTO measurement)
+
+- **Description:** Today's drill verifies the dump path only — pg_dump produces non-empty, real-content artifacts. The full restore drill exercises the recovery path end-to-end and produces the live RTO number that runbook §8 currently estimates as "60–90 minutes for a practised operator."
+- **Acceptance criteria:**
+  1. Provision fresh Postgres containers (or a fresh Docker compose stack) on a clean filesystem.
+  2. Restore Twenty + bookings + n8n DBs from the latest local-drill backup.
+  3. Verify all 10 Twenty custom objects exist (Candidate, JobPosting, Application, Interview, SkillTag, CandidateSkillTag, Holiday, ReviewTask, SocialPost, WorkflowError) by querying Twenty's metadata API.
+  4. Verify bookings DB application data: `slot`, `interviewer`, `event_log`, `workflow_errors`, `ai_call_log`, `system_incident`, `booking_event_log`, `twenty_schema_migrations` all present with row counts matching pre-backup state.
+  5. Verify n8n: every workflow loads in the UI, every credential decrypts (n8n encryption key from `.env` must be the same key used when the dump was taken), execution history present.
+  6. Run a synthetic Workflow A inbound message (real Meta-signed payload, HMAC-validated) end-to-end against the restored stack.
+  7. Measure end-to-end recovery time from "fresh containers up" to "synthetic workflow green." Target: ≤ 90 minutes per runbook §8.
+  8. If any acceptance gate fails, document the gap, update backup-dr.md and runbook §8, repeat the drill.
+- **Files affected:** new `scripts/restore-from-backup.sh` (probably written by T2-7 path), updates to `backup-dr.md` and `runbook.md` §8 with live RTO, possible ADR if restore reveals a structural gap (e.g. n8n encryption-key handling).
+- **Blocking:** No (before launch). Yes (before any compliance/security review claiming RPO=24h, RTO=2h).
+- **Target window:** **First Monday of Week 2** (one full week after Week 0 closes — gives Workflow A v1 a few days to populate real execution history and real workflow definitions, so the drill exercises non-trivial state).
+- **Owner:** tester (drill execution) + workflow-builder (restore script).
+- **Reference:** runbook.md §8 (the disaster recovery procedure this drill validates).
+
 ### T2-6. Pidgin transcription quality sanity-check (Groq Whisper)
 
 - **Description:** The Groq Whisper voucher uses an espeak-ng-synthesised English fixture, which proves the wire shape but not transcript quality on real Ghanaian Pidgin. Before Workflow A ships voice-note auto-handling, record ~5–10 short Pidgin voice notes from the firm's Operations Lead (or any Ghanaian Pidgin speaker) and run them through `whisper-large-v3-turbo`. Document observed WER, common error patterns, and recommended starting confidence-gate thresholds (`avg_logprob`, `no_speech_prob`, `compression_ratio`) for `docs/03-integrations/groq-whisper.md`. **Not a voucher concern; a workflow-build precondition.**

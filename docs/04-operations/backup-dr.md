@@ -4,46 +4,60 @@ Single-VPS, single-region, pragmatic. If the VPS dies, we restore from off-site 
 
 ## What we back up
 
+> **2026-04-29 audit finding.** The original spec listed two databases: Twenty + Bookings. The local drill on 2026-04-29 surfaced that the **n8n DB was missing from the inventory**. n8n stores its workflow DEFINITIONS in git (via the export process documented in `n8n-workflows/README.md`), but its **execution history, schedules, encrypted credentials, and any UI-edited workflows** live in a Postgres database (DB `n8n`, user `n8n`, hosted on the `hr-bookings-db` container alongside the bookings DB). Without a dump of this DB, a VPS-failure restore loses every n8n execution log, every queued webhook, and any workflow change a user made in the UI between exports. **The inventory below is the corrected, post-audit version.** The drill script `scripts/backup-databases.sh` reflects the corrected list.
+
 | Data | Frequency | Destination | Retention |
 |---|---|---|---|
 | Twenty Postgres | Nightly 02:00 Accra | Backblaze B2 via rclone | 14 daily, 8 weekly, 6 monthly |
 | Bookings Postgres | Nightly 02:00 Accra | Same | Same |
-| n8n workflows | On every export (manual or scripted) | Git repo | Forever (version controlled) |
+| **n8n internal Postgres** | **Nightly 02:00 Accra** | **Same** | **Same** |
+| n8n workflow JSON definitions | On every export (manual or scripted) | Git repo | Forever (version controlled) |
 | n8n credentials | Never automated; manual export via n8n UI | Encrypted file in 1Password / Bitwarden | Rotate on change |
 | WhatsApp media uploads | Nightly sync | Backblaze B2 | 36 months |
 | `.env` files | Never in git; per-environment | 1Password / Bitwarden | Rotate on change |
 | Docker images | Not backed up | Pulled from registry | N/A |
 
+### Per-database connection details
+
+The corrected inventory in concrete terms — these are what `scripts/backup-databases.sh` actually runs:
+
+| Label | Container | User | DB | Notes |
+|---|---|---|---|---|
+| `twenty` | `hr-twenty-db` | `twenty` | `twenty` | Twenty CRM's own database. Owns `core`, `metadata`, and tenant schemas. |
+| `bookings` | `hr-bookings-db` | `n8n_bookings` | `bookings` | The n8n-owned operational DB — bookings, event_log, workflow_errors, ai_call_log, system_incident, twenty_schema_migrations. |
+| `n8n` | `hr-bookings-db` | `n8n` | `n8n` | n8n's own internal store: executions, credentials (encrypted), settings, queue state. Provisioned by `infrastructure/postgres/init-n8n-user.sh`. |
+
+**Redis state is intentionally NOT backed up.** Conversation locks, dedupe keys, idempotency markers, and BullMQ queues are ephemeral by design — losing them on a VPS failure means at most a few minutes of in-flight work is replayed (workflows are written idempotent per the project style guide). A dumped Redis would be stale within seconds anyway, and re-acquired locks after restore are correct behaviour, not a recovery problem.
+
 ## How
 
-One script: `scripts/backup.sh`, run by cron on the host.
+One script will eventually live at `scripts/backup-databases.sh`, run by cron on the host. As of 2026-04-29 the script exists in **local-drill form only** — three pg_dumps + gzip + local timestamped output. The production version (cron, B2 sync via rclone, 30-day rotation, lockfile, paging on failure) is deferred to Week 4 — see `plans/tier-2-followups.md` item "Production-grade backup script".
 
-```
+The local-drill skeleton corresponds to the production script's bones:
+
+```bash
 #!/usr/bin/env bash
 set -euo pipefail
-source /etc/hr-automation/.env
+# .env path is config-driven. Local: $REPO_ROOT/infrastructure/.env.
+# Production (Week 4): a deployment-time path, e.g. /etc/hr-automation/.env.
+source "${ENV_FILE:-$REPO_ROOT/infrastructure/.env}"
 
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
-OUT=/var/backups/hr-automation/$STAMP
+OUT=$BACKUP_DIR/$STAMP
 mkdir -p "$OUT"
 
-# Twenty
-docker exec twenty-db pg_dump -U twenty -d twenty | gzip > "$OUT/twenty.sql.gz"
+# Three DBs (all corrected container names — note hr- prefix):
+docker exec -e PGPASSWORD="$TWENTY_DB_PASSWORD"   hr-twenty-db   pg_dump -U "$TWENTY_DB_USER"   -d "$TWENTY_DB_NAME"   --clean --if-exists | gzip > "$OUT/twenty.sql.gz"
+docker exec -e PGPASSWORD="$BOOKINGS_DB_PASSWORD" hr-bookings-db pg_dump -U "$BOOKINGS_DB_USER" -d "$BOOKINGS_DB_NAME" --clean --if-exists | gzip > "$OUT/bookings.sql.gz"
+docker exec -e PGPASSWORD="$N8N_DB_PASSWORD"      hr-bookings-db pg_dump -U "$N8N_DB_USER"      -d "$N8N_DB_NAME"      --clean --if-exists | gzip > "$OUT/n8n.sql.gz"
 
-# Bookings
-docker exec bookings-db pg_dump -U n8n_bookings -d bookings | gzip > "$OUT/bookings.sql.gz"
-
-# WhatsApp media (rsync-style)
-rclone sync /var/lib/hr-automation/media b2:${B2_BUCKET}/media --transfers 4
-
-# Push SQL backups
-rclone copy "$OUT" b2:${B2_BUCKET}/db/$STAMP
-
-# Prune local
-find /var/backups/hr-automation/ -type d -mtime +14 -exec rm -rf {} +
+# (Production-only, not in local drill:)
+# rclone sync /var/lib/hr-automation/media b2:${B2_BUCKET}/media --transfers 4
+# rclone copy "$OUT" b2:${B2_BUCKET}/db/$STAMP
+# find $BACKUP_DIR/ -type d -mtime +14 -exec rm -rf {} +
 ```
 
-This is skeletal — harden with proper lockfile, paging on failure, etc. The `workflow-builder` subagent will write it properly in Week 4.
+Production-grade hardening (lockfile so two crons can't overlap, paging on failure, retention rotation that respects the 14d/8w/6m policy, B2 push idempotency on retry, alerting via Workflow G) all lands in Week 4 alongside the cron schedule.
 
 ## Restore drills
 

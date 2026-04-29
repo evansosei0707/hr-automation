@@ -33,6 +33,7 @@ n8n-workflows/**/*.credentials.json
 *.sql.gz
 *.dump
 database/backups/
+backups/
 
 # Logs
 logs/

@@ -88,6 +88,7 @@
         "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'text', text: { body: $('WA Send Trigger').item.json.body } }) }}",
         "options": {
           "timeout": 20000,
+          "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 },
           "response": {
             "response": {
               "neverError": true
@@ -146,7 +147,8 @@
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName, language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
         "options": {
-          "timeout": 20000
+          "timeout": 20000,
+          "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 }
         }
       }
     },
@@ -170,7 +172,8 @@
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName || 'still_interested_10d', language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
         "options": {
-          "timeout": 20000
+          "timeout": 20000,
+          "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 }
         }
       }
     }

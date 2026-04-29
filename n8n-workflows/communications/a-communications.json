@@ -580,7 +580,7 @@
     {
       "parameters": {
         "operation": "executeCommand",
-        "command": "={{ 'SET hra:conv:' + $json.candidateId + ' ' + $execution.id + ':' + Math.random().toString(36).slice(2) + ' NX PX 180000' }}"
+        "command": "={{ 'SET hra:conv:' + $json.candidateId + ' ' + $execution.id + ' NX PX 180000' }}"
       },
       "id": "ac00013-0013-ac13-0013-000000000013",
       "name": "Acquire Conv Lock",
@@ -641,7 +641,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'info', 'lock_acquired', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').item.json.candidateId }},={{ $execution.id + ':' + $('Acquire Conv Lock').item.json }}"
+          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').item.json.candidateId }},={{ $execution.id }}"
         }
       },
       "id": "ac00016-0016-ac16-0016-000000000016",

@@ -79,6 +79,8 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
 14. **All Redis keys written by HRA app code MUST use the `hra:` prefix.** Flat `hra:<kind>:<id>` shape (e.g. `hra:conv:{candidateId}`, `hra:dedupe:{external_event_id}`). The shared `hr-redis` instance is also used by Twenty (`bull:` for BullMQ queues, `engine:` for workspace cache, `module:` for workflow scheduler partitions); the `hra:` prefix is the namespace boundary that prevents collision today and stays stable across future Twenty version bumps. The Phase 5 conv-lock test (`scripts/test-conv-lock.sh`) uses a test-scoped prefix (`test:lock:conv-test:$$`) and is exempt. See [ADR-0009](../../docs/05-decisions/ADR-0009-redis-namespace-strategy.md) for the full evidence trail (cited Twenty source files + observed Redis key counts).
 
+15. **Conv-lock token must be `$execution.id` alone — not `$execution.id + ':' + random`.** The execution ID is globally unique per n8n execution. Random suffixes create token-tracking inconsistencies when the same token must be passed to the acquire node, the `event_log` write, and all CAS DEL release nodes. The Phase 5 conv-lock test used `uuidgen` to simulate two competing processes — that's the only scenario where distinct random tokens per-locker matter. Within a single n8n execution, use the execution ID only.
+
 ## Before committing an n8n workflow
 
 Run the validator:

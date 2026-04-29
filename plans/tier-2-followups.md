@@ -135,6 +135,46 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** workflow-builder.
 - **Reference:** Workflow A v1 build (2026-04-29); `docs/02-workflows/a-communications-design-v1.md` §3; `n8n-workflows/communications/a-communications-NOTES.md` §"Conv-lock implementation".
 
+### T2-13. ReviewTask error path — rule #11 edge case when no candidateId
+
+- **Description:** `ac_e005` "Create Workflow Error Review Task" sources `candidateId` from `$('Query Lock Value from Event Log').item.json.candidate_id`. When an error occurs before lock acquisition, this value is empty string, creating a ReviewTask with `subjectCandidate.id = ''` — violating rule #11 (neither-set). Fix: add an If node before ac_e005 checking if `candidate_id` is non-empty; skip ReviewTask when no subject available, or create a `system_incident` row instead.
+- **Files affected:** `n8n-workflows/communications/a-communications.json` (new If node + bypass path).
+- **Blocking:** No. The workflow_errors table row is always written regardless; the ReviewTask is an additional notification, not the primary audit record.
+- **Target window:** Post-Week-1.
+- **Owner:** workflow-builder.
+
+### T2-14. Wrong template fallback in wa-send.json "Force Template — Window Expired"
+
+- **Description:** When a caller passes no `templateName` and the service window has expired, `Force Template — Window Expired` defaults to `still_interested_10d` (a re-engagement template). Several callers (distress holding reply, opted-out ack, retype prompts) don't pass `templateName` and may call this subflow outside the 24h window on stale conversations. The `still_interested_10d` template would fire — semantically wrong and potentially violating the candidate's opt-out expectation. Fix: callers that should never use a template fallback should pass a sentinel (e.g. `templateName: 'NONE'`) and the subflow should error-exit rather than default to a re-engagement template when `templateName === 'NONE'`.
+- **Files affected:** `n8n-workflows/communications/wa-send.json`, all callsites in `a-communications.json` and `dpa-handler.json`.
+- **Blocking:** No. Affects only out-of-window edge cases. Opted-out candidates already have `consentStatus: REFUSED` blocking further processing.
+- **Target window:** Pre-launch.
+- **Owner:** workflow-builder.
+
+### T2-15. Outbound messages not stored in conversation_message
+
+- **Description:** Consent request templates, refusal acks, DPA acks, distress holding replies, and retype prompts are sent through the WA Send subflow but have no `conversation_message` INSERT. The service window calculation and DPA "show me all messages you sent me" audit both read from this table. These messages are invisible from the bookings DB; their audit trail exists only in n8n execution history.
+- **Files affected:** `n8n-workflows/communications/a-communications.json` (add outbound INSERT at each callsite or inside wa-send.json subflow).
+- **Blocking:** No for v1. DPA full-audit compliance requires this before handling real DATA requests.
+- **Target window:** Pre-launch.
+- **Owner:** workflow-builder.
+
+### T2-16. Budget Gate workflow_a exemption — document or cap
+
+- **Description:** `claude-call.json` Budget Gate has OR condition: under $10/day OR workflowName is `workflow_a_communications`. Workflow A is permanently exempt from the $10/day cap. A spam flood attacking the WhatsApp webhook could produce unbounded Claude API spend. Fix: either document the exemption with a separate higher cap for workflow_a, or add a per-conversation spend limit (e.g. max 3 Claude calls per candidateId per hour) enforced in the subflow.
+- **Files affected:** `n8n-workflows/communications/claude-call.json`.
+- **Blocking:** No. The `active: false` flag prevents real traffic until manual activation.
+- **Target window:** Pre-launch.
+- **Owner:** architect + workflow-builder.
+
+### T2-17. ai_call_log prompt_excerpt — reduce from 200 to 40 chars
+
+- **Description:** `claude-call.json` "Write AI Call Log" stores `LEFT(lastMessage.content, 200)` in `prompt_excerpt`. This captures up to 200 chars of candidate message text. CLAUDE.md style rules and DPA principles require minimising PII in operational logs. Reduce to 40 chars (sufficient to identify the prompt type for debugging) or replace with a non-PII descriptor.
+- **Files affected:** `n8n-workflows/communications/claude-call.json` node cc000006.
+- **Blocking:** No.
+- **Target window:** Pre-launch.
+- **Owner:** workflow-builder.
+
 ---
 
 ## How to use this plan

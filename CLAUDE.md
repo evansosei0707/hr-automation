@@ -64,7 +64,7 @@ plans/           per-feature working plans, chronological
 infrastructure/  docker-compose, nginx, postgres init — the stack as code
 n8n-workflows/   n8n workflow JSON exports, version-controlled
 database/        bookings-DB migrations and seed data
-twenty-schema/   Twenty CRM custom-object definitions (twenty-sdk)
+twenty-schema/   Twenty CRM custom-object definitions — JSON migrations applied via apply-twenty-schema.sh per ADR-0005
 scripts/         bootstrap, backup, deploy helpers
 reference/       vendor API docs snapshots for offline agent use
 ```

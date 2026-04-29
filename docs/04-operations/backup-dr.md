@@ -61,14 +61,43 @@ Production-grade hardening (lockfile so two crons can't overlap, paging on failu
 
 ## Restore drills
 
-**Monthly exercise** (first Monday of each month, 15 minutes):
+Three distinct activities, deliberately not the same thing:
 
-1. Spin up a throwaway VPS or Docker sandbox.
-2. Run `scripts/restore-drill.sh <backup-date>`.
-3. Script pulls the latest backups, spins up postgres containers, restores, and runs a read smoke test.
-4. Record success/failure in `memory/status.md`.
+### One-time baseline RTO measurement (Tier 2 item T2-8)
 
-**A restore drill that we have not run in 60 days is broken.** Workflow G alerts on this.
+Scheduled for **first Monday of Week 2.** Provisions fresh Postgres containers, restores all three DBs from the latest local-drill backup, verifies Twenty custom objects + bookings data + n8n workflows + n8n credentials, runs a synthetic Workflow A inbound message end-to-end, measures the actual elapsed time. Outputs (a) a real RTO number to replace the runbook §8 estimate of "60-90 minutes" and (b) `scripts/restore-from-backup.sh` (does not exist yet — T2-8 produces it). Full acceptance criteria in `plans/tier-2-followups.md` T2-8.
+
+### Ongoing monthly exercise (first Monday of each month, ~15 minutes)
+
+Production cadence once T2-7 (the production-grade backup script) and T2-8 (the restore script) have shipped. Runs the same restore-drill script against a throwaway sandbox, records success/failure in `.claude/memory/status.md`. **A restore drill that we have not run in 60 days is broken.** Workflow G alerts on this.
+
+### Ad-hoc disaster recovery (real incident, not a drill)
+
+Procedure in `runbook.md` §8. Provisions a new VPS, restores from the latest off-site backup, updates DNS. Currently uses manual `pg_restore` per the procedure below until `scripts/restore-from-backup.sh` lands.
+
+### What exists today (2026-04-29)
+
+- `scripts/backup-databases.sh` — local-drill version of the backup script (three pg_dumps + gzip → local timestamped dir). Phase 5 verification only; no B2 sync, no rotation, no cron.
+- `scripts/restore-from-backup.sh` — **does not exist yet.** Will be authored by T2-8.
+- Production-grade backup script (cron + B2 + rotation + paging) — **does not exist yet.** Will be authored by T2-7 (target Week 4).
+
+## Manual `pg_restore` procedure (until the restore script lands)
+
+For each of the three databases (twenty, bookings, n8n), restore the latest dump in turn:
+
+```bash
+# Pick the most recent backup directory under ./backups/
+LATEST=$(ls -1t backups/ | head -1)
+
+# Drop and recreate the target DB inside the running Postgres container, then
+# stream the gunzipped dump back in. --clean --if-exists in the dump handles
+# pre-existing schema; this DROP DATABASE is belt-and-braces for full clarity.
+gunzip -c "backups/$LATEST/twenty.sql.gz"   | docker exec -i -e PGPASSWORD="$TWENTY_DB_PASSWORD"   hr-twenty-db    psql -U "$TWENTY_DB_USER"   -d "$TWENTY_DB_NAME"
+gunzip -c "backups/$LATEST/bookings.sql.gz" | docker exec -i -e PGPASSWORD="$BOOKINGS_DB_PASSWORD" hr-bookings-db  psql -U "$BOOKINGS_DB_USER" -d "$BOOKINGS_DB_NAME"
+gunzip -c "backups/$LATEST/n8n.sql.gz"      | docker exec -i -e PGPASSWORD="$N8N_DB_PASSWORD"      hr-bookings-db  psql -U "$N8N_DB_USER"      -d "$N8N_DB_NAME"
+```
+
+Verify post-restore via the §0 first-touch queries in `runbook.md` (last-hour activity + unack workflow_errors) plus a Twenty `/healthz` 200 check.
 
 ## RTO / RPO
 

@@ -13,10 +13,10 @@ The stack that runs the HR automation system. One VPS, Docker-composed.
 
 | Component | Image / source | Role |
 |---|---|---|
-| Twenty CRM | `twentycrm/twenty:latest` (pinned) | System of record for candidates, companies, jobs, interviews |
+| Twenty CRM | `twentycrm/twenty:v2.1.0` | System of record for candidates, companies, jobs, interviews |
 | Twenty Postgres | `postgres:16` | Twenty's own DB — do not touch from outside Twenty |
-| n8n | `n8nio/n8n:latest` (pinned) | Workflow engine: all orchestration logic |
-| Bookings Postgres | `postgres:16` | n8n-owned DB for interview bookings and slot claiming |
+| n8n | `n8nio/n8n:1.85.0` | Workflow engine: all orchestration logic |
+| Bookings Postgres | `postgres:16` | n8n-owned DB for interview bookings (and the n8n internal DB co-resides here) |
 | Redis | `redis:7-alpine` | Conversation locks, short-lived dedupe keys (HRA-owned keys use `hra:` prefix per [ADR-0009](../05-decisions/ADR-0009-redis-namespace-strategy.md)) |
 | Nginx | `nginx:stable-alpine` | TLS termination, reverse proxy |
 
@@ -44,10 +44,11 @@ Database migrations (bookings DB) run via a one-shot container in the compose fi
 
 ## Backups
 
-- **Nightly:** `pg_dump` of both Postgres instances, compressed, written to `/var/backups/hr-automation/` on the host.
-- **Offsite:** rclone sync to a S3-compatible bucket (Backblaze B2 recommended for cost).
-- **Retention:** 14 daily, 8 weekly, 6 monthly.
-- **Restore drill:** monthly. Script in `scripts/restore-drill.sh` (build this during Week 4).
+Authoritative spec: [`docs/04-operations/backup-dr.md`](../04-operations/backup-dr.md). One-line summary:
+
+- **Three DBs** dumped nightly (twenty, bookings, n8n — the n8n DB was added to the inventory after the 2026-04-29 audit; co-resides on `hr-bookings-db`).
+- **Nightly to local** + **offsite to Backblaze B2** via rclone, retention 14 daily / 8 weekly / 6 monthly.
+- **Today's state:** local-drill version at `scripts/backup-databases.sh`. Production-grade script (cron + B2 + rotation + paging) deferred to Week 4 per Tier 2 item T2-7. First end-to-end restore drill (RTO measurement) scheduled for first Monday of Week 2 per Tier 2 item T2-8.
 
 ## Monitoring
 

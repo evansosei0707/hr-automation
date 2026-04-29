@@ -79,3 +79,10 @@ The raw JWT string returned at API-key creation is not traceable to a specific r
 - Related: ADR-0003 Google Calendar holidays — same pattern of "verify vendor reality before specifying against it."
 - Twenty v2.1.0 release notes: https://github.com/twentyhq/twenty/releases (latest tag at time of decision)
 - Twenty docs (rate limits + auth header): https://docs.twenty.com/developers/extend/capabilities/apis
+
+## Resolution log
+
+Append-only. Original ADR body above is immutable per the project's ADR convention; resolutions and post-acceptance follow-ups land here.
+
+- **2026-04-26 — Open Q1 closed (commit `6f83125`).** The carried-forward question — "the raw JWT string returned at API-key creation is not traceable to a specific resolver in v2 source" — was resolved by direct observation of the Twenty UI flow: when an API key is created via `Settings → API & Webhooks`, the JWT is shown inline in a textarea on the keys page after creation. The previous "generate via UI until verified" workaround is no longer a workaround; it is the intended UX. No code change, no spec drift; the open item is closed.
+- **2026-04-29 — Redis namespace deferral resolved by ADR-0009.** The §"Neutral / follow-up" item ("Consider a dedicated ADR if observed Redis key-prefix collisions force us to split Twenty's BullMQ off the shared Redis") was elevated to a deliberate decision by [ADR-0009](ADR-0009-redis-namespace-strategy.md). The resolution: `hra:` prefix mandate for our app's keys; document Twenty's de facto `bull:` / `engine:` / `module:` separation; capture the n8n queue-mode hazard as a future-scaling precondition. No collisions were observed; the ADR was written ahead of need based on Phase 6 reconnaissance evidence.

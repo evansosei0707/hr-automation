@@ -103,10 +103,7 @@ For deeper investigation — execution traces, throughput, AI cost, open inciden
 1. Provision new VPS (Ubuntu 24.04, same or larger size) in same region.
 2. `ssh-copy-id` + `git clone <repo>`.
 3. Install Docker: follow `scripts/bootstrap.sh`.
-4. Restore both DBs:
-   ```
-   ./scripts/restore-from-backup.sh --date=latest
-   ```
+4. Restore the three DBs (twenty + bookings + n8n). **Restore script does not yet exist** (T2-8 will produce `./scripts/restore-from-backup.sh` — see `plans/tier-2-followups.md`). Until then, run the manual `pg_restore` procedure documented in [`backup-dr.md` §"Manual pg_restore procedure"](./backup-dr.md#manual-pg_restore-procedure-until-the-restore-script-lands) — three `gunzip | docker exec psql` invocations, one per DB.
 5. Copy `.env` from password manager. Also grab any `secrets/` files (Google service account JSON).
 6. `docker compose -f infrastructure/docker-compose.yml up -d`
 7. Update DNS A records to new IP. TTL should already be low (300s); wait for propagation.
@@ -161,3 +158,39 @@ Post-incident:
 3. If a direct risk to the candidate's safety is indicated: provide relevant helpline numbers (the Operations Lead keeps a small reference card of Ghanaian crisis resources), pause further automated messaging.
 4. Document the incident outcome in the ReviewTask.
 5. This is a human moment. The system's job is to not make it worse.
+
+## §12 — Twenty schema half-init during bootstrap
+
+**Symptom:** Twenty bootstrapped cleanly the first time but on a subsequent restart, the UI is broken / GraphQL throws "relation does not exist" errors / `/healthz` returns non-200 even though `hr-twenty-db` is healthy. Surfaces if Twenty's initial `database:init:prod` was interrupted partway (the `core` schema was created but not its tables); on next start, Twenty's entrypoint sees `core` exists, takes the "skip init, just run upgrade migrations" branch, and boots with no usable schema.
+
+1. Verify the symptom — list tables in the `core` schema:
+   ```bash
+   docker exec -e PGPASSWORD="$TWENTY_DB_PASSWORD" hr-twenty-db \
+     psql -U "$TWENTY_DB_USER" -d "$TWENTY_DB_NAME" -c "\dt core.*"
+   ```
+   A healthy install has dozens of tables; a half-init shows the schema but few or no tables.
+
+2. Drop the schema so Twenty re-runs `database:init:prod` from scratch:
+   ```bash
+   docker exec -e PGPASSWORD="$TWENTY_DB_PASSWORD" hr-twenty-db \
+     psql -U "$TWENTY_DB_USER" -d "$TWENTY_DB_NAME" \
+     -c "DROP SCHEMA core CASCADE;"
+   ```
+
+3. Restart Twenty so the entrypoint re-detects "core schema absent" and runs full init:
+   ```bash
+   docker compose -f infrastructure/docker-compose.yml restart twenty
+   ```
+
+4. Wait for the healthcheck (up to ~60s):
+   ```bash
+   docker compose -f infrastructure/docker-compose.yml ps twenty
+   ```
+   Expect `Up` + `healthy`.
+
+5. If still broken, inspect the init failure directly:
+   ```bash
+   docker compose -f infrastructure/docker-compose.yml logs twenty | grep -iE 'error|failed|init'
+   ```
+
+**Source incident:** Discovered during Phase 1 bring-up (2026-04-26). Captured in `.claude/memory/decisions.md` 2026-04-26 §"Phase 1 scaffolding fixes" #7 with a "TODO: add to runbook" marker. Codified here on 2026-04-29 during Phase 6 close-out.

@@ -117,9 +117,9 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message, data) VALUES ('workflow_a_communications', $1, 'info', 'webhook_received', LEFT($2, 200), $3::jsonb);",
+        "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message, data) VALUES ('workflow_a_communications', $1, 'info', 'webhook_received', $2, $3::jsonb);",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ JSON.stringify($json.body_parsed) }},={{ JSON.stringify($json.body_parsed) }}"
+          "queryReplacement": "={{ $execution.id }},={{ 'entry_count=' + (($json.body_parsed && $json.body_parsed.entry && $json.body_parsed.entry.length) || 0) }},={{ JSON.stringify({ entry_count: ($json.body_parsed && $json.body_parsed.entry && $json.body_parsed.entry.length) || 0, raw_body_length: $json.raw_body_length || 0 }) }}"
         }
       },
       "id": "a0000008-0008-0008-0008-000000000008",
@@ -298,7 +298,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $json.candidateId || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $('Query Lock Value from Event Log').item.json.candidate_id || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } }) }}",
         "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
       },
       "id": "ac_e005-e005-e005-e005-000000000005",
@@ -1222,7 +1222,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO conversation_message (conversation_id, direction, body, wa_message_id, media_type, transcript, transcript_quality, occurred_at) VALUES ($1, 'inbound', $2, $3, $4, $5, $6, NOW())",
+        "query": "INSERT INTO conversation_message (conversation_id, direction, body, wa_message_id, media_type, transcript, transcript_quality, occurred_at) VALUES ($1, 'inbound', $2, $3, $4, $5, $6, NOW()) ON CONFLICT (wa_message_id) DO NOTHING",
         "options": {
           "queryReplacement": "={{ $json.id }},={{ $('Set Candidate Context').item.json.messageBody || $('Evaluate Transcript Confidence').item.json.transcript || '' }},={{ $('Set Candidate Context').item.json.waMessageId }},={{ $('Set Candidate Context').item.json.messageType === 'audio' ? 'audio' : null }},={{ $('Evaluate Transcript Confidence').item.json.transcript || null }},={{ $('Evaluate Transcript Confidence').item.json.transcriptQuality || null }}"
         }

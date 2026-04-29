@@ -125,7 +125,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation UpdateCandidate($id: ID!) { updateCandidate(id: $id, data: { dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $json.candidateId } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation UpdateCandidate($id: ID!) { updateOneCandidate(id: $id, data: { dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $json.candidateId } }) }}",
         "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
       }
     },

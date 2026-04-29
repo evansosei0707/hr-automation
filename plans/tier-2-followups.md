@@ -94,6 +94,38 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Target window:** **Pre-Workflow-A build** (Week 2 or 3). User noted at Phase 4 dispatch (2026-04-28): "I'll record a real Ghanaian Pidgin sample later for a quality sanity check before we ship Workflow A."
 - **Owner:** HRA Project Lead (audio recording) + workflow-builder (run + write up).
 
+### T2-9. Rules consolidation pass after Week 1 close
+
+- **Description:** Phase 6 reconnaissance (2026-04-29) surfaced five rules-coverage gaps (RC1-RC5) — bug classes we caught during Phases 2-4 that aren't yet codified into `.claude/rules/`. Codify them as new rules during a single batched pass after Week 1's first workflow-builder dispatches have shipped (so the rule wording is grounded in additional real-world cases, not just the Phase 4 incidents).
+  - **RC1 — Nginx default_server pattern.** Phase 4 hit the routing bug where webhooks landed at the wrong server block. Codify in a new `.claude/rules/nginx.md` (file doesn't exist yet) covering: default_server discipline, $fwd_proto inheritance, single-file bind-mount caveat (see RC2).
+  - **RC2 — Docker single-file bind-mount + atomic-write inode quirk.** When you edit a bind-mounted single file and the editor does an atomic-write replace, the container holds the old inode; `nginx -s reload` reloads the stale config. Fix: `docker compose up -d --force-recreate <service>`. Either folded into the new nginx.md rule file or as a general infrastructure rule.
+  - **RC3 — n8n Webhook node `options.rawBody` toggle.** Required for HMAC validation. Mentioned in `n8n-workflows/communications/a0-whatsapp-webhook-handler-NOTES.md` but not as a rule. Add as rule #15 (or fold into rule #12's surrounding commentary).
+  - **RC4 — Twenty data-API resolver naming convention.** "No `One` infix on data API; `One` only appears on `/metadata` mutations." In ADR-0005 + schema doc but not in n8n rules. Add as a short rule near rule #6 (Claude calls go through subflow) so workflow-builder dispatches that construct Twenty mutations from scratch see it.
+  - **RC5 — Twenty `RESERVED_METADATA_NAME_KEYWORDS`** awareness. ~30 reserved names; audit script catches programmatically; no rule mentions the existence of the list as a class. Future schema-designer dispatches without the heads-up could pick another reserved name (`event`, `task`, `note`) and reproduce Phase 2's R1 RED round.
+- **Files affected:** new `.claude/rules/nginx.md` (or extension to existing rules); additions to `.claude/rules/n8n-workflows.md` (rules #15+); possibly `.claude/agents/schema-designer.md` for RC5 reserved-name awareness.
+- **Blocking:** No. None of these are bugs today; they're future-proofing against re-occurrence.
+- **Target window:** **After Week 1 close** — gives the rules consolidation a few more workflow-builder dispatches to ground against, and bundles the cleanup into one focused pass instead of trickling rule additions per-PR.
+- **Owner:** code-reviewer or workflow-builder (whoever is closing out Week 1).
+- **Reference:** Phase 6 reconnaissance findings §"Rules coverage gaps" (in conversation history).
+
+### T2-10. observability.md aspirational references — annotate or remove
+
+- **Description:** `docs/04-operations/observability.md` references `scripts/metrics-exporter.py` (line 31) and a `metrics_daily` aggregation table in the bookings DB. Neither exists; no V-migration creates the table. Reads as if the artifacts are present. Annotate as "Phase 2 / not yet shipped" with target Week, OR remove the section if Prometheus/metrics aren't in the v1 plan. Cleanup of an aspirational doc that crept in during the v3.1 blueprint round.
+- **Files affected:** `docs/04-operations/observability.md` (Metrics section).
+- **Blocking:** No. Cosmetic — but worth landing before any new operator joins and tries to find these artifacts.
+- **Target window:** **Post-Week-0** docs-gardening pass.
+- **Owner:** doc-gardener.
+- **Reference:** Phase 6 reconnaissance §"Coherence gaps" item C2.
+
+### T2-11. ghana-context.md holiday list drift from Google Calendar source-of-truth
+
+- **Description:** `docs/00-foundations/ghana-context.md` lines 41-55 hold a static "for reference" 2026 holiday list. ADR-0003 makes Google Calendar the authoritative source; the static list disagrees with Google's actual response on a few entries (e.g. the file says "Dec 1 — Farmers' Day"; Google returned Dec 4 for 2026 — first Friday is the rule, the date drifts each year). Either annotate the static list as "illustrative only — Google Calendar is authoritative per ADR-0003" or prune to a minimal "see google-calendar.md" pointer.
+- **Files affected:** `docs/00-foundations/ghana-context.md` Public holidays section.
+- **Blocking:** No. The actual Holiday object in Twenty is sourced from Google per ADR-0003; the static list is informational.
+- **Target window:** **Post-Week-0** docs-gardening pass, OR Week 4 batch with other docs cleanup.
+- **Owner:** doc-gardener.
+- **Reference:** Phase 6 reconnaissance §"Spec drift findings" item SD8.
+
 ---
 
 ## How to use this plan

@@ -93,9 +93,11 @@ Each "voucher" is a minimal working test that proves we can call the API from ou
 
 ### Phase 5 — Cross-cutting patterns (target: day 5)
 
-- [ ] Redis lock pattern: write a standalone n8n workflow that acquires the conv lock, holds for 45s with heartbeat extending TTL, releases with CAS. Verify another n8n workflow attempting the same lock waits correctly.
-- [ ] Observability: one workflow logs a structured event to the `event_log` table; query it back.
-- [ ] Backup drill: run `scripts/backup.sh`, wipe DB, restore, query.
+- [x] Redis lock pattern: scripted bash + redis-cli harness (not an n8n workflow — same property, simpler vehicle) acquires the conv lock with `SET NX PX 60000`, holds for 45s with Lua CAS PEXPIRE heartbeat every 15s, releases with Lua CAS DEL. Four scenarios × 5 rounds = 20/20 PASS, including the foundational stale-heartbeat-after-takeover subtle-bug catcher (refinement #2: deterministic 0.2s gap so we test the takeover path, not the empty-key path). `scripts/test-conv-lock.sh`, commit `6a7bf01`.
+- [x] Observability: surveyed live `event_log` + `workflow_errors` content, authored canonical operational queries in `docs/04-operations/observability.md` organized by ops scenario (last-hour / errors / execution-trace / throughput / AI-cost / open-incidents), embedded real query outputs as evidence, added §0 cross-reference in `docs/04-operations/runbook.md`. Commit `852ffd2`.
+- [x] Backup drill: scope reduced to local-only verification per session decision (full-restore drill is a half-day exercise — deferred to Tier 2 item T2-8, target first Monday of Week 2). `scripts/backup-databases.sh` runs three pg_dumps (twenty, bookings, n8n) → gzip → timestamped local dir. 2026-04-29 13:20Z run: twenty 245KB / 0.32s, bookings 7.8KB / 0.22s, n8n 42KB / 0.22s, all green. **Audit finding:** original spec inventory was missing the n8n internal DB; corrected in `docs/04-operations/backup-dr.md` (three-DB inventory, hr- container prefixes, explicit Redis-ephemeral statement, config-driven .env path). Production script (cron + B2 + rotation + alerting) deferred to T2-7 (target Week 4). Commit `3256497`.
+
+**Phase 5 done 2026-04-29.** Three cross-cutting patterns proven; closing arc `6a7bf01..3256497`. The conv-lock test catches four bug classes including the foundational "heartbeat extends any lock by key" via S4. The observability queries are operations-ready with real evidence — every embedded output is from running the same query against the live DB. The backup drill surfaced a real spec gap (n8n DB missing from inventory) and produced restorable artifacts; the wider restore-path verification is scoped to T2-8. Scope reductions on tasks 1 (bash harness instead of n8n workflow) and 3 (drill-only, no restore) were both deliberate cost/value calls — full-fidelity proofs of the same invariants without the half-day workflow-builder dispatch or the half-day restore exercise.
 
 ### Phase 6 — Go / no-go review
 

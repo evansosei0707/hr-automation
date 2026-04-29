@@ -538,7 +538,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, error_message, context) VALUES ('workflow_a_communications', $1, 'multiple_candidates_same_phone', $2::jsonb)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ JSON.stringify({ phone: $('Normalise Phone Number').item.json.phoneE164, count: $('Resolve Candidate by Phone').item.json.data.candidates.edges.length }) }}"
+          "queryReplacement": "={{ $execution.id }},={{ JSON.stringify({ count: $('Resolve Candidate by Phone').item.json.data.candidates.edges.length }) }}"
         }
       },
       "id": "ac00011-0011-ac11-0011-000000000011",

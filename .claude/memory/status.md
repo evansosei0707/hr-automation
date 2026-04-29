@@ -5,7 +5,7 @@ Current build state. Updated at the end of every work session.
 ---
 
 **Last updated:** 2026-04-29
-**Current phase:** Week 1 — Workflow A v1 build
+**Current phase:** Week 1 — Workflow A v1 DONE; Week 1 next workflow TBD
 **Active plan:** `plans/active-plan.md` (Week 0 closed; Week 1 plan to be drafted at session start)
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -25,14 +25,11 @@ Current build state. Updated at the end of every work session.
 - ✅ **Week 0 / Phase 6 — Go/no-go review (2026-04-29).** Decision: **GO**. 20 findings reviewed (R1-R5, SD1-SD8, C1-C2, RC1-RC5) → 13 closed in commits → 7 carried forward with T2 tracking items. Full auditable record: `docs/05-decisions/week-0-go-no-go.md`. Closing arc: `5bd25c3`..`53361f9` (5 commits).
 - ✅ **Week 0 — CLOSED 2026-04-29.**
 
+- ✅ **Week 1 — Workflow A v1 (2026-04-29).** Four workflow JSON files shipped: `a-communications.json` (~70 nodes), `wa-send.json`, `claude-call.json`, `dpa-handler.json`. Design note `a-communications-design-v1.md` written; V003 migration applied (candidate_facts, conversation, conversation_message). Conv-lock Option C (180s flat TTL, CAS DEL on all exit paths). Calibration gate (ac00067) added for 2-week human-review window. Tester 14/14 PASS; code-reviewer APPROVE after 3 blocker fixes. T2-13 through T2-17 added. Closing arc: `f811dd6`..`a3c4cbd` + minor cleanup commits.
+
 ## What's next
 
-- **Week 1 — Workflow A v1 build.** Dispatch order per go/no-go §6:
-  1. `architect` — design pass for Workflow A v1 (inputs: `docs/02-workflows/a-communications.md`, eight Week-0 artifacts, ADR-0009, rules #11–#14)
-  2. `schema-designer` — V003 `candidate_facts` migration per architect design note
-  3. `workflow-builder` — Workflow A v1 JSON extending the Phase 4 webhook handler
-  4. `tester` — verify Workflow A v1 against `docs/02-workflows/a-communications.md` acceptance criteria
-  5. `code-reviewer` — review against invariants + ADR-0009 prefix discipline
+- **Week 1 continued** — next workflow per active-plan.md.
 
 ## What's blocked
 

@@ -14,13 +14,15 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 3. **Every Postgres node** uses n8n's credential system. Never inline connection strings.
 
 4. **Redis lock pattern (when used):**
-   - Acquire: `SET conv:{candidateId} {executionId} NX PX 60000`. Branch on failure → enqueue retry.
+   - Acquire: `SET hra:conv:{candidateId} {executionId} NX PX 60000`. Branch on failure → enqueue retry.
    - Heartbeat: Lua `PEXPIRE` CAS, scheduled every 15s while the workflow is holding the lock.
    - Release: Lua `DEL` CAS, run in both the success path and the error path.
+   - Key prefix `hra:conv:` per [ADR-0009](../../docs/05-decisions/ADR-0009-redis-namespace-strategy.md).
 
 5. **Dedupe on inbound webhooks:**
-   - First node after the Webhook is a Redis SETNX on the external event ID with 24h TTL.
+   - First node after the Webhook is a Redis SETNX on `hra:dedupe:{external_event_id}` with 24h TTL.
    - If key already exists → return 200 and exit.
+   - Key prefix `hra:dedupe:` per [ADR-0009](../../docs/05-decisions/ADR-0009-redis-namespace-strategy.md).
 
 6. **Claude calls** go through a subflow (reusable node group), not ad-hoc HTTP Request nodes. The subflow handles model routing, budget gating, and `ai_call_log` writes.
 
@@ -74,6 +76,8 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
     - **`ai_call_log`** NOT NULL: `workflow_name`, `model`. (V005)
     
     **Surfaced 2026-04-28** by an INSERT into workflow_errors omitting execution_id — n8n's Test Setup tripped the NOT NULL constraint; row 27 in workflow_errors is the artefact.
+
+14. **All Redis keys written by HRA app code MUST use the `hra:` prefix.** Flat `hra:<kind>:<id>` shape (e.g. `hra:conv:{candidateId}`, `hra:dedupe:{external_event_id}`). The shared `hr-redis` instance is also used by Twenty (`bull:` for BullMQ queues, `engine:` for workspace cache, `module:` for workflow scheduler partitions); the `hra:` prefix is the namespace boundary that prevents collision today and stays stable across future Twenty version bumps. The Phase 5 conv-lock test (`scripts/test-conv-lock.sh`) uses a test-scoped prefix (`test:lock:conv-test:$$`) and is exempt. See [ADR-0009](../../docs/05-decisions/ADR-0009-redis-namespace-strategy.md) for the full evidence trail (cited Twenty source files + observed Redis key counts).
 
 ## Before committing an n8n workflow
 

@@ -92,7 +92,7 @@ For deeper investigation — execution traces, throughput, AI cost, open inciden
 **Symptom:** Same candidate keeps appearing in error logs; a workflow execution running for > 10 minutes.
 
 1. n8n UI → Executions → find the stuck run. Stop manually.
-2. Check the conversation lock: `redis-cli KEYS "conv:*"` and `GET` the specific key. If stale (> 5 min old), force delete: `DEL conv:{candidateId}`.
+2. Check the conversation lock: `redis-cli --scan --pattern "hra:conv:*"` and `GET` the specific key. If stale (> 5 min old), force delete: `DEL hra:conv:{candidateId}`. (Key prefix `hra:` per [ADR-0009](../05-decisions/ADR-0009-redis-namespace-strategy.md); `--scan` is preferred over `KEYS` to avoid blocking under load.)
 3. Inspect `workflow_errors` for the candidate; the pattern tells us the actual bug.
 4. Patch the workflow; redeploy. Do NOT bypass the lock in the patch.
 

@@ -17,7 +17,7 @@ The stack that runs the HR automation system. One VPS, Docker-composed.
 | Twenty Postgres | `postgres:16` | Twenty's own DB — do not touch from outside Twenty |
 | n8n | `n8nio/n8n:latest` (pinned) | Workflow engine: all orchestration logic |
 | Bookings Postgres | `postgres:16` | n8n-owned DB for interview bookings and slot claiming |
-| Redis | `redis:7-alpine` | Conversation locks, short-lived dedupe keys |
+| Redis | `redis:7-alpine` | Conversation locks, short-lived dedupe keys (HRA-owned keys use `hra:` prefix per [ADR-0009](../05-decisions/ADR-0009-redis-namespace-strategy.md)) |
 | Nginx | `nginx:stable-alpine` | TLS termination, reverse proxy |
 
 Everything talks over a private Docker network. Only Nginx is exposed on the public interface (ports 80/443).
@@ -25,6 +25,10 @@ Everything talks over a private Docker network. Only Nginx is exposed on the pub
 ## Why two Postgres instances
 
 One of our non-negotiable invariants is that we do not write directly into Twenty's database. Bookings, slot claims, and conversation state live in a separate Postgres that n8n fully owns. This keeps us safe from Twenty schema migrations and keeps Twenty safe from our hot-path writes. See `docs/05-decisions/` for the historical record of this choice.
+
+## Redis namespace separation
+
+The single `hr-redis` instance is shared by Twenty and our HRA app. Twenty owns the `bull:` (BullMQ queues), `engine:` (workspace cache), and `module:` (workflow scheduler) prefixes — observed via `docker exec hr-redis redis-cli --scan` and confirmed against Twenty source. Our app uses the `hra:` prefix exclusively (`hra:conv:*`, `hra:dedupe:*`, future kinds follow `hra:<kind>:<id>`). n8n is currently in `regular` mode and writes nothing to Redis; if it's ever switched to `EXECUTIONS_MODE=queue`, the prefix-isolation question must be resolved before the change ships (set `QUEUE_BULL_PREFIX` on n8n, or split Twenty onto a dedicated Redis). Full evidence trail and decision rationale: [ADR-0009](../05-decisions/ADR-0009-redis-namespace-strategy.md).
 
 ## Environment variables
 

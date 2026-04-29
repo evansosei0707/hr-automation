@@ -39,8 +39,9 @@ Workflow A holds a Redis lock for the duration of a Claude call. Claude response
 
 **Acquire:**
 ```
-SET conv:{candidateId} {lockValue} NX PX 60000
+SET hra:conv:{candidateId} {lockValue} NX PX 60000
 ```
+Key prefix `hra:conv:` per [ADR-0009](../05-decisions/ADR-0009-redis-namespace-strategy.md).
 
 **Heartbeat (Lua, run every 15s):**
 ```lua
@@ -51,7 +52,7 @@ else
   return 0
 end
 ```
-Called with `KEYS=[conv:{candidateId}]`, `ARGV=[lockValue, 60000]`.
+Called with `KEYS=[hra:conv:{candidateId}]`, `ARGV=[lockValue, 60000]`.
 
 **Release (Lua CAS):**
 ```lua

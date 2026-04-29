@@ -34,8 +34,8 @@ And always:
 
 ## Step sequence (high level)
 
-1. **Dedupe.** Check `wa_message_id` in Redis with SETNX. If already seen, exit. If new, proceed. Redis TTL 24h.
-2. **Acquire conversation lock.** Redis `SET conv:{candidateId} {executionId} NX PX 60000`. If failed, enqueue for retry with exponential backoff.
+1. **Dedupe.** Check `hra:dedupe:{wa_message_id}` in Redis with SETNX. If already seen, exit. If new, proceed. Redis TTL 24h. Key prefix per [ADR-0009](../05-decisions/ADR-0009-redis-namespace-strategy.md).
+2. **Acquire conversation lock.** Redis `SET hra:conv:{candidateId} {executionId} NX PX 60000`. If failed, enqueue for retry with exponential backoff. Key prefix per [ADR-0009](../05-decisions/ADR-0009-redis-namespace-strategy.md).
 3. **Start Lua heartbeat.** Every 15 seconds, a Lua script extends the lock TTL if and only if the lock value still matches this execution. See `03-integrations/claude-api.md` for the heartbeat script.
 4. **Resolve candidate.** Look up by `whatsappNumber`. If new, create a Candidate with `consentStatus=pending`.
 5. **Handle consent.** If `consentStatus=pending` and this is the first message, the outbound is the consent request — not a Claude reply.

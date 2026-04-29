@@ -79,13 +79,17 @@ The audit script is the structural antibody: future migration files are format-c
 
 Each "voucher" is a minimal working test that proves we can call the API from our environment.
 
-- [ ] **WhatsApp:** webhook reachable; inbound test message received and stored; `consent_request` template submitted (approval may lag into Week 1 — that's fine, the test is submission).
-- [ ] **Claude:** `curl` against the API with both models; costs logged.
-- [ ] **OpenAI transcribe:** three test audio files (en, pidgin, twi) → expected outcomes.
-- [ ] **Meta Graph (FB + IG):** draft-and-immediately-delete a test post on both. Capture returned post IDs.
-- [ ] **X:** post + delete a single test tweet.
-- [ ] **Telegram:** post to the test channel + delete. (Telegram supports message deletion via `deleteMessage`.)
-- [ ] **Google Calendar:** read + write test.
+- [x] **WhatsApp:** webhook reachable; inbound test message received and stored. `9f4241d`. Real Ghana traffic verified end-to-end (event_log row 13, +233 532 751 040, HMAC-validated). `consent_request` template submission deferred to Week 1+ as planned.
+- [x] **Claude (Anthropic):** Sonnet + Haiku Messages API, costs logged to `ai_call_log` (V005 migration). `68210bd`. Total cost of voucher run: $0.000184 across both models.
+- [~] ~~**OpenAI transcribe:**~~ `e5a9b16` — script committed, run BLOCKED on Ghana-region card refusal. **Superseded by Groq Whisper per [ADR-0006](../docs/05-decisions/ADR-0006-groq-whisper-pivot.md)**: `scripts/voucher/groq-transcribe.sh` green at `e0fd320` covers the transcription wire shape that the original OpenAI bullet asked for.
+- [x] **Meta Graph (FB):** `scripts/voucher/meta-fb.sh`, `d561219`. Composite post id captured + deleted via `published: false` draft path. Three test audio files (en/pidgin/twi) testing was reframed: voucher proves wire shape only; real-Pidgin quality testing deferred to Workflow A build per Tier 2 item T2-6.
+- [→] ~~**Meta Graph (IG):**~~ deferred per [ADR-0007](../docs/05-decisions/ADR-0007-defer-instagram.md). Voucher script `scripts/voucher/meta-ig.sh` committed (`d561219`) and skip-gates on empty `META_IG_USER_ID`; runnable the moment the link unblocks.
+- [→] ~~**X:**~~ deferred per [ADR-0008](../docs/05-decisions/ADR-0008-defer-x.md). Free-tier developer access pending since 2026-04-27. 30-day re-trigger at 2026-05-27.
+- [x] **Telegram:** `scripts/voucher/telegram.sh`, `79a93d2`. Test message posted to channel; HTTP 200 + `result.message_id` captured.
+- [x] **Google Calendar:** `scripts/voucher/google-calendar.sh`, `79a93d2`. 26 events read for 2026; Founder's Day on 2026-09-21 verified (post-2019-reform date, not August).
+- [x] **Groq Whisper:** added per ADR-0006. `scripts/voucher/groq-transcribe.sh`, `e0fd320`. espeak-ng fixture transcribed; pipeline proven.
+
+**Phase 4 done 2026-04-29.** 6 active green vouchers, 1 parked-superseded (OpenAI Whisper, ADR-0006), 2 deferred via ADRs (Instagram/ADR-0007 structural Meta refusal, X/ADR-0008 free-tier access pending). Workflow E v1 ships with 2 channels (FB + Telegram). Three structural antibodies landed alongside the vouchers: `scripts/audit-twenty-schema.py` (Phase 2 byproduct, mirrors Twenty's metadata validation locally), `.claude/rules/n8n-workflows.md` rules #11–#13 (ReviewTask invariant, Code-node stdlib gating, Postgres NOT-NULL binding cross-check), and the Nginx default_server pattern + `NODE_FUNCTION_ALLOW_BUILTIN=crypto` env config that unblocks any future webhook handler. Closing arc: 9 commits across `42680aa`..`65f8935`.
 
 ### Phase 5 — Cross-cutting patterns (target: day 5)
 

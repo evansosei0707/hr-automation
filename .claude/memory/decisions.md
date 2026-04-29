@@ -144,6 +144,14 @@ Loser-cleanliness assertion confirms workflow code can rely on plain
 separate migration needed; atomic claim is inline). V003 (candidate_facts)
 deferred to Workflow C build per "schema close to workflow" principle.
 
+## 2026-04-29 — Phase 4 closed
+
+6 active green vouchers, 1 parked (OpenAI Whisper, ADR-0006), 2 deferred
+via ADRs (Instagram/ADR-0007, X/ADR-0008). Real Ghana traffic verified
+WhatsApp webhook. Three structural antibodies landed:
+`scripts/audit-twenty-schema.py`, n8n rules #11–#13, Nginx
+default_server. Phase 5 (cross-cutting patterns) next.
+
 ---
 
 ## Format for new entries

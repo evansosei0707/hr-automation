@@ -152,6 +152,12 @@ WhatsApp webhook. Three structural antibodies landed:
 `scripts/audit-twenty-schema.py`, n8n rules #11–#13, Nginx
 default_server. Phase 5 (cross-cutting patterns) next.
 
+## 2026-04-29 — Week 0 closed. GO to Week 1.
+
+Phase 6 go/no-go review: GO. All conditions met. Full record:
+`docs/05-decisions/week-0-go-no-go.md`. Week 1 starts with architect
+dispatch for Workflow A v1.
+
 ---
 
 ## Format for new entries

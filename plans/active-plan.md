@@ -101,10 +101,11 @@ Each "voucher" is a minimal working test that proves we can call the API from ou
 
 ### Phase 6 — Go / no-go review
 
-- [ ] All acceptance criteria green or explicitly deferred with a note.
-- [ ] Update `.claude/memory/status.md`.
-- [ ] If green: set `plans/active-plan.md` to Week 1's plan (to be drafted then) and archive this plan as `plans/20260424-week-0-validation-DONE.md`.
-- [ ] If red on a critical item: write an ADR describing the show-stopper and the redesign, then revise the spec and restart relevant parts of Week 0.
+- [x] All acceptance criteria green or explicitly deferred with a note.
+- [x] Update `.claude/memory/status.md`.
+- [x] Decision: **GO**. Full auditable record in `docs/05-decisions/week-0-go-no-go.md`. Commit `53361f9`.
+
+**Week 0 closed 2026-04-29.** GO decision granted with all four conditions met (Items A/B/C + close-out fix-ups). 20 findings reviewed across 6 categories (R1-R5, SD1-SD8, C1-C2, RC1-RC5) — 13 closed in commits (`5bd25c3`, `8759b6c`, `8117c29`), 7 carried forward into T2 tracking items (`1980c4c`). Week 1 begins with an `architect` dispatch for Workflow A v1; dispatch order documented in go/no-go §6.
 
 ## Out of scope
 

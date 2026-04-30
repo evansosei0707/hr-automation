@@ -23,7 +23,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },

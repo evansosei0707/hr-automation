@@ -109,7 +109,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "value": "KHRw1yBx6GbEt9yK",
           "mode": "id"
         },
         "options": {},
@@ -144,7 +144,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "value": "KHRw1yBx6GbEt9yK",
           "mode": "id"
         },
         "options": {},
@@ -215,7 +215,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -243,7 +243,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }
@@ -270,7 +270,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -338,7 +338,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }

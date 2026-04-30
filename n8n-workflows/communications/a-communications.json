@@ -24,7 +24,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -132,7 +132,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -323,7 +323,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -430,7 +430,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -507,7 +507,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -605,7 +605,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -628,7 +628,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -853,7 +853,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "or",
           "conditions": [
@@ -945,7 +945,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -968,7 +968,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "or",
                 "conditions": [
@@ -993,6 +993,29 @@
                 ]
               },
               "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-g",
+                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "GRANTED"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                }
+              },
+              "outputKey": "granted",
+              "renameOutput": true
             }
           ]
         },
@@ -1012,7 +1035,7 @@
     {
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const body = ($('Set Candidate Context').item.json.messageBody || '').trim().toUpperCase();\nlet intent = 'OTHER';\nif (['YES', 'YES PLEASE', 'I AGREE', 'AGREE', 'OK', 'OKAY', 'SURE', 'ACCEPT'].some(k => body === k || body.startsWith(k + ' '))) intent = 'YES';\nelse if (['NO', 'STOP', 'REFUSE', 'NOPE', 'DONT', \"DON'T\", 'NOT INTERESTED'].some(k => body === k || body.startsWith(k + ' '))) intent = 'NO';\nelse if (['DATA', 'DELETE', 'FORGET', 'ACCESS', 'REMOVE MY DATA', 'DELETE MY DATA'].some(k => body === k || body.startsWith(k))) intent = 'DPA';\nreturn [{ json: { ...$input.item.json, consentIntent: intent } }];\n"
+        "jsCode": "const body = ($('Set Candidate Context').first()?.json?.messageBody || '').trim().toUpperCase();\nlet intent = 'OTHER';\nif (['YES', 'YES PLEASE', 'I AGREE', 'AGREE', 'OK', 'OKAY', 'SURE', 'ACCEPT'].some(k => body === k || body.startsWith(k + ' '))) intent = 'YES';\nelse if (['NO', 'STOP', 'REFUSE', 'NOPE', 'DONT', \"DON'T\", 'NOT INTERESTED'].some(k => body === k || body.startsWith(k + ' '))) intent = 'NO';\nelse if (['DATA', 'DELETE', 'FORGET', 'ACCESS', 'REMOVE MY DATA', 'DELETE MY DATA'].some(k => body === k || body.startsWith(k))) intent = 'DPA';\nreturn [{ json: { ...$input.item.json, consentIntent: intent } }];\n"
       },
       "id": "ac00018-0018-ac18-0018-000000000018",
       "name": "Parse Pending Consent Reply",
@@ -1034,7 +1057,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -1057,7 +1080,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -1080,7 +1103,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -1309,7 +1332,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "u60PBglA0XFEEgJc",
+          "value": "idPrJIC9q7ioN89i",
           "mode": "id"
         },
         "options": {},
@@ -1413,7 +1436,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -1498,7 +1521,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "or",
           "conditions": [
@@ -1705,7 +1728,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -1766,7 +1789,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -2050,7 +2073,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "wwfgFZSG2hbTbjIm",
+          "value": "BpFdmkPuqOueATOd",
           "mode": "id"
         },
         "options": {},
@@ -2113,7 +2136,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -2137,7 +2160,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -2160,7 +2183,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -2183,7 +2206,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -2206,7 +2229,7 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict"
+                  "typeValidation": "loose"
                 },
                 "combinator": "and",
                 "conditions": [
@@ -2396,7 +2419,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "u60PBglA0XFEEgJc",
+          "value": "idPrJIC9q7ioN89i",
           "mode": "id"
         },
         "options": {},
@@ -2654,7 +2677,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -2805,7 +2828,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -2866,7 +2889,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -2918,7 +2941,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -2970,7 +2993,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3022,7 +3045,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3074,7 +3097,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3126,7 +3149,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3178,7 +3201,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3230,7 +3253,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3282,7 +3305,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3334,7 +3357,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3386,7 +3409,7 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
@@ -3745,6 +3768,13 @@
         [
           {
             "node": "Route by Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Consent Request Template",
             "type": "main",
             "index": 0
           }

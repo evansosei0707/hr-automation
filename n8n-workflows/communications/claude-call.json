@@ -111,7 +111,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        920,
+        1160,
         200
       ],
       "parameters": {
@@ -153,7 +153,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1160,
+        1400,
         200
       ],
       "credentials": {
@@ -176,7 +176,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
       "position": [
-        1400,
+        1640,
         200
       ],
       "parameters": {
@@ -200,6 +200,75 @@
               "id": "resp-output-tokens",
               "name": "output_tokens",
               "value": "={{ $json.usage && $json.usage.output_tokens }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cc000008-0008-0008-0008-000000000008",
+      "name": "Has Messages?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        920,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-has-messages",
+              "leftValue": "={{ ($('Claude Call Trigger').first()?.json?.messages ?? []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cc000009-0009-0009-0009-000000000009",
+      "name": "Return Empty Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1160,
+        440
+      ],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "empty-content",
+              "name": "content",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "empty-input-tokens",
+              "name": "input_tokens",
+              "value": 0,
+              "type": "number"
+            },
+            {
+              "id": "empty-output-tokens",
+              "name": "output_tokens",
+              "value": 0,
               "type": "number"
             }
           ]
@@ -235,7 +304,7 @@
       "main": [
         [
           {
-            "node": "Call Claude API",
+            "node": "Has Messages?",
             "type": "main",
             "index": 0
           }
@@ -265,6 +334,24 @@
         [
           {
             "node": "Return Claude Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Messages?": {
+      "main": [
+        [
+          {
+            "node": "Call Claude API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Empty Response",
             "type": "main",
             "index": 0
           }

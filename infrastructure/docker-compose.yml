@@ -183,6 +183,12 @@ services:
       # via $env.ANTHROPIC_API_KEY, $env.WHATSAPP_TOKEN, etc.
       # See .claude/rules/n8n-workflows.md rule #17.
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      TWENTY_API_URL: http://twenty:3000
+      TWENTY_API_KEY: ${TWENTY_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_TOKEN}
+      CALIBRATION_WINDOW_ACTIVE: "false"
 
       # Allowlist Node.js stdlib modules accessible to Code nodes via require().
       # Default n8n sandbox blocks ALL require() of stdlib. We need crypto for

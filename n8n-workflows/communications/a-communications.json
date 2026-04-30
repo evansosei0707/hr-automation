@@ -381,7 +381,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -390,8 +390,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $('Query Lock Value from Event Log').first()?.json?.candidate_id || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -399,7 +398,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $('Query Lock Value from Event Log').first()?.json?.candidate_id || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } } }}"
       },
       "id": "ac_e005-e005-e005-e005-000000000005",
       "name": "Create Workflow Error Review Task",
@@ -565,7 +565,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -574,8 +574,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'query FindCandidateByPhone($phone: String!) { candidates(filter: { whatsappNumberE164: { eq: $phone } }) { edges { node { id firstName consentStatus } } } }', variables: { phone: $('Normalise Phone Number').first()?.json?.phoneE164 } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -583,7 +582,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'query FindCandidateByPhone($phone: String!) { candidates(filter: { whatsappNumberE164: { eq: $phone } }) { edges { node { id firstName consentStatus } } } }', variables: { phone: $('Normalise Phone Number').first()?.json?.phoneE164 } } }}"
       },
       "id": "ac00007-0007-ac07-0007-000000000007",
       "name": "Resolve Candidate by Phone",
@@ -669,7 +669,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -678,8 +678,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CreateCandidate($data: CandidateCreateInput!) { createOneCandidate(data: $data) { id firstName consentStatus } }', variables: { data: { whatsappNumberE164: $('Normalise Phone Number').first()?.json?.phoneE164, consentStatus: 'PENDING' } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -687,7 +686,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation CreateCandidate($data: CandidateCreateInput!) { createOneCandidate(data: $data) { id firstName consentStatus } }', variables: { data: { whatsappNumberE164: $('Normalise Phone Number').first()?.json?.phoneE164, consentStatus: 'PENDING' } } } }}"
       },
       "id": "ac00009-0009-ac09-0009-000000000009",
       "name": "Create Candidate in Twenty",
@@ -707,7 +707,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -716,8 +716,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation FlagDup($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $json.data.candidates.edges?.[0]?.node?.id } } } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -725,7 +724,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation FlagDup($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $json.data.candidates.edges?.[0]?.node?.id } } } } } }}"
       },
       "id": "ac00010-0010-ac10-0010-000000000010",
       "name": "Flag Duplicate Candidate",
@@ -1121,7 +1121,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -1130,8 +1130,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation GrantConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1139,7 +1138,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation GrantConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
       },
       "id": "ac00020-0020-ac20-0020-000000000020",
       "name": "Grant Consent in Twenty",
@@ -1159,7 +1159,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -1168,8 +1168,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation RefuseConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1177,7 +1176,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation RefuseConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
       },
       "id": "ac00021-0021-ac21-0021-000000000021",
       "name": "Refuse Consent in Twenty",
@@ -1193,7 +1193,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -1249,7 +1249,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -1309,7 +1309,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "hX6yRM4eUPbq9OeG",
+          "value": "fXqkqpVEuLXDR2NQ",
           "mode": "id"
         },
         "options": {},
@@ -1356,7 +1356,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -1542,7 +1542,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -1551,8 +1551,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1560,7 +1559,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
       },
       "id": "ac00032-0032-ac32-0032-000000000032",
       "name": "Route Local Language to Review",
@@ -1576,7 +1576,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -1801,7 +1801,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -1810,8 +1810,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1819,7 +1818,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
       },
       "id": "ac00040-0040-ac40-0040-000000000040",
       "name": "Create Manual Review Task \u2014 Audio",
@@ -1856,7 +1856,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -2050,7 +2050,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "tWwgB2K4tAg9aFjx",
+          "value": "wwfgFZSG2hbTbjIm",
           "mode": "id"
         },
         "options": {},
@@ -2247,7 +2247,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -2256,8 +2256,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -2265,7 +2264,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
       },
       "id": "ac00053-0053-ac53-0053-000000000053",
       "name": "Create Low-Confidence Review Task",
@@ -2302,7 +2302,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -2341,7 +2341,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -2350,8 +2350,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation Distress($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -2359,7 +2358,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation Distress($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
       },
       "id": "ac00056-0056-ac56-0056-000000000056",
       "name": "Create Distress Review Task",
@@ -2396,7 +2396,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "hX6yRM4eUPbq9OeG",
+          "value": "fXqkqpVEuLXDR2NQ",
           "mode": "id"
         },
         "options": {},
@@ -2531,7 +2531,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "tWwgB2K4tAg9aFjx",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -2597,7 +2597,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},
@@ -2689,7 +2689,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
             },
             {
               "name": "Content-Type",
@@ -2698,8 +2698,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } }, body: $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content } } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -2707,7 +2706,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "jsonBody": "={{ { query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } }, body: $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content } } } }}"
       },
       "id": "ac00068-0068-ac68-0068-000000000068",
       "name": "Create Calibration Review Task",
@@ -2723,7 +2723,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "9Fv4Xu2DPgBzjwhU",
+          "value": "M6OlFxYpaotn2wJ3",
           "mode": "id"
         },
         "options": {},

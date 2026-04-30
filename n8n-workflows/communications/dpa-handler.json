@@ -1,5 +1,5 @@
 {
-  "name": "Subflow \u2014 DPA Handler",
+  "name": "Subflow — DPA Handler",
   "nodes": [
     {
       "id": "dpa00001-0001-0001-0001-000000000001",
@@ -234,7 +234,7 @@
         "propertyName": "value"
       },
       "id": "dpa00007-0007-0007-0007-000000000007",
-      "name": "Get Lock \u2014 DPA",
+      "name": "Get Lock — DPA",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -278,7 +278,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack) VALUES ('subflow_dpa_handler', $1, $2, $3, $4)",
         "options": {
-          "queryReplacement": "={{ $json.execution?.id ?? '' }},={{ $json.execution?.lastNodeExecuted ?? '' }},={{ $json.execution?.error?.message ?? '' }},={{ $json.execution?.error?.stack ?? '' }}"
+          "queryReplacement": "={{ [$json.execution?.id ?? '', $json.execution?.lastNodeExecuted ?? '', $json.execution?.error?.message ?? '', $json.execution?.error?.stack?.split('\\n')[0] ?? ''] }}"
         }
       }
     },
@@ -315,7 +315,7 @@
         "options": {}
       },
       "id": "dpa00007if-0007-0007-0007-000000000007",
-      "name": "Check Token \u2014 DPA",
+      "name": "Check Token — DPA",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -329,7 +329,7 @@
         "key": "={{ 'hra:conv:' + $('DPA Handler Trigger').first()?.json?.candidateId }}"
       },
       "id": "dpa00007dl-0007-0007-0007-000000000007",
-      "name": "Delete Lock \u2014 DPA",
+      "name": "Delete Lock — DPA",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -411,7 +411,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 DPA",
+            "node": "Get Lock — DPA",
             "type": "main",
             "index": 0
           }
@@ -429,22 +429,22 @@
         ]
       ]
     },
-    "Get Lock \u2014 DPA": {
+    "Get Lock — DPA": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 DPA",
+            "node": "Check Token — DPA",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 DPA": {
+    "Check Token — DPA": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 DPA",
+            "node": "Delete Lock — DPA",
             "type": "main",
             "index": 0
           }

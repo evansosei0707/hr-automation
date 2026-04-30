@@ -99,6 +99,23 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-04-30** during n8n 2.18.5 live test re-import — claude-call.json HTTP Request headers evaluated `$env.ANTHROPIC_API_KEY` to `undefined`.
 
+18. **`queryReplacement` splits on commas — never pass values that can produce commas.** The Postgres node (typeVersion ≥ 2.5) evaluates each `{{ }}` block individually. For each result it calls `isJSON(result)`: if true (valid JSON object/array/string) it passes the value as-is; if false it calls `stringToArray(result)` which splits on `,`. Any non-JSON expression that evaluates to a string containing a comma (user message text, error messages, stack traces) will silently produce extra parameters and corrupt the query.
+
+    **Rules:**
+    - **Never use `JSON.stringify(obj)` with multi-key objects** in queryReplacement — the output `{"a":1,"b":2}` would pass `isJSON` in v2.5+ but is brittle; use a hand-crafted minimal string instead: `'{"node":"' + nodeName + '"}'` .
+    - **For JSONB context columns**, write only what is needed: `'{"count":' + n + '}'` for a single numeric fact. Do not serialize full objects.
+    - **For any TEXT column that can contain user-supplied or system-generated text** (message bodies, error messages, stack traces), use the **array form** which bypasses all comma-splitting:
+
+    ```
+    "queryReplacement": "={{ [val1, val2, val3] }}"
+    ```
+
+    When `queryReplacement` is a single expression that returns a JavaScript array, n8n routes it via `Array.isArray(queryReplacement) → values = queryReplacement` and each element is bound directly as a Postgres `$N` parameter with no splitting.
+
+    - **Stack traces**: always truncate to first line (`error.stack?.split('\n')[0]`) — full traces have commas and are noisy in log tables. Use the array form regardless.
+
+    **Surfaced 2026-04-30** during Workflow A live test — `Store Inbound Message` body and `Store Outbound Message` content both receive user/LLM text with commas, corrupting parameter counts. `Log DPA Error` full stack trace broke similarly.
+
 ## Before committing an n8n workflow
 
 Run the validator:

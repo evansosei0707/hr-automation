@@ -1,5 +1,5 @@
 {
-  "name": "Workflow A \u2014 Communications",
+  "name": "Workflow A — Communications",
   "nodes": [
     {
       "parameters": {
@@ -164,7 +164,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message, data) VALUES ('workflow_a_communications', $1, 'info', 'webhook_received', $2, $3::jsonb);",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ 'entry_count=' + (($json.body_parsed && $json.body_parsed.entry && $json.body_parsed.entry.length) || 0) }},={{ JSON.stringify({ entry_count: ($json.body_parsed && $json.body_parsed.entry && $json.body_parsed.entry.length) || 0, raw_body_length: $json.raw_body_length || 0 }) }}"
+          "queryReplacement": "={{ $execution.id }},={{ 'entry_count=' + (($json.body_parsed?.entry?.length) || 0) }},={{ '{\"entry_count\":' + (($json.body_parsed?.entry?.length) || 0) + ',\"raw_body_length\":' + ($json.raw_body_length || 0) + '}' }}"
         }
       },
       "id": "a0000008-0008-0008-0008-000000000008",
@@ -204,7 +204,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, context) VALUES ('workflow_a_communications', $1, 'Validate HMAC', $2, $3::jsonb);",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $json.reason ? $json.reason : 'X-Hub-Signature-256 mismatch' }},={{ JSON.stringify({received_signature_prefix: $json.received_signature_prefix, raw_body_length: $json.raw_body_length}) }}"
+          "queryReplacement": "={{ $execution.id }},={{ $json.reason ? $json.reason : 'X-Hub-Signature-256 mismatch' }},={{ '{\"raw_body_length\":' + ($json.raw_body_length || 0) + '}' }}"
         }
       },
       "id": "a0000010-0010-0010-0010-000000000010",
@@ -299,7 +299,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ('workflow_a_communications', $1, $2, $3, $4, $5::jsonb);",
         "options": {
-          "queryReplacement": "={{ $json.execution?.id ?? '' }},={{ $json.execution?.lastNodeExecuted ?? '' }},={{ $json.execution?.error?.message ?? '' }},={{ $json.execution?.error?.stack ?? '' }},={{ JSON.stringify($json.execution || {}) }}"
+          "queryReplacement": "={{ [$json.execution?.id ?? '', $json.execution?.lastNodeExecuted ?? '', $json.execution?.error?.message ?? '', $json.execution?.error?.stack?.split('\\n')[0] ?? '', '{\"node\":\"' + ($json.execution?.lastNodeExecuted ?? '') + '\"}'] }}"
         }
       },
       "id": "a0000013-0013-0013-0013-000000000013",
@@ -741,11 +741,11 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, error_message, context) VALUES ('workflow_a_communications', $1, 'multiple_candidates_same_phone', $2::jsonb)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ JSON.stringify({ count: $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.length ?? 0 }) }}"
+          "queryReplacement": "={{ $execution.id }},={{ '{\"count\":' + ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.length ?? 0) + '}' }}"
         }
       },
       "id": "ac00011-0011-ac11-0011-000000000011",
-      "name": "Log Stop \u2014 Duplicate Candidate",
+      "name": "Log Stop — Duplicate Candidate",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
@@ -1230,7 +1230,7 @@
         "propertyName": "value"
       },
       "id": "ac00023-0023-ac23-0023-000000000023",
-      "name": "Get Lock \u2014 Consent Refused",
+      "name": "Get Lock — Consent Refused",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -1290,7 +1290,7 @@
         "propertyName": "value"
       },
       "id": "ac00025-0025-ac25-0025-000000000025",
-      "name": "Get Lock \u2014 Consent Pending",
+      "name": "Get Lock — Consent Pending",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -1393,7 +1393,7 @@
         "propertyName": "value"
       },
       "id": "ac00028-0028-ac28-0028-000000000028",
-      "name": "Get Lock \u2014 Refused or Revoked",
+      "name": "Get Lock — Refused or Revoked",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -1484,7 +1484,7 @@
         }
       },
       "id": "ac00030-0030-ac30-0030-000000000030",
-      "name": "Language Detection \u2014 Short Clip",
+      "name": "Language Detection — Short Clip",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -1598,7 +1598,7 @@
         }
       },
       "id": "ac00033-0033-ac33-0033-000000000033",
-      "name": "Send Please Retype \u2014 Local Language",
+      "name": "Send Please Retype — Local Language",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -1613,7 +1613,7 @@
         "propertyName": "value"
       },
       "id": "ac00034-0034-ac34-0034-000000000034",
-      "name": "Get Lock \u2014 Local Language",
+      "name": "Get Lock — Local Language",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -1672,7 +1672,7 @@
         }
       },
       "id": "ac00035-0035-ac35-0035-000000000035",
-      "name": "Full Transcription \u2014 Groq Whisper",
+      "name": "Full Transcription — Groq Whisper",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -1822,7 +1822,7 @@
         "jsonBody": "={{ { query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
       },
       "id": "ac00040-0040-ac40-0040-000000000040",
-      "name": "Create Manual Review Task \u2014 Audio",
+      "name": "Create Manual Review Task — Audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -1837,7 +1837,7 @@
         "propertyName": "value"
       },
       "id": "ac00041-0041-ac41-0041-000000000041",
-      "name": "Get Lock \u2014 Second Strike Audio",
+      "name": "Get Lock — Second Strike Audio",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -1878,7 +1878,7 @@
         }
       },
       "id": "ac00042-0042-ac42-0042-000000000042",
-      "name": "Send Please Retype \u2014 Low Quality",
+      "name": "Send Please Retype — Low Quality",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -1916,7 +1916,7 @@
         "propertyName": "value"
       },
       "id": "ac00044-0044-ac44-0044-000000000044",
-      "name": "Get Lock \u2014 Low Quality Audio",
+      "name": "Get Lock — Low Quality Audio",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -1981,7 +1981,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation_message (conversation_id, direction, body, wa_message_id, media_type, transcript, transcript_quality, occurred_at) VALUES ($1, 'inbound', $2, $3, $4, $5, $6, NOW()) ON CONFLICT (wa_message_id) DO NOTHING",
         "options": {
-          "queryReplacement": "={{ $json.id }},={{ $('Set Candidate Context').first()?.json?.messageBody || (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript || ''; } catch(e) { return ''; } })() }},={{ $('Set Candidate Context').first()?.json?.waMessageId }},={{ $('Set Candidate Context').first()?.json?.messageType === 'audio' ? 'audio' : null }},={{ (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript || null; } catch(e) { return null; } })() }},={{ (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcriptQuality || null; } catch(e) { return null; } })() }}"
+          "queryReplacement": "={{ [$json.id, $('Set Candidate Context').first()?.json?.messageBody || (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript || ''; } catch(e) { return ''; } })(), $('Set Candidate Context').first()?.json?.waMessageId, $('Set Candidate Context').first()?.json?.messageType === 'audio' ? 'audio' : null, (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript ?? null; } catch(e) { return null; } })(), (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcriptQuality ?? null; } catch(e) { return null; } })()] }}"
         }
       },
       "id": "ac00047-0047-ac47-0047-000000000047",
@@ -2080,7 +2080,7 @@
         }
       },
       "id": "ac00050-0050-ac50-0050-000000000050",
-      "name": "Classify Intent \u2014 Claude Haiku",
+      "name": "Classify Intent — Claude Haiku",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -2283,7 +2283,7 @@
         "propertyName": "value"
       },
       "id": "ac00054-0054-ac54-0054-000000000054",
-      "name": "Get Lock \u2014 Low Confidence",
+      "name": "Get Lock — Low Confidence",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -2377,7 +2377,7 @@
         "propertyName": "value"
       },
       "id": "ac00057-0057-ac57-0057-000000000057",
-      "name": "Get Lock \u2014 Distress",
+      "name": "Get Lock — Distress",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -2468,7 +2468,7 @@
         "propertyName": "value"
       },
       "id": "ac00060-0060-ac60-0060-000000000060",
-      "name": "Get Lock \u2014 Spam",
+      "name": "Get Lock — Spam",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -2512,7 +2512,7 @@
         "propertyName": "value"
       },
       "id": "ac00062-0062-ac62-0062-000000000062",
-      "name": "Get Lock \u2014 Workflow Dispatch",
+      "name": "Get Lock — Workflow Dispatch",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -2561,7 +2561,7 @@
         }
       },
       "id": "ac00063-0063-ac63-0063-000000000063",
-      "name": "Generate Reply \u2014 Claude Sonnet",
+      "name": "Generate Reply — Claude Sonnet",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -2574,7 +2574,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation_message (conversation_id, direction, body, occurred_at) VALUES ($1, 'outbound', $2, NOW())",
         "options": {
-          "queryReplacement": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }},={{ $json.content }}"
+          "queryReplacement": "={{ [$('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000', $json.content] }}"
         }
       },
       "id": "ac00064-0064-ac64-0064-000000000064",
@@ -2609,7 +2609,7 @@
             },
             {
               "name": "body",
-              "stringValue": "={{ $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content }}"
+              "stringValue": "={{ $('Generate Reply — Claude Sonnet').first()?.json?.content }}"
             },
             {
               "name": "conversationId",
@@ -2619,7 +2619,7 @@
         }
       },
       "id": "ac00065-0065-ac65-0065-000000000065",
-      "name": "Send Reply \u2014 WA",
+      "name": "Send Reply — WA",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -2634,7 +2634,7 @@
         "propertyName": "value"
       },
       "id": "ac00066-0066-ac66-0066-000000000066",
-      "name": "Get Lock \u2014 Open Conversation",
+      "name": "Get Lock — Open Conversation",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -2707,7 +2707,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } }, body: $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content } } } }}"
+        "jsonBody": "={{ { query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } }, body: $('Generate Reply — Claude Sonnet').first()?.json?.content } } } }}"
       },
       "id": "ac00068-0068-ac68-0068-000000000068",
       "name": "Create Calibration Review Task",
@@ -2745,7 +2745,7 @@
         }
       },
       "id": "ac00069-0069-ac69-0069-000000000069",
-      "name": "Send Holding Reply \u2014 Calibration",
+      "name": "Send Holding Reply — Calibration",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -2884,7 +2884,7 @@
         "options": {}
       },
       "id": "ac00023if-00023-00023-00023-000230000000",
-      "name": "Check Token \u2014 Consent Refused",
+      "name": "Check Token — Consent Refused",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -2898,7 +2898,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00023dl-00023-00023-00023-000230000000",
-      "name": "Delete Lock \u2014 Consent Refused",
+      "name": "Delete Lock — Consent Refused",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -2936,7 +2936,7 @@
         "options": {}
       },
       "id": "ac00025if-00025-00025-00025-000250000000",
-      "name": "Check Token \u2014 Consent Pending",
+      "name": "Check Token — Consent Pending",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -2950,7 +2950,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00025dl-00025-00025-00025-000250000000",
-      "name": "Delete Lock \u2014 Consent Pending",
+      "name": "Delete Lock — Consent Pending",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -2988,7 +2988,7 @@
         "options": {}
       },
       "id": "ac00028if-00028-00028-00028-000280000000",
-      "name": "Check Token \u2014 Refused or Revoked",
+      "name": "Check Token — Refused or Revoked",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3002,7 +3002,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00028dl-00028-00028-00028-000280000000",
-      "name": "Delete Lock \u2014 Refused or Revoked",
+      "name": "Delete Lock — Refused or Revoked",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3040,7 +3040,7 @@
         "options": {}
       },
       "id": "ac00034if-00034-00034-00034-000340000000",
-      "name": "Check Token \u2014 Local Language",
+      "name": "Check Token — Local Language",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3054,7 +3054,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00034dl-00034-00034-00034-000340000000",
-      "name": "Delete Lock \u2014 Local Language",
+      "name": "Delete Lock — Local Language",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3092,7 +3092,7 @@
         "options": {}
       },
       "id": "ac00041if-00041-00041-00041-000410000000",
-      "name": "Check Token \u2014 Second Strike Audio",
+      "name": "Check Token — Second Strike Audio",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3106,7 +3106,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00041dl-00041-00041-00041-000410000000",
-      "name": "Delete Lock \u2014 Second Strike Audio",
+      "name": "Delete Lock — Second Strike Audio",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3144,7 +3144,7 @@
         "options": {}
       },
       "id": "ac00044if-00044-00044-00044-000440000000",
-      "name": "Check Token \u2014 Low Quality Audio",
+      "name": "Check Token — Low Quality Audio",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3158,7 +3158,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00044dl-00044-00044-00044-000440000000",
-      "name": "Delete Lock \u2014 Low Quality Audio",
+      "name": "Delete Lock — Low Quality Audio",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3196,7 +3196,7 @@
         "options": {}
       },
       "id": "ac00054if-00054-00054-00054-000540000000",
-      "name": "Check Token \u2014 Low Confidence",
+      "name": "Check Token — Low Confidence",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3210,7 +3210,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00054dl-00054-00054-00054-000540000000",
-      "name": "Delete Lock \u2014 Low Confidence",
+      "name": "Delete Lock — Low Confidence",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3248,7 +3248,7 @@
         "options": {}
       },
       "id": "ac00057if-00057-00057-00057-000570000000",
-      "name": "Check Token \u2014 Distress",
+      "name": "Check Token — Distress",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3262,7 +3262,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00057dl-00057-00057-00057-000570000000",
-      "name": "Delete Lock \u2014 Distress",
+      "name": "Delete Lock — Distress",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3300,7 +3300,7 @@
         "options": {}
       },
       "id": "ac00060if-00060-00060-00060-000600000000",
-      "name": "Check Token \u2014 Spam",
+      "name": "Check Token — Spam",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3314,7 +3314,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00060dl-00060-00060-00060-000600000000",
-      "name": "Delete Lock \u2014 Spam",
+      "name": "Delete Lock — Spam",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3352,7 +3352,7 @@
         "options": {}
       },
       "id": "ac00062if-00062-00062-00062-000620000000",
-      "name": "Check Token \u2014 Workflow Dispatch",
+      "name": "Check Token — Workflow Dispatch",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3366,7 +3366,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00062dl-00062-00062-00062-000620000000",
-      "name": "Delete Lock \u2014 Workflow Dispatch",
+      "name": "Delete Lock — Workflow Dispatch",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3404,7 +3404,7 @@
         "options": {}
       },
       "id": "ac00066if-00066-00066-00066-000660000000",
-      "name": "Check Token \u2014 Open Conversation",
+      "name": "Check Token — Open Conversation",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -3418,7 +3418,7 @@
         "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00066dl-00066-00066-00066-000660000000",
-      "name": "Delete Lock \u2014 Open Conversation",
+      "name": "Delete Lock — Open Conversation",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
       "position": [
@@ -3679,7 +3679,7 @@
       "main": [
         [
           {
-            "node": "Log Stop \u2014 Duplicate Candidate",
+            "node": "Log Stop — Duplicate Candidate",
             "type": "main",
             "index": 0
           }
@@ -3820,7 +3820,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Consent Refused",
+            "node": "Get Lock — Consent Refused",
             "type": "main",
             "index": 0
           }
@@ -3831,7 +3831,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Consent Pending",
+            "node": "Get Lock — Consent Pending",
             "type": "main",
             "index": 0
           }
@@ -3842,7 +3842,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Refused or Revoked",
+            "node": "Get Lock — Refused or Revoked",
             "type": "main",
             "index": 0
           }
@@ -3853,7 +3853,7 @@
       "main": [
         [
           {
-            "node": "Language Detection \u2014 Short Clip",
+            "node": "Language Detection — Short Clip",
             "type": "main",
             "index": 0
           }
@@ -3867,7 +3867,7 @@
         ]
       ]
     },
-    "Language Detection \u2014 Short Clip": {
+    "Language Detection — Short Clip": {
       "main": [
         [
           {
@@ -3882,7 +3882,7 @@
       "main": [
         [
           {
-            "node": "Full Transcription \u2014 Groq Whisper",
+            "node": "Full Transcription — Groq Whisper",
             "type": "main",
             "index": 0
           }
@@ -3900,25 +3900,25 @@
       "main": [
         [
           {
-            "node": "Send Please Retype \u2014 Local Language",
+            "node": "Send Please Retype — Local Language",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Please Retype \u2014 Local Language": {
+    "Send Please Retype — Local Language": {
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Local Language",
+            "node": "Get Lock — Local Language",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Full Transcription \u2014 Groq Whisper": {
+    "Full Transcription — Groq Whisper": {
       "main": [
         [
           {
@@ -3973,32 +3973,32 @@
       "main": [
         [
           {
-            "node": "Create Manual Review Task \u2014 Audio",
+            "node": "Create Manual Review Task — Audio",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send Please Retype \u2014 Low Quality",
+            "node": "Send Please Retype — Low Quality",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create Manual Review Task \u2014 Audio": {
+    "Create Manual Review Task — Audio": {
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Second Strike Audio",
+            "node": "Get Lock — Second Strike Audio",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Please Retype \u2014 Low Quality": {
+    "Send Please Retype — Low Quality": {
       "main": [
         [
           {
@@ -4013,7 +4013,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Low Quality Audio",
+            "node": "Get Lock — Low Quality Audio",
             "type": "main",
             "index": 0
           }
@@ -4068,14 +4068,14 @@
       "main": [
         [
           {
-            "node": "Classify Intent \u2014 Claude Haiku",
+            "node": "Classify Intent — Claude Haiku",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Classify Intent \u2014 Claude Haiku": {
+    "Classify Intent — Claude Haiku": {
       "main": [
         [
           {
@@ -4136,7 +4136,7 @@
         ],
         [
           {
-            "node": "Generate Reply \u2014 Claude Sonnet",
+            "node": "Generate Reply — Claude Sonnet",
             "type": "main",
             "index": 0
           }
@@ -4147,7 +4147,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Low Confidence",
+            "node": "Get Lock — Low Confidence",
             "type": "main",
             "index": 0
           }
@@ -4169,7 +4169,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Distress",
+            "node": "Get Lock — Distress",
             "type": "main",
             "index": 0
           }
@@ -4180,7 +4180,7 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Spam",
+            "node": "Get Lock — Spam",
             "type": "main",
             "index": 0
           }
@@ -4191,14 +4191,14 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Workflow Dispatch",
+            "node": "Get Lock — Workflow Dispatch",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generate Reply \u2014 Claude Sonnet": {
+    "Generate Reply — Claude Sonnet": {
       "main": [
         [
           {
@@ -4231,7 +4231,7 @@
         ],
         [
           {
-            "node": "Send Reply \u2014 WA",
+            "node": "Send Reply — WA",
             "type": "main",
             "index": 0
           }
@@ -4242,29 +4242,29 @@
       "main": [
         [
           {
-            "node": "Send Holding Reply \u2014 Calibration",
+            "node": "Send Holding Reply — Calibration",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Holding Reply \u2014 Calibration": {
+    "Send Holding Reply — Calibration": {
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Open Conversation",
+            "node": "Get Lock — Open Conversation",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send Reply \u2014 WA": {
+    "Send Reply — WA": {
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Open Conversation",
+            "node": "Get Lock — Open Conversation",
             "type": "main",
             "index": 0
           }
@@ -4355,22 +4355,22 @@
         ]
       ]
     },
-    "Get Lock \u2014 Consent Refused": {
+    "Get Lock — Consent Refused": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Consent Refused",
+            "node": "Check Token — Consent Refused",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Consent Refused": {
+    "Check Token — Consent Refused": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Consent Refused",
+            "node": "Delete Lock — Consent Refused",
             "type": "main",
             "index": 0
           }
@@ -4378,22 +4378,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Consent Pending": {
+    "Get Lock — Consent Pending": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Consent Pending",
+            "node": "Check Token — Consent Pending",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Consent Pending": {
+    "Check Token — Consent Pending": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Consent Pending",
+            "node": "Delete Lock — Consent Pending",
             "type": "main",
             "index": 0
           }
@@ -4401,22 +4401,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Refused or Revoked": {
+    "Get Lock — Refused or Revoked": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Refused or Revoked",
+            "node": "Check Token — Refused or Revoked",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Refused or Revoked": {
+    "Check Token — Refused or Revoked": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Refused or Revoked",
+            "node": "Delete Lock — Refused or Revoked",
             "type": "main",
             "index": 0
           }
@@ -4424,22 +4424,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Local Language": {
+    "Get Lock — Local Language": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Local Language",
+            "node": "Check Token — Local Language",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Local Language": {
+    "Check Token — Local Language": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Local Language",
+            "node": "Delete Lock — Local Language",
             "type": "main",
             "index": 0
           }
@@ -4447,22 +4447,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Second Strike Audio": {
+    "Get Lock — Second Strike Audio": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Second Strike Audio",
+            "node": "Check Token — Second Strike Audio",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Second Strike Audio": {
+    "Check Token — Second Strike Audio": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Second Strike Audio",
+            "node": "Delete Lock — Second Strike Audio",
             "type": "main",
             "index": 0
           }
@@ -4470,22 +4470,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Low Quality Audio": {
+    "Get Lock — Low Quality Audio": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Low Quality Audio",
+            "node": "Check Token — Low Quality Audio",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Low Quality Audio": {
+    "Check Token — Low Quality Audio": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Low Quality Audio",
+            "node": "Delete Lock — Low Quality Audio",
             "type": "main",
             "index": 0
           }
@@ -4493,22 +4493,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Low Confidence": {
+    "Get Lock — Low Confidence": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Low Confidence",
+            "node": "Check Token — Low Confidence",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Low Confidence": {
+    "Check Token — Low Confidence": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Low Confidence",
+            "node": "Delete Lock — Low Confidence",
             "type": "main",
             "index": 0
           }
@@ -4516,22 +4516,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Distress": {
+    "Get Lock — Distress": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Distress",
+            "node": "Check Token — Distress",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Distress": {
+    "Check Token — Distress": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Distress",
+            "node": "Delete Lock — Distress",
             "type": "main",
             "index": 0
           }
@@ -4539,22 +4539,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Spam": {
+    "Get Lock — Spam": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Spam",
+            "node": "Check Token — Spam",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Spam": {
+    "Check Token — Spam": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Spam",
+            "node": "Delete Lock — Spam",
             "type": "main",
             "index": 0
           }
@@ -4562,22 +4562,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Workflow Dispatch": {
+    "Get Lock — Workflow Dispatch": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Workflow Dispatch",
+            "node": "Check Token — Workflow Dispatch",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Workflow Dispatch": {
+    "Check Token — Workflow Dispatch": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Workflow Dispatch",
+            "node": "Delete Lock — Workflow Dispatch",
             "type": "main",
             "index": 0
           }
@@ -4585,22 +4585,22 @@
         []
       ]
     },
-    "Get Lock \u2014 Open Conversation": {
+    "Get Lock — Open Conversation": {
       "main": [
         [
           {
-            "node": "Check Token \u2014 Open Conversation",
+            "node": "Check Token — Open Conversation",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check Token \u2014 Open Conversation": {
+    "Check Token — Open Conversation": {
       "main": [
         [
           {
-            "node": "Delete Lock \u2014 Open Conversation",
+            "node": "Delete Lock — Open Conversation",
             "type": "main",
             "index": 0
           }

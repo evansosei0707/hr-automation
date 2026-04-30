@@ -1,9 +1,23 @@
-# Plan — Week 0: Validation Gate
+# Active Plan — Week 1
+
+**Current work:** Workflow B — white-collar CV screening
+**Spec:** `docs/02-workflows/b-screening.md`
+**Status:** Not started — ready to dispatch
+
+## Week 1 progress
+
+- [x] **Workflow A v1** — DONE 2026-04-30. Closing arc: `f811dd6` + `4325099`. T2-13–T2-17 in `plans/tier-2-followups.md`.
+- [ ] **Workflow B** — white-collar screening (next)
+- [ ] Remaining Week 1 workflows per dispatch order in `docs/05-decisions/week-0-go-no-go.md §6`
+
+---
+
+# Archived — Week 0: Validation Gate
 
 **Started:** 2026-04-24
 **Spec:** This is the validation gate, not a workflow spec. Its output is "go / no-go for Week 1."
 **Owner this session:** human (with Claude Code as pair)
-**Status:** In Progress
+**Status:** CLOSED 2026-04-29 — GO decision granted
 
 ## Goal
 

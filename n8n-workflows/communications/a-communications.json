@@ -1981,7 +1981,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation_message (conversation_id, direction, body, wa_message_id, media_type, transcript, transcript_quality, occurred_at) VALUES ($1, 'inbound', $2, $3, $4, $5, $6, NOW()) ON CONFLICT (wa_message_id) DO NOTHING",
         "options": {
-          "queryReplacement": "={{ $json.id }},={{ $('Set Candidate Context').first()?.json?.messageBody || $('Evaluate Transcript Confidence').first()?.json?.transcript || '' }},={{ $('Set Candidate Context').first()?.json?.waMessageId }},={{ $('Set Candidate Context').first()?.json?.messageType === 'audio' ? 'audio' : null }},={{ $('Evaluate Transcript Confidence').first()?.json?.transcript || null }},={{ $('Evaluate Transcript Confidence').first()?.json?.transcriptQuality || null }}"
+          "queryReplacement": "={{ $json.id }},={{ $('Set Candidate Context').first()?.json?.messageBody || (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript || ''; } catch(e) { return ''; } })() }},={{ $('Set Candidate Context').first()?.json?.waMessageId }},={{ $('Set Candidate Context').first()?.json?.messageType === 'audio' ? 'audio' : null }},={{ (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript || null; } catch(e) { return null; } })() }},={{ (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcriptQuality || null; } catch(e) { return null; } })() }}"
         }
       },
       "id": "ac00047-0047-ac47-0047-000000000047",

@@ -135,8 +135,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ model: ($('Claude Call Trigger').first()?.json?.model ?? 'claude-haiku-4-5-20251001'), max_tokens: ($('Claude Call Trigger').first()?.json?.maxTokens ?? 1000), system: ($('Claude Call Trigger').first()?.json?.systemPrompt ?? ''), messages: ($('Claude Call Trigger').first()?.json?.messages ?? []) }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 60000,
           "retry": {
@@ -144,7 +143,8 @@
             "maxTries": 2,
             "waitBetweenTries": 2000
           }
-        }
+        },
+        "jsonBody": "={{ { model: ($('Claude Call Trigger').first()?.json?.model ?? 'claude-haiku-4-5-20251001'), max_tokens: ($('Claude Call Trigger').first()?.json?.maxTokens ?? 1000), system: ($('Claude Call Trigger').first()?.json?.systemPrompt ?? ''), messages: ($('Claude Call Trigger').first()?.json?.messages ?? []) } }}"
       }
     },
     {

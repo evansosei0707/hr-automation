@@ -73,6 +73,8 @@ All Lua `EVAL` and `SET NX PX` patterns were replaced with two-step GET + IF + S
 | `SET hra:conv:{id} {token} NX PX 180000` | Redis Get → If (value empty OR == execId) → Redis Set (expire 180s) |
 | Lua CAS DEL | Redis Get → If (value == token) → Redis Delete |
 
+**Redis Get `propertyName`:** The Get operation's output property defaults to `"propertyName"` (i.e. `$json.propertyName`). All Redis Get nodes in this workflow explicitly set `propertyName: "value"` so that downstream If conditions can reference `$json.value ?? ''`.
+
 **TOCTOU race condition:** The two-step GET+IF+SET acquire and GET+IF+DELETE release are NOT atomic. A competing execution could acquire the lock between the GET and SET steps. At expected v1 volume (one candidate per conversation, sequential n8n execution), this race window is negligible. Both limitations are tracked as T2-18 and T2-19.
 
 ---

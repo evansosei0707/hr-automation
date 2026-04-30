@@ -87,7 +87,7 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
     - **SETNX behaviour (dedupe, lock acquire):** Redis Get → If (value empty) → Redis Set with Expire. TOCTOU race window exists but is acceptable at v1 volume.
     - **CAS DEL behaviour (lock release):** Redis Get → If (value === expected token) → Redis Delete. Same TOCTOU caveat.
     
-    **Redis Get output:** result is in `$json.value`. Key not found → `$json.value` is `null`. Use `$json.value ?? ''` in If conditions.
+    **Redis Get output:** The Get operation stores the result in a property named by the node's `propertyName` parameter (default: `"propertyName"`, producing `$json.propertyName`). Always set `propertyName: "value"` explicitly on every Redis Get node so downstream If nodes can use `$json.value ?? ''`. Key not found → `$json.value` is `null`.
     
     **Redis Set parameters:** `key`, `value`, `expire` (boolean), `ttl` (seconds when expire is true).
     

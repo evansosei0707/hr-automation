@@ -276,7 +276,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').item.json.candidate_id ?? '') }}"
+        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').item.json.candidate_id ?? '') }}",
+        "propertyName": "value"
       },
       "id": "ac_e002-e002-e002-e002-000000000002",
       "name": "Get Lock on Error",
@@ -482,7 +483,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').item.json.waMessageId }}"
+        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').item.json.waMessageId }}",
+        "propertyName": "value"
       },
       "id": "ac00004-0004-ac04-0004-000000000004",
       "name": "Get Dedupe Key",
@@ -826,7 +828,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00013-0013-ac13-0013-000000000013",
       "name": "Get Conv Lock",
@@ -1211,7 +1214,7 @@
       "id": "ac00022-0022-ac22-0022-000000000022",
       "name": "Send Consent Refusal Ack",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         4760,
         480
@@ -1220,7 +1223,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00023-0023-ac23-0023-000000000023",
       "name": "Get Lock \u2014 Consent Refused",
@@ -1270,7 +1274,7 @@
       "id": "ac00024-0024-ac24-0024-000000000024",
       "name": "Send Consent Request Template",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         4520,
         680
@@ -1279,7 +1283,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00025-0025-ac25-0025-000000000025",
       "name": "Get Lock \u2014 Consent Pending",
@@ -1337,7 +1342,7 @@
       "id": "ac00026-0026-ac26-0026-000000000026",
       "name": "Handle DPA Before Consent",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         4520,
         880
@@ -1372,7 +1377,7 @@
       "id": "ac00027-0027-ac27-0027-000000000027",
       "name": "Send Already Opted-Out Reply",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         4040,
         580
@@ -1381,7 +1386,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00028-0028-ac28-0028-000000000028",
       "name": "Get Lock \u2014 Refused or Revoked",
@@ -1591,7 +1597,7 @@
       "id": "ac00033-0033-ac33-0033-000000000033",
       "name": "Send Please Retype \u2014 Local Language",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         5480,
         180
@@ -1600,7 +1606,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00034-0034-ac34-0034-000000000034",
       "name": "Get Lock \u2014 Local Language",
@@ -1822,7 +1829,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00041-0041-ac41-0041-000000000041",
       "name": "Get Lock \u2014 Second Strike Audio",
@@ -1868,7 +1876,7 @@
       "id": "ac00042-0042-ac42-0042-000000000042",
       "name": "Send Please Retype \u2014 Low Quality",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         6440,
         580
@@ -1900,7 +1908,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00044-0044-ac44-0044-000000000044",
       "name": "Get Lock \u2014 Low Quality Audio",
@@ -2069,7 +2078,7 @@
       "id": "ac00050-0050-ac50-0050-000000000050",
       "name": "Classify Intent \u2014 Claude Haiku",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         7160,
         280
@@ -2265,7 +2274,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00054-0054-ac54-0054-000000000054",
       "name": "Get Lock \u2014 Low Confidence",
@@ -2311,7 +2321,7 @@
       "id": "ac00055-0055-ac55-0055-000000000055",
       "name": "Send Distress Holding Reply",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         7880,
         380
@@ -2358,7 +2368,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00057-0057-ac57-0057-000000000057",
       "name": "Get Lock \u2014 Distress",
@@ -2416,7 +2427,7 @@
       "id": "ac00058-0058-ac58-0058-000000000058",
       "name": "Handle DPA Request",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         7880,
         480
@@ -2448,7 +2459,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00060-0060-ac60-0060-000000000060",
       "name": "Get Lock \u2014 Spam",
@@ -2491,7 +2503,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00062-0062-ac62-0062-000000000062",
       "name": "Get Lock \u2014 Workflow Dispatch",
@@ -2545,7 +2558,7 @@
       "id": "ac00063-0063-ac63-0063-000000000063",
       "name": "Generate Reply \u2014 Claude Sonnet",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         7880,
         780
@@ -2603,7 +2616,7 @@
       "id": "ac00065-0065-ac65-0065-000000000065",
       "name": "Send Reply \u2014 WA",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         8360,
         780
@@ -2612,7 +2625,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "ac00066-0066-ac66-0066-000000000066",
       "name": "Get Lock \u2014 Open Conversation",
@@ -2728,7 +2742,7 @@
       "id": "ac00069-0069-ac69-0069-000000000069",
       "name": "Send Holding Reply \u2014 Calibration",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         8840,
         680

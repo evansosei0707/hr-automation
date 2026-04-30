@@ -99,7 +99,7 @@
       "id": "dpa00003-0003-0003-0003-000000000003",
       "name": "Send Data Access Ack",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         680,
         200
@@ -134,7 +134,7 @@
       "id": "dpa00004-0004-0004-0004-000000000004",
       "name": "Send Deletion Ack",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         680,
         400
@@ -229,7 +229,8 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('DPA Handler Trigger').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('DPA Handler Trigger').item.json.candidateId }}",
+        "propertyName": "value"
       },
       "id": "dpa00007-0007-0007-0007-000000000007",
       "name": "Get Lock \u2014 DPA",

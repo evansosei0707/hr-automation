@@ -143,7 +143,7 @@ services:
   # n8n — all workflow orchestration
   # ─────────────────────────────────────────────
   n8n:
-    image: n8nio/n8n:1.85.0
+    image: n8nio/n8n:2.18.5
     container_name: hr-n8n
     restart: unless-stopped
     depends_on:

@@ -1,5 +1,5 @@
 {
-  "name": "Subflow \u2014 WA Send",
+  "name": "Subflow — WA Send",
   "nodes": [
     {
       "id": "was00001-0001-0001-0001-000000000001",
@@ -55,7 +55,7 @@
           "conditions": [
             {
               "id": "cond-window",
-              "leftValue": "={{ $json.seconds_since_last_inbound }}",
+              "leftValue": "={{ Number($json.seconds_since_last_inbound) }}",
               "rightValue": 86400,
               "operator": {
                 "type": "number",
@@ -87,13 +87,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $env.WHATSAPP_PHONE_NUMBER_ID + '/messages' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}"
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_ACCESS_TOKEN }}"
             },
             {
               "name": "Content-Type",
@@ -163,13 +163,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $env.WHATSAPP_PHONE_NUMBER_ID + '/messages' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}"
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_ACCESS_TOKEN }}"
             },
             {
               "name": "Content-Type",
@@ -192,7 +192,7 @@
     },
     {
       "id": "was00007-0007-0007-0007-000000000007",
-      "name": "Force Template \u2014 Window Expired",
+      "name": "Force Template — Window Expired",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -201,13 +201,13 @@
       ],
       "parameters": {
         "method": "POST",
-        "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $env.WHATSAPP_PHONE_NUMBER_ID + '/messages' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}"
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_ACCESS_TOKEN }}"
             },
             {
               "name": "Content-Type",
@@ -263,7 +263,7 @@
         ],
         [
           {
-            "node": "Force Template \u2014 Window Expired",
+            "node": "Force Template — Window Expired",
             "type": "main",
             "index": 0
           }

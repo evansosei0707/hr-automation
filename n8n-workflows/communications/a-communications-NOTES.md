@@ -61,9 +61,25 @@ If no row exists (error occurred before lock was acquired), the SELECT returns e
 
 ---
 
-## 3. Six lock-release exit paths
+## 3. Redis node constraint — n8n 1.85.0
 
-Every path that exits the workflow MUST release the lock via Lua CAS DEL. Confirmed six paths:
+**Surfaced 2026-04-30 during live test.** n8n 1.85.0's Redis node does NOT support `executeCommand`. Available operations: Delete, Get, Increment, Info, Keys, Pop, Publish, Push, Set. The Set operation supports Key, Value, Key Type, and Expire (TTL toggle) — but **no NX flag**.
+
+All Lua `EVAL` and `SET NX PX` patterns were replaced with two-step GET + IF + SET/DELETE sequences:
+
+| Pattern | Replacement |
+|---------|-------------|
+| `SET hra:dedupe:{id} 1 NX EX 86400` | Redis Get → If (value empty) → Redis Set (expire 86400s) |
+| `SET hra:conv:{id} {token} NX PX 180000` | Redis Get → If (value empty OR == execId) → Redis Set (expire 180s) |
+| Lua CAS DEL | Redis Get → If (value == token) → Redis Delete |
+
+**TOCTOU race condition:** The two-step GET+IF+SET acquire and GET+IF+DELETE release are NOT atomic. A competing execution could acquire the lock between the GET and SET steps. At expected v1 volume (one candidate per conversation, sequential n8n execution), this race window is negligible. Both limitations are tracked as T2-18 and T2-19.
+
+---
+
+## 4. Lock-release exit paths
+
+Every path that exits the workflow MUST release the lock. The original six paths grew to eleven as the workflow expanded. Each release lock is now a three-node chain: **Get Lock → Check Token → Delete Lock** (Delete only on token match).
 
 | # | Node | Path | Release node |
 |---|------|------|--------------|
@@ -84,7 +100,7 @@ The `lockValue` is the n8n execution ID (`$execution.id` on success paths; read 
 
 ---
 
-## 4. Subflows
+## 5. Subflows
 
 | Subflow | File | Purpose |
 |---------|------|---------|
@@ -96,7 +112,7 @@ All three subflows are referenced via `executeWorkflow` with `PLACEHOLDER_*_WORK
 
 ---
 
-## 5. T2-6 — Claude confidence thresholds (callout)
+## 6. T2-6 — Claude confidence thresholds (callout)
 
 The "Classify Intent" Claude call returns a JSON object with `intent`, `confidence`, and `candidateId`. Node ac00020 currently applies a hard rule: `confidence < 0.7` → unclassified path.
 
@@ -104,7 +120,7 @@ The "Classify Intent" Claude call returns a JSON object with `intent`, `confiden
 
 ---
 
-## 6. V003 tables consumed
+## 7. V003 tables consumed
 
 | Table | Used by | Purpose |
 |-------|---------|---------|
@@ -116,12 +132,14 @@ Migration: `database/migrations/V003__candidate_conversation_tables.sql` — app
 
 ---
 
-## 7. Known limitations and deferred items
+## 8. Known limitations and deferred items
 
 | ID | Description | Location |
 |----|-------------|----------|
 | T2-12 | True Lua CAS PEXPIRE heartbeat (15s cadence) | `plans/tier-2-followups.md` |
+| T2-18 | Replace two-step GET+SET conv-lock acquire with atomic SETNX (n8n executeCommand or upgrade) | `plans/tier-2-followups.md` |
+| T2-19 | Replace two-step GET+DELETE conv-lock release with atomic Lua CAS DEL (n8n executeCommand or upgrade) | `plans/tier-2-followups.md` |
 | T2-6 | Claude confidence threshold calibration | `plans/tier-2-followups.md` |
-| — | PLACEHOLDER_*_WORKFLOW_ID must be replaced post-import | This file §4 |
+| — | PLACEHOLDER_*_WORKFLOW_ID must be replaced post-import | This file §5 |
 | — | Human review mandatory for all outputs for first 2 weeks | CLAUDE.md invariant #6 |
 | — | Groq Whisper handles English + Pidgin only; local-language voice notes → human queue | CLAUDE.md invariant #5 |

@@ -1,5 +1,5 @@
 {
-  "name": "Workflow A — Communications",
+  "name": "Workflow A \u2014 Communications",
   "nodes": [
     {
       "parameters": {
@@ -12,26 +12,39 @@
       "name": "WhatsApp Webhook (GET)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [200, 100],
+      "position": [
+        200,
+        100
+      ],
       "webhookId": "a0-whatsapp-get"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
             {
               "id": "cond-mode",
               "leftValue": "={{ $json.query['hub.mode'] }}",
               "rightValue": "subscribe",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             },
             {
               "id": "cond-token",
               "leftValue": "={{ $json.query['hub.verify_token'] }}",
               "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ]
         },
@@ -41,44 +54,62 @@
       "name": "Verify Token Matches",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [440, 100]
+      "position": [
+        440,
+        100
+      ]
     },
     {
       "parameters": {
         "respondWith": "text",
         "responseBody": "={{ $('WhatsApp Webhook (GET)').item.json.query['hub.challenge'] }}",
-        "options": { "responseCode": 200 }
+        "options": {
+          "responseCode": 200
+        }
       },
       "id": "a0000003-0003-0003-0003-000000000003",
       "name": "Respond 200 Challenge",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [680, 0]
+      "position": [
+        680,
+        0
+      ]
     },
     {
       "parameters": {
         "respondWith": "text",
         "responseBody": "Forbidden",
-        "options": { "responseCode": 403 }
+        "options": {
+          "responseCode": 403
+        }
       },
       "id": "a0000004-0004-0004-0004-000000000004",
       "name": "Respond 403 Verify Failed",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [680, 200]
+      "position": [
+        680,
+        200
+      ]
     },
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "whatsapp",
         "responseMode": "responseNode",
-        "options": { "rawBody": true }
+        "options": {
+          "rawBody": true
+        }
       },
       "id": "a0000005-0005-0005-0005-000000000005",
       "name": "WhatsApp Webhook (POST)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [200, 480],
+      "position": [
+        200,
+        480
+      ],
       "webhookId": "a0-whatsapp-post"
     },
     {
@@ -90,19 +121,30 @@
       "name": "Validate HMAC",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 480]
+      "position": [
+        440,
+        480
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
             {
               "id": "cond-valid",
               "leftValue": "={{ $json.valid }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ]
         },
@@ -112,7 +154,10 @@
       "name": "HMAC Valid",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 480]
+      "position": [
+        680,
+        480
+      ]
     },
     {
       "parameters": {
@@ -126,7 +171,10 @@
       "name": "Log Inbound Event",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [920, 380],
+      "position": [
+        920,
+        380
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -138,13 +186,18 @@
       "parameters": {
         "respondWith": "text",
         "responseBody": "EVENT_RECEIVED",
-        "options": { "responseCode": 200 }
+        "options": {
+          "responseCode": 200
+        }
       },
       "id": "a0000009-0009-0009-0009-000000000009",
       "name": "Respond 200 Event Received",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1160, 280]
+      "position": [
+        1160,
+        280
+      ]
     },
     {
       "parameters": {
@@ -158,7 +211,10 @@
       "name": "Log POST Validation Failure",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [920, 580],
+      "position": [
+        920,
+        580
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -170,13 +226,18 @@
       "parameters": {
         "respondWith": "text",
         "responseBody": "Forbidden",
-        "options": { "responseCode": 403 }
+        "options": {
+          "responseCode": 403
+        }
       },
       "id": "a0000011-0011-0011-0011-000000000011",
       "name": "Respond 403 HMAC Failed",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1160, 580]
+      "position": [
+        1160,
+        580
+      ]
     },
     {
       "parameters": {},
@@ -184,7 +245,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [200, 900]
+      "position": [
+        200,
+        900
+      ]
     },
     {
       "parameters": {
@@ -198,7 +262,10 @@
       "name": "Query Lock Value from Event Log",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [440, 900],
+      "position": [
+        440,
+        900
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -208,14 +275,17 @@
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ ($json.candidate_id && $json.lock_value) ? (\"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $json.candidate_id + ' ' + $json.lock_value) : 'DEBUG noopkey' }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').item.json.candidate_id ?? '') }}"
       },
       "id": "ac_e002-e002-e002-e002-000000000002",
-      "name": "Release Lock on Error",
+      "name": "Get Lock on Error",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [680, 900],
+      "position": [
+        680,
+        900
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -235,7 +305,10 @@
       "name": "Write Workflow Error",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [920, 900],
+      "position": [
+        920,
+        900
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -246,14 +319,21 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
             {
               "id": "cond-retry",
               "leftValue": "={{ ($json.attempt_count || 1) }}",
               "rightValue": 3,
-              "operator": { "type": "number", "operation": "lt" }
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
             }
           ]
         },
@@ -263,7 +343,10 @@
       "name": "Check Retry Attempt",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1160, 900]
+      "position": [
+        1160,
+        900
+      ]
     },
     {
       "parameters": {
@@ -277,7 +360,10 @@
       "name": "Log Retry Hint",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1400, 800],
+      "position": [
+        1400,
+        800
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -292,20 +378,36 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $('Query Lock Value from Event Log').item.json.candidate_id || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac_e005-e005-e005-e005-000000000005",
       "name": "Create Workflow Error Review Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1400, 1000]
+      "position": [
+        1400,
+        1000
+      ]
     },
     {
       "parameters": {
@@ -316,19 +418,30 @@
       "name": "Normalise Phone Number",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1160, 480]
+      "position": [
+        1160,
+        480
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
             {
               "id": "cond-valid-phone",
               "leftValue": "={{ $json.valid }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ]
         },
@@ -338,7 +451,10 @@
       "name": "Phone Valid",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1400, 480]
+      "position": [
+        1400,
+        480
+      ]
     },
     {
       "parameters": {
@@ -352,7 +468,10 @@
       "name": "Log Invalid Phone",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [1640, 600],
+      "position": [
+        1640,
+        600
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -362,14 +481,17 @@
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ 'SET hra:dedupe:' + $json.waMessageId + ' 1 NX EX 86400' }}"
+        "operation": "get",
+        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').item.json.waMessageId }}"
       },
       "id": "ac00004-0004-ac04-0004-000000000004",
-      "name": "Dedupe Check",
+      "name": "Get Dedupe Key",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [1640, 480],
+      "position": [
+        1640,
+        480
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -380,14 +502,21 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
             {
               "id": "cond-new-message",
-              "leftValue": "={{ $json }}",
-              "rightValue": "OK",
-              "operator": { "type": "string", "operation": "equals" }
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ]
         },
@@ -397,7 +526,10 @@
       "name": "Is New Message",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1880, 480]
+      "position": [
+        1880,
+        480
+      ]
     },
     {
       "parameters": {
@@ -411,7 +543,10 @@
       "name": "Log Dedupe Hit",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [2120, 600],
+      "position": [
+        2120,
+        600
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -426,20 +561,36 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'query FindCandidateByPhone($phone: String!) { candidates(filter: { whatsappNumberE164: { eq: $phone } }) { edges { node { id firstName consentStatus } } } }', variables: { phone: $('Normalise Phone Number').item.json.phoneE164 } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00007-0007-ac07-0007-000000000007",
       "name": "Resolve Candidate by Phone",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2120, 480]
+      "position": [
+        2120,
+        480
+      ]
     },
     {
       "parameters": {
@@ -450,14 +601,21 @@
             {
               "outputKey": "zero",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
                 "combinator": "and",
                 "conditions": [
                   {
                     "id": "cond-zero",
                     "leftValue": "={{ $json.data && $json.data.candidates && $json.data.candidates.edges ? $json.data.candidates.edges.length : 0 }}",
                     "rightValue": 0,
-                    "operator": { "type": "number", "operation": "equals" }
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
                   }
                 ]
               },
@@ -466,14 +624,21 @@
             {
               "outputKey": "one",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
                 "combinator": "and",
                 "conditions": [
                   {
                     "id": "cond-one",
                     "leftValue": "={{ $json.data && $json.data.candidates && $json.data.candidates.edges ? $json.data.candidates.edges.length : 0 }}",
                     "rightValue": 1,
-                    "operator": { "type": "number", "operation": "equals" }
+                    "operator": {
+                      "type": "number",
+                      "operation": "equals"
+                    }
                   }
                 ]
               },
@@ -487,7 +652,10 @@
       "name": "Count Candidate Results",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [2360, 480]
+      "position": [
+        2360,
+        480
+      ]
     },
     {
       "parameters": {
@@ -496,20 +664,36 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation CreateCandidate($data: CandidateCreateInput!) { createOneCandidate(data: $data) { id firstName consentStatus } }', variables: { data: { whatsappNumberE164: $('Normalise Phone Number').item.json.phoneE164, consentStatus: 'PENDING' } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00009-0009-ac09-0009-000000000009",
       "name": "Create Candidate in Twenty",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2600, 380]
+      "position": [
+        2600,
+        380
+      ]
     },
     {
       "parameters": {
@@ -518,20 +702,36 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation FlagDup($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $json.data.candidates.edges[0].node.id } } } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00010-0010-ac10-0010-000000000010",
       "name": "Flag Duplicate Candidate",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2600, 580]
+      "position": [
+        2600,
+        580
+      ]
     },
     {
       "parameters": {
@@ -542,10 +742,13 @@
         }
       },
       "id": "ac00011-0011-ac11-0011-000000000011",
-      "name": "Log Stop — Duplicate Candidate",
+      "name": "Log Stop \u2014 Duplicate Candidate",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [2840, 580],
+      "position": [
+        2840,
+        580
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -559,14 +762,54 @@
         "duplicateItem": false,
         "assignments": {
           "assignments": [
-            { "id": "ctx-cid", "name": "candidateId", "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.id : $('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.id }}", "type": "string" },
-            { "id": "ctx-fn", "name": "firstName", "value": "={{ $json.data && $json.data.createOneCandidate ? ($json.data.createOneCandidate.firstName || '') : ($('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.firstName || '') }}", "type": "string" },
-            { "id": "ctx-cs", "name": "consentStatus", "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.consentStatus : $('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.consentStatus }}", "type": "string" },
-            { "id": "ctx-phone", "name": "phoneE164", "value": "={{ $('Normalise Phone Number').item.json.phoneE164 }}", "type": "string" },
-            { "id": "ctx-waid", "name": "waMessageId", "value": "={{ $('Normalise Phone Number').item.json.waMessageId }}", "type": "string" },
-            { "id": "ctx-type", "name": "messageType", "value": "={{ $('Normalise Phone Number').item.json.messageType }}", "type": "string" },
-            { "id": "ctx-body", "name": "messageBody", "value": "={{ $('Normalise Phone Number').item.json.messageBody }}", "type": "string" },
-            { "id": "ctx-media", "name": "mediaUrl", "value": "={{ $('Normalise Phone Number').item.json.mediaUrl }}", "type": "string" }
+            {
+              "id": "ctx-cid",
+              "name": "candidateId",
+              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.id : $('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-fn",
+              "name": "firstName",
+              "value": "={{ $json.data && $json.data.createOneCandidate ? ($json.data.createOneCandidate.firstName || '') : ($('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.firstName || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-cs",
+              "name": "consentStatus",
+              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.consentStatus : $('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.consentStatus }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-phone",
+              "name": "phoneE164",
+              "value": "={{ $('Normalise Phone Number').item.json.phoneE164 }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-waid",
+              "name": "waMessageId",
+              "value": "={{ $('Normalise Phone Number').item.json.waMessageId }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-type",
+              "name": "messageType",
+              "value": "={{ $('Normalise Phone Number').item.json.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-body",
+              "name": "messageBody",
+              "value": "={{ $('Normalise Phone Number').item.json.messageBody }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-media",
+              "name": "mediaUrl",
+              "value": "={{ $('Normalise Phone Number').item.json.mediaUrl }}",
+              "type": "string"
+            }
           ]
         },
         "options": {}
@@ -575,18 +818,24 @@
       "name": "Set Candidate Context",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
-      "position": [2840, 480]
+      "position": [
+        2840,
+        480
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ 'SET hra:conv:' + $json.candidateId + ' ' + $execution.id + ' NX PX 180000' }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $json.candidateId }}"
       },
       "id": "ac00013-0013-ac13-0013-000000000013",
-      "name": "Acquire Conv Lock",
+      "name": "Get Conv Lock",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [3080, 480],
+      "position": [
+        3080,
+        480
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -597,14 +846,30 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
-          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "or",
           "conditions": [
             {
-              "id": "cond-lock-ok",
-              "leftValue": "={{ $json }}",
-              "rightValue": "OK",
-              "operator": { "type": "string", "operation": "equals" }
+              "id": "cond-free",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-self",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ]
         },
@@ -614,7 +879,10 @@
       "name": "Lock Acquired",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3320, 480]
+      "position": [
+        3320,
+        480
+      ]
     },
     {
       "parameters": {
@@ -628,7 +896,10 @@
       "name": "Log Lock Contention",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [3560, 600],
+      "position": [
+        3560,
+        600
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -648,7 +919,10 @@
       "name": "Write Lock Acquired Event",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [3560, 480],
+      "position": [
+        3560,
+        480
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -665,20 +939,54 @@
             {
               "outputKey": "pending",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
                 "combinator": "and",
-                "conditions": [{ "id": "c-p", "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}", "rightValue": "PENDING", "operator": { "type": "string", "operation": "equals" } }]
+                "conditions": [
+                  {
+                    "id": "c-p",
+                    "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}",
+                    "rightValue": "PENDING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
               },
               "renameOutput": true
             },
             {
               "outputKey": "refused",
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
                 "combinator": "or",
                 "conditions": [
-                  { "id": "c-r", "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}", "rightValue": "REFUSED", "operator": { "type": "string", "operation": "equals" } },
-                  { "id": "c-rv", "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}", "rightValue": "REVOKED", "operator": { "type": "string", "operation": "equals" } }
+                  {
+                    "id": "c-r",
+                    "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}",
+                    "rightValue": "REFUSED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "c-rv",
+                    "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}",
+                    "rightValue": "REVOKED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
                 ]
               },
               "renameOutput": true
@@ -691,7 +999,10 @@
       "name": "Check Consent Status",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [3800, 480]
+      "position": [
+        3800,
+        480
+      ]
     },
     {
       "parameters": {
@@ -702,7 +1013,10 @@
       "name": "Parse Pending Consent Reply",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4040, 380]
+      "position": [
+        4040,
+        380
+      ]
     },
     {
       "parameters": {
@@ -710,9 +1024,75 @@
         "output": "single",
         "rules": {
           "rules": [
-            { "outputKey": "yes", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-yes", "leftValue": "={{ $json.consentIntent }}", "rightValue": "YES", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true },
-            { "outputKey": "no", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-no", "leftValue": "={{ $json.consentIntent }}", "rightValue": "NO", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true },
-            { "outputKey": "dpa", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-dpa", "leftValue": "={{ $json.consentIntent }}", "rightValue": "DPA", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true }
+            {
+              "outputKey": "yes",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-yes",
+                    "leftValue": "={{ $json.consentIntent }}",
+                    "rightValue": "YES",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "no",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-no",
+                    "leftValue": "={{ $json.consentIntent }}",
+                    "rightValue": "NO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "dpa",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-dpa",
+                    "leftValue": "={{ $json.consentIntent }}",
+                    "rightValue": "DPA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
           ]
         },
         "fallbackOutput": "extra"
@@ -721,52 +1101,110 @@
       "name": "Route Consent Reply",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [4280, 380]
+      "position": [
+        4280,
+        380
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation GrantConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').item.json.candidateId } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00020-0020-ac20-0020-000000000020",
       "name": "Grant Consent in Twenty",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4520, 280]
+      "position": [
+        4520,
+        280
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation RefuseConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').item.json.candidateId } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00021-0021-ac21-0021-000000000021",
       "name": "Refuse Consent in Twenty",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4520, 480]
+      "position": [
+        4520,
+        480
+      ]
     },
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "body", "stringValue": "={{ 'No problem at all, ' + ($('Set Candidate Context').item.json.firstName || 'there') + \". We won't contact you again via WhatsApp. If you change your mind later, just send us a message and we'll start fresh.\" }}" },
-            { "name": "conversationId", "stringValue": "" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "body",
+              "stringValue": "={{ 'No problem at all, ' + ($('Set Candidate Context').item.json.firstName || 'there') + \". We won't contact you again via WhatsApp. If you change your mind later, just send us a message and we'll start fresh.\" }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": ""
+            }
           ]
         }
       },
@@ -774,18 +1212,24 @@
       "name": "Send Consent Refusal Ack",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [4760, 480]
+      "position": [
+        4760,
+        480
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00023-0023-ac23-0023-000000000023",
-      "name": "Release Lock — Consent Refused",
+      "name": "Get Lock \u2014 Consent Refused",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [5000, 480],
+      "position": [
+        5000,
+        480
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -796,14 +1240,30 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "templateName", "stringValue": "consent_request" },
-            { "name": "templateVars", "arrayValue": "={{ [$('Set Candidate Context').item.json.firstName || 'there'] }}" },
-            { "name": "conversationId", "stringValue": "" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "templateName",
+              "stringValue": "consent_request"
+            },
+            {
+              "name": "templateVars",
+              "arrayValue": "={{ [$('Set Candidate Context').item.json.firstName || 'there'] }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": ""
+            }
           ]
         }
       },
@@ -811,18 +1271,24 @@
       "name": "Send Consent Request Template",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [4520, 680]
+      "position": [
+        4520,
+        680
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00025-0025-ac25-0025-000000000025",
-      "name": "Release Lock — Consent Pending",
+      "name": "Get Lock \u2014 Consent Pending",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [4760, 680],
+      "position": [
+        4760,
+        680
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -833,16 +1299,38 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_DPA_HANDLER_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_DPA_HANDLER_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "candidateId", "stringValue": "={{ $('Set Candidate Context').item.json.candidateId }}" },
-            { "name": "phoneE164", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "firstName", "stringValue": "={{ $('Set Candidate Context').item.json.firstName }}" },
-            { "name": "intent", "stringValue": "={{ $json.consentIntent }}" },
-            { "name": "lockValue", "stringValue": "={{ $execution.id }}" },
-            { "name": "conversationId", "stringValue": "" }
+            {
+              "name": "candidateId",
+              "stringValue": "={{ $('Set Candidate Context').item.json.candidateId }}"
+            },
+            {
+              "name": "phoneE164",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "firstName",
+              "stringValue": "={{ $('Set Candidate Context').item.json.firstName }}"
+            },
+            {
+              "name": "intent",
+              "stringValue": "={{ $json.consentIntent }}"
+            },
+            {
+              "name": "lockValue",
+              "stringValue": "={{ $execution.id }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": ""
+            }
           ]
         }
       },
@@ -850,18 +1338,34 @@
       "name": "Handle DPA Before Consent",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [4520, 880]
+      "position": [
+        4520,
+        880
+      ]
     },
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "body", "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + ', you previously asked not to be contacted via WhatsApp. We respect that. If you change your mind, you can send us a message to get started again.' }}" },
-            { "name": "conversationId", "stringValue": "" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "body",
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + ', you previously asked not to be contacted via WhatsApp. We respect that. If you change your mind, you can send us a message to get started again.' }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": ""
+            }
           ]
         }
       },
@@ -869,18 +1373,24 @@
       "name": "Send Already Opted-Out Reply",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [4040, 580]
+      "position": [
+        4040,
+        580
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00028-0028-ac28-0028-000000000028",
-      "name": "Release Lock — Refused or Revoked",
+      "name": "Get Lock \u2014 Refused or Revoked",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [4280, 580],
+      "position": [
+        4280,
+        580
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -891,10 +1401,22 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
-            { "id": "cond-audio", "leftValue": "={{ $('Set Candidate Context').item.json.messageType }}", "rightValue": "audio", "operator": { "type": "string", "operation": "equals" } }
+            {
+              "id": "cond-audio",
+              "leftValue": "={{ $('Set Candidate Context').item.json.messageType }}",
+              "rightValue": "audio",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
           ]
         },
         "options": {}
@@ -903,40 +1425,92 @@
       "name": "Route by Message Type",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [4520, 380]
+      "position": [
+        4520,
+        380
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://api.groq.com/openai/v1/audio/transcriptions",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.GROQ_API_KEY }}" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.GROQ_API_KEY }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "multipart-form-data",
         "bodyParameters": {
           "parameters": [
-            { "name": "model", "value": "whisper-large-v3-turbo" },
-            { "name": "url", "value": "={{ $('Set Candidate Context').item.json.mediaUrl }}" },
-            { "name": "response_format", "value": "verbose_json" },
-            { "name": "timestamp_granularities[]", "value": "segment" }
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "url",
+              "value": "={{ $('Set Candidate Context').item.json.mediaUrl }}"
+            },
+            {
+              "name": "response_format",
+              "value": "verbose_json"
+            },
+            {
+              "name": "timestamp_granularities[]",
+              "value": "segment"
+            }
           ]
         },
-        "options": { "timeout": 30000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 2000 } }
+        "options": {
+          "timeout": 30000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
       },
       "id": "ac00030-0030-ac30-0030-000000000030",
-      "name": "Language Detection — Short Clip",
+      "name": "Language Detection \u2014 Short Clip",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4760, 280]
+      "position": [
+        4760,
+        280
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "or",
           "conditions": [
-            { "id": "c-en", "leftValue": "={{ $json.language }}", "rightValue": "en", "operator": { "type": "string", "operation": "equals" } },
-            { "id": "c-null", "leftValue": "={{ $json.language ?? '' }}", "rightValue": "", "operator": { "type": "string", "operation": "equals" } }
+            {
+              "id": "c-en",
+              "leftValue": "={{ $json.language }}",
+              "rightValue": "en",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c-null",
+              "leftValue": "={{ $json.language ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
           ]
         },
         "options": {}
@@ -945,54 +1519,97 @@
       "name": "Check Language Code",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [5000, 280]
+      "position": [
+        5000,
+        280
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00032-0032-ac32-0032-000000000032",
       "name": "Route Local Language to Review",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [5240, 180]
+      "position": [
+        5240,
+        180
+      ]
     },
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "body", "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}" },
-            { "name": "conversationId", "stringValue": "" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "body",
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": ""
+            }
           ]
         }
       },
       "id": "ac00033-0033-ac33-0033-000000000033",
-      "name": "Send Please Retype — Local Language",
+      "name": "Send Please Retype \u2014 Local Language",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [5480, 180]
+      "position": [
+        5480,
+        180
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00034-0034-ac34-0034-000000000034",
-      "name": "Release Lock — Local Language",
+      "name": "Get Lock \u2014 Local Language",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [5720, 180],
+      "position": [
+        5720,
+        180
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1005,24 +1622,53 @@
         "method": "POST",
         "url": "https://api.groq.com/openai/v1/audio/transcriptions",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.GROQ_API_KEY }}" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.GROQ_API_KEY }}"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "multipart-form-data",
         "bodyParameters": {
           "parameters": [
-            { "name": "model", "value": "whisper-large-v3-turbo" },
-            { "name": "url", "value": "={{ $('Set Candidate Context').item.json.mediaUrl }}" },
-            { "name": "response_format", "value": "verbose_json" },
-            { "name": "timestamp_granularities[]", "value": "segment" }
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "url",
+              "value": "={{ $('Set Candidate Context').item.json.mediaUrl }}"
+            },
+            {
+              "name": "response_format",
+              "value": "verbose_json"
+            },
+            {
+              "name": "timestamp_granularities[]",
+              "value": "segment"
+            }
           ]
         },
-        "options": { "timeout": 60000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 3000 } }
+        "options": {
+          "timeout": 60000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 3000
+          }
+        }
       },
       "id": "ac00035-0035-ac35-0035-000000000035",
-      "name": "Full Transcription — Groq Whisper",
+      "name": "Full Transcription \u2014 Groq Whisper",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [5240, 380]
+      "position": [
+        5240,
+        380
+      ]
     },
     {
       "parameters": {
@@ -1033,7 +1679,10 @@
       "name": "Evaluate Transcript Confidence",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [5480, 380]
+      "position": [
+        5480,
+        380
+      ]
     },
     {
       "parameters": {
@@ -1041,7 +1690,29 @@
         "output": "single",
         "rules": {
           "rules": [
-            { "outputKey": "high", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-hi", "leftValue": "={{ $json.transcriptQuality }}", "rightValue": "high", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true }
+            {
+              "outputKey": "high",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-hi",
+                    "leftValue": "={{ $json.transcriptQuality }}",
+                    "rightValue": "high",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
           ]
         },
         "fallbackOutput": "extra"
@@ -1050,7 +1721,10 @@
       "name": "Route by Transcript Quality",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [5720, 380]
+      "position": [
+        5720,
+        380
+      ]
     },
     {
       "parameters": {
@@ -1064,7 +1738,10 @@
       "name": "Check Voice Note Retry State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [5960, 480],
+      "position": [
+        5960,
+        480
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1075,10 +1752,22 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
-            { "id": "cond-retry", "leftValue": "={{ $json.voice_note_retry_at }}", "rightValue": "", "operator": { "type": "string", "operation": "notEmpty" } }
+            {
+              "id": "cond-retry",
+              "leftValue": "={{ $json.voice_note_retry_at }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
           ]
         },
         "options": {}
@@ -1087,35 +1776,62 @@
       "name": "Is Second Strike",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [6200, 480]
+      "position": [
+        6200,
+        480
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00040-0040-ac40-0040-000000000040",
-      "name": "Create Manual Review Task — Audio",
+      "name": "Create Manual Review Task \u2014 Audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [6440, 380]
+      "position": [
+        6440,
+        380
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00041-0041-ac41-0041-000000000041",
-      "name": "Release Lock — Second Strike Audio",
+      "name": "Get Lock \u2014 Second Strike Audio",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [6680, 380],
+      "position": [
+        6680,
+        380
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1126,21 +1842,37 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "body", "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}" },
-            { "name": "conversationId", "stringValue": "" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "body",
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": ""
+            }
           ]
         }
       },
       "id": "ac00042-0042-ac42-0042-000000000042",
-      "name": "Send Please Retype — Low Quality",
+      "name": "Send Please Retype \u2014 Low Quality",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [6440, 580]
+      "position": [
+        6440,
+        580
+      ]
     },
     {
       "parameters": {
@@ -1154,7 +1886,10 @@
       "name": "Set Voice Note Retry Flag",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [6680, 580],
+      "position": [
+        6680,
+        580
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1164,14 +1899,17 @@
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00044-0044-ac44-0044-000000000044",
-      "name": "Release Lock — Low Quality Audio",
+      "name": "Get Lock \u2014 Low Quality Audio",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [6920, 580],
+      "position": [
+        6920,
+        580
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1191,7 +1929,10 @@
       "name": "Clear Voice Note Retry Flag",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [5960, 280],
+      "position": [
+        5960,
+        280
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1211,7 +1952,10 @@
       "name": "Upsert Conversation Record",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [6200, 280],
+      "position": [
+        6200,
+        280
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1231,7 +1975,10 @@
       "name": "Store Inbound Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [6440, 280],
+      "position": [
+        6440,
+        280
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1251,7 +1998,10 @@
       "name": "Fetch Last 20 Messages",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [6680, 280],
+      "position": [
+        6680,
+        280
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1271,7 +2021,10 @@
       "name": "Fetch Conversation Summary",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [6920, 280],
+      "position": [
+        6920,
+        280
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1282,23 +2035,45 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_CLAUDE_CALL_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_CLAUDE_CALL_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "model", "stringValue": "claude-haiku-4-5" },
-            { "name": "workflowName", "stringValue": "workflow_a_communications" },
-            { "name": "maxTokens", "numberValue": 200 },
-            { "name": "systemPrompt", "stringValue": "Classify the candidate message intent into exactly one of: workflow_reply, dpa_request, open_conversation, distress, spam. Return JSON only: {\"intent\": \"...\", \"confidence\": 0.0}. workflow_reply = responding to a specific workflow prompt (interview time, screening answer). dpa_request = asking about their data, deletion, access (words: DATA, DELETE, FORGET, ACCESS). open_conversation = general questions or conversation. distress = expressing suicidal ideation, crisis, severe distress. spam = commercial content, nonsense, links only." },
-            { "name": "messages", "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-5).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: $('Set Candidate Context').item.json.messageBody}]) }}" }
+            {
+              "name": "model",
+              "stringValue": "claude-haiku-4-5"
+            },
+            {
+              "name": "workflowName",
+              "stringValue": "workflow_a_communications"
+            },
+            {
+              "name": "maxTokens",
+              "numberValue": 200
+            },
+            {
+              "name": "systemPrompt",
+              "stringValue": "Classify the candidate message intent into exactly one of: workflow_reply, dpa_request, open_conversation, distress, spam. Return JSON only: {\"intent\": \"...\", \"confidence\": 0.0}. workflow_reply = responding to a specific workflow prompt (interview time, screening answer). dpa_request = asking about their data, deletion, access (words: DATA, DELETE, FORGET, ACCESS). open_conversation = general questions or conversation. distress = expressing suicidal ideation, crisis, severe distress. spam = commercial content, nonsense, links only."
+            },
+            {
+              "name": "messages",
+              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-5).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: $('Set Candidate Context').item.json.messageBody}]) }}"
+            }
           ]
         }
       },
       "id": "ac00050-0050-ac50-0050-000000000050",
-      "name": "Classify Intent — Claude Haiku",
+      "name": "Classify Intent \u2014 Claude Haiku",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [7160, 280]
+      "position": [
+        7160,
+        280
+      ]
     },
     {
       "parameters": {
@@ -1309,7 +2084,10 @@
       "name": "Parse Intent and Confidence",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [7400, 280]
+      "position": [
+        7400,
+        280
+      ]
     },
     {
       "parameters": {
@@ -1317,11 +2095,122 @@
         "output": "single",
         "rules": {
           "rules": [
-            { "outputKey": "low_confidence", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-lc", "leftValue": "={{ $json.riskyLowConfidence }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }] }, "renameOutput": true },
-            { "outputKey": "distress", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-d", "leftValue": "={{ $json.intent }}", "rightValue": "distress", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true },
-            { "outputKey": "dpa", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-dpa", "leftValue": "={{ $json.intent }}", "rightValue": "dpa_request", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true },
-            { "outputKey": "workflow_reply", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-wr", "leftValue": "={{ $json.intent }}", "rightValue": "workflow_reply", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true },
-            { "outputKey": "spam", "conditions": { "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" }, "combinator": "and", "conditions": [{ "id": "c-sp", "leftValue": "={{ $json.intent }}", "rightValue": "spam", "operator": { "type": "string", "operation": "equals" } }] }, "renameOutput": true }
+            {
+              "outputKey": "low_confidence",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-lc",
+                    "leftValue": "={{ $json.riskyLowConfidence }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "distress",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-d",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "distress",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "dpa",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-dpa",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "dpa_request",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "workflow_reply",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-wr",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "workflow_reply",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "spam",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "c-sp",
+                    "leftValue": "={{ $json.intent }}",
+                    "rightValue": "spam",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
           ]
         },
         "fallbackOutput": "extra"
@@ -1330,35 +2219,62 @@
       "name": "Route by Intent",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [7640, 280]
+      "position": [
+        7640,
+        280
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00053-0053-ac53-0053-000000000053",
       "name": "Create Low-Confidence Review Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [7880, 180]
+      "position": [
+        7880,
+        180
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00054-0054-ac54-0054-000000000054",
-      "name": "Release Lock — Low Confidence",
+      "name": "Get Lock \u2014 Low Confidence",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [8120, 180],
+      "position": [
+        8120,
+        180
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1369,13 +2285,26 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "body", "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + ', thank you for reaching out. We want to make sure you are okay. One of our team will be in touch with you shortly.' }}" },
-            { "name": "conversationId", "stringValue": "={{ $('Upsert Conversation Record').item.json.id ?? '' }}" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "body",
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + ', thank you for reaching out. We want to make sure you are okay. One of our team will be in touch with you shortly.' }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": "={{ $('Upsert Conversation Record').item.json.id ?? '' }}"
+            }
           ]
         }
       },
@@ -1383,35 +2312,62 @@
       "name": "Send Distress Holding Reply",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [7880, 380]
+      "position": [
+        7880,
+        380
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
         "sendHeaders": true,
-        "headerParameters": { "parameters": [{ "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" }, { "name": "Content-Type", "value": "application/json" }] },
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "string",
         "body": "={{ JSON.stringify({ query: 'mutation Distress($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00056-0056-ac56-0056-000000000056",
       "name": "Create Distress Review Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [8120, 380]
+      "position": [
+        8120,
+        380
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00057-0057-ac57-0057-000000000057",
-      "name": "Release Lock — Distress",
+      "name": "Get Lock \u2014 Distress",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [8360, 380],
+      "position": [
+        8360,
+        380
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1422,16 +2378,38 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_DPA_HANDLER_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_DPA_HANDLER_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "candidateId", "stringValue": "={{ $('Set Candidate Context').item.json.candidateId }}" },
-            { "name": "phoneE164", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "firstName", "stringValue": "={{ $('Set Candidate Context').item.json.firstName }}" },
-            { "name": "intent", "stringValue": "DATA" },
-            { "name": "lockValue", "stringValue": "={{ $execution.id }}" },
-            { "name": "conversationId", "stringValue": "={{ $('Upsert Conversation Record').item.json.id ?? '' }}" }
+            {
+              "name": "candidateId",
+              "stringValue": "={{ $('Set Candidate Context').item.json.candidateId }}"
+            },
+            {
+              "name": "phoneE164",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "firstName",
+              "stringValue": "={{ $('Set Candidate Context').item.json.firstName }}"
+            },
+            {
+              "name": "intent",
+              "stringValue": "DATA"
+            },
+            {
+              "name": "lockValue",
+              "stringValue": "={{ $execution.id }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": "={{ $('Upsert Conversation Record').item.json.id ?? '' }}"
+            }
           ]
         }
       },
@@ -1439,7 +2417,10 @@
       "name": "Handle DPA Request",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [7880, 480]
+      "position": [
+        7880,
+        480
+      ]
     },
     {
       "parameters": {
@@ -1453,7 +2434,10 @@
       "name": "Log Spam Intent",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [7880, 580],
+      "position": [
+        7880,
+        580
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1463,14 +2447,17 @@
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00060-0060-ac60-0060-000000000060",
-      "name": "Release Lock — Spam",
+      "name": "Get Lock \u2014 Spam",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [8120, 580],
+      "position": [
+        8120,
+        580
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1490,7 +2477,10 @@
       "name": "Log Workflow Dispatch",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [7880, 680],
+      "position": [
+        7880,
+        680
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1500,14 +2490,17 @@
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00062-0062-ac62-0062-000000000062",
-      "name": "Release Lock — Workflow Dispatch",
+      "name": "Get Lock \u2014 Workflow Dispatch",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [8120, 680],
+      "position": [
+        8120,
+        680
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1518,23 +2511,45 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_CLAUDE_CALL_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_CLAUDE_CALL_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "model", "stringValue": "claude-sonnet-4-6" },
-            { "name": "workflowName", "stringValue": "workflow_a_communications" },
-            { "name": "maxTokens", "numberValue": 500 },
-            { "name": "systemPrompt", "stringValue": "You are a warm, professional assistant for a Ghanaian HR and recruiting firm in Accra. Keep replies to 1-3 sentences for WhatsApp. Use plain Ghanaian English. Never promise a placement, salary, interview outcome, or timeline. If you are unsure, say you will check with the team. Conversation history follows, then the candidate's new message. Previous summary: <<SUMMARY_BEGIN>>{{ $('Fetch Conversation Summary').item.json.summary }}<<SUMMARY_END>>" },
-            { "name": "messages", "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-10).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: '<<CANDIDATE_MESSAGE_BEGIN>>' + $('Set Candidate Context').item.json.messageBody + '<<CANDIDATE_MESSAGE_END>>'}]) }}" }
+            {
+              "name": "model",
+              "stringValue": "claude-sonnet-4-6"
+            },
+            {
+              "name": "workflowName",
+              "stringValue": "workflow_a_communications"
+            },
+            {
+              "name": "maxTokens",
+              "numberValue": 500
+            },
+            {
+              "name": "systemPrompt",
+              "stringValue": "You are a warm, professional assistant for a Ghanaian HR and recruiting firm in Accra. Keep replies to 1-3 sentences for WhatsApp. Use plain Ghanaian English. Never promise a placement, salary, interview outcome, or timeline. If you are unsure, say you will check with the team. Conversation history follows, then the candidate's new message. Previous summary: <<SUMMARY_BEGIN>>{{ $('Fetch Conversation Summary').item.json.summary }}<<SUMMARY_END>>"
+            },
+            {
+              "name": "messages",
+              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-10).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: '<<CANDIDATE_MESSAGE_BEGIN>>' + $('Set Candidate Context').item.json.messageBody + '<<CANDIDATE_MESSAGE_END>>'}]) }}"
+            }
           ]
         }
       },
       "id": "ac00063-0063-ac63-0063-000000000063",
-      "name": "Generate Reply — Claude Sonnet",
+      "name": "Generate Reply \u2014 Claude Sonnet",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [7880, 780]
+      "position": [
+        7880,
+        780
+      ]
     },
     {
       "parameters": {
@@ -1548,7 +2563,10 @@
       "name": "Store Outbound Message",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [8120, 780],
+      "position": [
+        8120,
+        780
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -1559,32 +2577,51 @@
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "body", "stringValue": "={{ $('Generate Reply — Claude Sonnet').item.json.content }}" },
-            { "name": "conversationId", "stringValue": "={{ $('Upsert Conversation Record').item.json.id }}" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "body",
+              "stringValue": "={{ $('Generate Reply \u2014 Claude Sonnet').item.json.content }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": "={{ $('Upsert Conversation Record').item.json.id }}"
+            }
           ]
         }
       },
       "id": "ac00065-0065-ac65-0065-000000000065",
-      "name": "Send Reply — WA",
+      "name": "Send Reply \u2014 WA",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [8360, 780]
+      "position": [
+        8360,
+        780
+      ]
     },
     {
       "parameters": {
-        "operation": "executeCommand",
-        "command": "={{ \"EVAL \\\"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\\\" 1 hra:conv:\" + $('Set Candidate Context').item.json.candidateId + ' ' + $execution.id }}"
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
       },
       "id": "ac00066-0066-ac66-0066-000000000066",
-      "name": "Release Lock — Open Conversation",
+      "name": "Get Lock \u2014 Open Conversation",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [9080, 780],
+      "position": [
+        9080,
+        780
+      ],
       "credentials": {
         "redis": {
           "id": "PLACEHOLDER_REDIS_CRED",
@@ -1595,14 +2632,21 @@
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "combinator": "and",
           "conditions": [
             {
               "id": "cond-calib",
               "leftValue": "={{ $env.CALIBRATION_WINDOW_ACTIVE }}",
               "rightValue": "true",
-              "operator": { "type": "string", "operation": "equals" }
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
           ]
         },
@@ -1612,7 +2656,10 @@
       "name": "Calibration Gate",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [8360, 780]
+      "position": [
+        8360,
+        780
+      ]
     },
     {
       "parameters": {
@@ -1621,113 +2668,1942 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.TWENTY_API_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } }, body: $('Generate Reply — Claude Sonnet').item.json.content } } }) }}",
-        "options": { "timeout": 15000, "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 } }
+        "body": "={{ JSON.stringify({ query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } }, body: $('Generate Reply \u2014 Claude Sonnet').item.json.content } } }) }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
       },
       "id": "ac00068-0068-ac68-0068-000000000068",
       "name": "Create Calibration Review Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [8600, 680]
+      "position": [
+        8600,
+        680
+      ]
     },
     {
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID", "mode": "id" },
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_WORKFLOW_ID",
+          "mode": "id"
+        },
         "options": {},
         "fields": {
           "values": [
-            { "name": "to", "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}" },
-            { "name": "body", "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", thanks for your message. One of our team will get back to you shortly.\" }}" },
-            { "name": "conversationId", "stringValue": "={{ $('Upsert Conversation Record').item.json.id }}" }
+            {
+              "name": "to",
+              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+            },
+            {
+              "name": "body",
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", thanks for your message. One of our team will get back to you shortly.\" }}"
+            },
+            {
+              "name": "conversationId",
+              "stringValue": "={{ $('Upsert Conversation Record').item.json.id }}"
+            }
           ]
         }
       },
       "id": "ac00069-0069-ac69-0069-000000000069",
-      "name": "Send Holding Reply — Calibration",
+      "name": "Send Holding Reply \u2014 Calibration",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
-      "position": [8840, 680]
+      "position": [
+        8840,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').item.json.waMessageId }}",
+        "value": "1",
+        "expire": true,
+        "ttl": 86400
+      },
+      "id": "ac00004b-dedup-set01-0000-000000000001",
+      "name": "Set Dedupe Key",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        480
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "value": "={{ $execution.id }}",
+        "expire": true,
+        "ttl": 180
+      },
+      "id": "ac00013s-conv-set01-0000-000000000001",
+      "name": "Set Conv Lock",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3560,
+        480
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-has-cid",
+              "leftValue": "={{ $('Query Lock Value from Event Log').item.json.candidate_id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "cond-token-match",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $('Query Lock Value from Event Log').item.json.lock_value ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac_e002if-e002-e002-e002-000000000002",
+      "name": "Check Token on Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        920,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').item.json.candidate_id ?? '') }}"
+      },
+      "id": "ac_e002dl-e002-e002-e002-000000000002",
+      "name": "Delete Lock on Error",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        900
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00023if-00023-00023-00023-000230000000",
+      "name": "Check Token \u2014 Consent Refused",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5240,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00023dl-00023-00023-00023-000230000000",
+      "name": "Delete Lock \u2014 Consent Refused",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        5480,
+        480
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00025if-00025-00025-00025-000250000000",
+      "name": "Check Token \u2014 Consent Pending",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5000,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00025dl-00025-00025-00025-000250000000",
+      "name": "Delete Lock \u2014 Consent Pending",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        5240,
+        680
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00028if-00028-00028-00028-000280000000",
+      "name": "Check Token \u2014 Refused or Revoked",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4520,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00028dl-00028-00028-00028-000280000000",
+      "name": "Delete Lock \u2014 Refused or Revoked",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        4760,
+        580
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00034if-00034-00034-00034-000340000000",
+      "name": "Check Token \u2014 Local Language",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5960,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00034dl-00034-00034-00034-000340000000",
+      "name": "Delete Lock \u2014 Local Language",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        6200,
+        180
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00041if-00041-00041-00041-000410000000",
+      "name": "Check Token \u2014 Second Strike Audio",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        6920,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00041dl-00041-00041-00041-000410000000",
+      "name": "Delete Lock \u2014 Second Strike Audio",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        7160,
+        380
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00044if-00044-00044-00044-000440000000",
+      "name": "Check Token \u2014 Low Quality Audio",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        7160,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00044dl-00044-00044-00044-000440000000",
+      "name": "Delete Lock \u2014 Low Quality Audio",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        7400,
+        580
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00054if-00054-00054-00054-000540000000",
+      "name": "Check Token \u2014 Low Confidence",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        8360,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00054dl-00054-00054-00054-000540000000",
+      "name": "Delete Lock \u2014 Low Confidence",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        8600,
+        180
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00057if-00057-00057-00057-000570000000",
+      "name": "Check Token \u2014 Distress",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        8600,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00057dl-00057-00057-00057-000570000000",
+      "name": "Delete Lock \u2014 Distress",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        8840,
+        380
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00060if-00060-00060-00060-000600000000",
+      "name": "Check Token \u2014 Spam",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        8360,
+        580
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00060dl-00060-00060-00060-000600000000",
+      "name": "Delete Lock \u2014 Spam",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        8600,
+        580
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00062if-00062-00062-00062-000620000000",
+      "name": "Check Token \u2014 Workflow Dispatch",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        8360,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00062dl-00062-00062-00062-000620000000",
+      "name": "Delete Lock \u2014 Workflow Dispatch",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        8600,
+        680
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac00066if-00066-00066-00066-000660000000",
+      "name": "Check Token \u2014 Open Conversation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        9320,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+      },
+      "id": "ac00066dl-00066-00066-00066-000660000000",
+      "name": "Delete Lock \u2014 Open Conversation",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        9560,
+        780
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "Redis"
+        }
+      }
     }
   ],
   "connections": {
-    "WhatsApp Webhook (GET)": { "main": [[{ "node": "Verify Token Matches", "type": "main", "index": 0 }]] },
-    "Verify Token Matches": { "main": [[{ "node": "Respond 200 Challenge", "type": "main", "index": 0 }], [{ "node": "Respond 403 Verify Failed", "type": "main", "index": 0 }]] },
-    "WhatsApp Webhook (POST)": { "main": [[{ "node": "Validate HMAC", "type": "main", "index": 0 }]] },
-    "Validate HMAC": { "main": [[{ "node": "HMAC Valid", "type": "main", "index": 0 }]] },
-    "HMAC Valid": { "main": [[{ "node": "Log Inbound Event", "type": "main", "index": 0 }], [{ "node": "Log POST Validation Failure", "type": "main", "index": 0 }]] },
-    "Log Inbound Event": { "main": [[{ "node": "Respond 200 Event Received", "type": "main", "index": 0 }, { "node": "Normalise Phone Number", "type": "main", "index": 0 }]] },
-    "Log POST Validation Failure": { "main": [[{ "node": "Respond 403 HMAC Failed", "type": "main", "index": 0 }]] },
-    "Error Trigger": { "main": [[{ "node": "Query Lock Value from Event Log", "type": "main", "index": 0 }]] },
-    "Query Lock Value from Event Log": { "main": [[{ "node": "Release Lock on Error", "type": "main", "index": 0 }]] },
-    "Release Lock on Error": { "main": [[{ "node": "Write Workflow Error", "type": "main", "index": 0 }]] },
-    "Write Workflow Error": { "main": [[{ "node": "Check Retry Attempt", "type": "main", "index": 0 }]] },
-    "Check Retry Attempt": { "main": [[{ "node": "Log Retry Hint", "type": "main", "index": 0 }], [{ "node": "Create Workflow Error Review Task", "type": "main", "index": 0 }]] },
-    "Normalise Phone Number": { "main": [[{ "node": "Phone Valid", "type": "main", "index": 0 }]] },
-    "Phone Valid": { "main": [[{ "node": "Dedupe Check", "type": "main", "index": 0 }], [{ "node": "Log Invalid Phone", "type": "main", "index": 0 }]] },
-    "Dedupe Check": { "main": [[{ "node": "Is New Message", "type": "main", "index": 0 }]] },
-    "Is New Message": { "main": [[{ "node": "Resolve Candidate by Phone", "type": "main", "index": 0 }], [{ "node": "Log Dedupe Hit", "type": "main", "index": 0 }]] },
-    "Resolve Candidate by Phone": { "main": [[{ "node": "Count Candidate Results", "type": "main", "index": 0 }]] },
-    "Count Candidate Results": { "main": [[{ "node": "Create Candidate in Twenty", "type": "main", "index": 0 }], [{ "node": "Set Candidate Context", "type": "main", "index": 0 }], [{ "node": "Flag Duplicate Candidate", "type": "main", "index": 0 }]] },
-    "Create Candidate in Twenty": { "main": [[{ "node": "Set Candidate Context", "type": "main", "index": 0 }]] },
-    "Flag Duplicate Candidate": { "main": [[{ "node": "Log Stop — Duplicate Candidate", "type": "main", "index": 0 }]] },
-    "Set Candidate Context": { "main": [[{ "node": "Acquire Conv Lock", "type": "main", "index": 0 }]] },
-    "Acquire Conv Lock": { "main": [[{ "node": "Lock Acquired", "type": "main", "index": 0 }]] },
-    "Lock Acquired": { "main": [[{ "node": "Write Lock Acquired Event", "type": "main", "index": 0 }], [{ "node": "Log Lock Contention", "type": "main", "index": 0 }]] },
-    "Write Lock Acquired Event": { "main": [[{ "node": "Check Consent Status", "type": "main", "index": 0 }]] },
-    "Check Consent Status": { "main": [[{ "node": "Parse Pending Consent Reply", "type": "main", "index": 0 }], [{ "node": "Send Already Opted-Out Reply", "type": "main", "index": 0 }], [{ "node": "Route by Message Type", "type": "main", "index": 0 }]] },
-    "Parse Pending Consent Reply": { "main": [[{ "node": "Route Consent Reply", "type": "main", "index": 0 }]] },
-    "Route Consent Reply": { "main": [[{ "node": "Grant Consent in Twenty", "type": "main", "index": 0 }], [{ "node": "Refuse Consent in Twenty", "type": "main", "index": 0 }], [{ "node": "Handle DPA Before Consent", "type": "main", "index": 0 }], [{ "node": "Send Consent Request Template", "type": "main", "index": 0 }]] },
-    "Grant Consent in Twenty": { "main": [[{ "node": "Route by Message Type", "type": "main", "index": 0 }]] },
-    "Refuse Consent in Twenty": { "main": [[{ "node": "Send Consent Refusal Ack", "type": "main", "index": 0 }]] },
-    "Send Consent Refusal Ack": { "main": [[{ "node": "Release Lock — Consent Refused", "type": "main", "index": 0 }]] },
-    "Send Consent Request Template": { "main": [[{ "node": "Release Lock — Consent Pending", "type": "main", "index": 0 }]] },
-    "Send Already Opted-Out Reply": { "main": [[{ "node": "Release Lock — Refused or Revoked", "type": "main", "index": 0 }]] },
-    "Route by Message Type": { "main": [[{ "node": "Language Detection — Short Clip", "type": "main", "index": 0 }], [{ "node": "Clear Voice Note Retry Flag", "type": "main", "index": 0 }]] },
-    "Language Detection — Short Clip": { "main": [[{ "node": "Check Language Code", "type": "main", "index": 0 }]] },
-    "Check Language Code": { "main": [[{ "node": "Full Transcription — Groq Whisper", "type": "main", "index": 0 }], [{ "node": "Route Local Language to Review", "type": "main", "index": 0 }]] },
-    "Route Local Language to Review": { "main": [[{ "node": "Send Please Retype — Local Language", "type": "main", "index": 0 }]] },
-    "Send Please Retype — Local Language": { "main": [[{ "node": "Release Lock — Local Language", "type": "main", "index": 0 }]] },
-    "Full Transcription — Groq Whisper": { "main": [[{ "node": "Evaluate Transcript Confidence", "type": "main", "index": 0 }]] },
-    "Evaluate Transcript Confidence": { "main": [[{ "node": "Route by Transcript Quality", "type": "main", "index": 0 }]] },
-    "Route by Transcript Quality": { "main": [[{ "node": "Clear Voice Note Retry Flag", "type": "main", "index": 0 }], [{ "node": "Check Voice Note Retry State", "type": "main", "index": 0 }]] },
-    "Check Voice Note Retry State": { "main": [[{ "node": "Is Second Strike", "type": "main", "index": 0 }]] },
-    "Is Second Strike": { "main": [[{ "node": "Create Manual Review Task — Audio", "type": "main", "index": 0 }], [{ "node": "Send Please Retype — Low Quality", "type": "main", "index": 0 }]] },
-    "Create Manual Review Task — Audio": { "main": [[{ "node": "Release Lock — Second Strike Audio", "type": "main", "index": 0 }]] },
-    "Send Please Retype — Low Quality": { "main": [[{ "node": "Set Voice Note Retry Flag", "type": "main", "index": 0 }]] },
-    "Set Voice Note Retry Flag": { "main": [[{ "node": "Release Lock — Low Quality Audio", "type": "main", "index": 0 }]] },
-    "Clear Voice Note Retry Flag": { "main": [[{ "node": "Upsert Conversation Record", "type": "main", "index": 0 }]] },
-    "Upsert Conversation Record": { "main": [[{ "node": "Store Inbound Message", "type": "main", "index": 0 }]] },
-    "Store Inbound Message": { "main": [[{ "node": "Fetch Last 20 Messages", "type": "main", "index": 0 }]] },
-    "Fetch Last 20 Messages": { "main": [[{ "node": "Fetch Conversation Summary", "type": "main", "index": 0 }]] },
-    "Fetch Conversation Summary": { "main": [[{ "node": "Classify Intent — Claude Haiku", "type": "main", "index": 0 }]] },
-    "Classify Intent — Claude Haiku": { "main": [[{ "node": "Parse Intent and Confidence", "type": "main", "index": 0 }]] },
-    "Parse Intent and Confidence": { "main": [[{ "node": "Route by Intent", "type": "main", "index": 0 }]] },
-    "Route by Intent": { "main": [[{ "node": "Create Low-Confidence Review Task", "type": "main", "index": 0 }], [{ "node": "Send Distress Holding Reply", "type": "main", "index": 0 }], [{ "node": "Handle DPA Request", "type": "main", "index": 0 }], [{ "node": "Log Workflow Dispatch", "type": "main", "index": 0 }], [{ "node": "Log Spam Intent", "type": "main", "index": 0 }], [{ "node": "Generate Reply — Claude Sonnet", "type": "main", "index": 0 }]] },
-    "Create Low-Confidence Review Task": { "main": [[{ "node": "Release Lock — Low Confidence", "type": "main", "index": 0 }]] },
-    "Send Distress Holding Reply": { "main": [[{ "node": "Create Distress Review Task", "type": "main", "index": 0 }]] },
-    "Create Distress Review Task": { "main": [[{ "node": "Release Lock — Distress", "type": "main", "index": 0 }]] },
-    "Log Spam Intent": { "main": [[{ "node": "Release Lock — Spam", "type": "main", "index": 0 }]] },
-    "Log Workflow Dispatch": { "main": [[{ "node": "Release Lock — Workflow Dispatch", "type": "main", "index": 0 }]] },
-    "Generate Reply — Claude Sonnet": { "main": [[{ "node": "Store Outbound Message", "type": "main", "index": 0 }]] },
-    "Store Outbound Message": { "main": [[{ "node": "Calibration Gate", "type": "main", "index": 0 }]] },
-    "Calibration Gate": { "main": [[{ "node": "Create Calibration Review Task", "type": "main", "index": 0 }], [{ "node": "Send Reply — WA", "type": "main", "index": 0 }]] },
-    "Create Calibration Review Task": { "main": [[{ "node": "Send Holding Reply — Calibration", "type": "main", "index": 0 }]] },
-    "Send Holding Reply — Calibration": { "main": [[{ "node": "Release Lock — Open Conversation", "type": "main", "index": 0 }]] },
-    "Send Reply — WA": { "main": [[{ "node": "Release Lock — Open Conversation", "type": "main", "index": 0 }]] }
+    "WhatsApp Webhook (GET)": {
+      "main": [
+        [
+          {
+            "node": "Verify Token Matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Token Matches": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Challenge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 403 Verify Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Webhook (POST)": {
+      "main": [
+        [
+          {
+            "node": "Validate HMAC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate HMAC": {
+      "main": [
+        [
+          {
+            "node": "HMAC Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HMAC Valid": {
+      "main": [
+        [
+          {
+            "node": "Log Inbound Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log POST Validation Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Inbound Event": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Event Received",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Normalise Phone Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log POST Validation Failure": {
+      "main": [
+        [
+          {
+            "node": "Respond 403 HMAC Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Query Lock Value from Event Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Lock Value from Event Log": {
+      "main": [
+        [
+          {
+            "node": "Get Lock on Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Check Retry Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Retry Attempt": {
+      "main": [
+        [
+          {
+            "node": "Log Retry Hint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Workflow Error Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise Phone Number": {
+      "main": [
+        [
+          {
+            "node": "Phone Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phone Valid": {
+      "main": [
+        [
+          {
+            "node": "Get Dedupe Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Invalid Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Message": {
+      "main": [
+        [
+          {
+            "node": "Set Dedupe Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Dedupe Hit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Candidate by Phone": {
+      "main": [
+        [
+          {
+            "node": "Count Candidate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Candidate Results": {
+      "main": [
+        [
+          {
+            "node": "Create Candidate in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Candidate Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Flag Duplicate Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Candidate in Twenty": {
+      "main": [
+        [
+          {
+            "node": "Set Candidate Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flag Duplicate Candidate": {
+      "main": [
+        [
+          {
+            "node": "Log Stop \u2014 Duplicate Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Candidate Context": {
+      "main": [
+        [
+          {
+            "node": "Get Conv Lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock Acquired": {
+      "main": [
+        [
+          {
+            "node": "Set Conv Lock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Lock Contention",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Lock Acquired Event": {
+      "main": [
+        [
+          {
+            "node": "Check Consent Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Consent Status": {
+      "main": [
+        [
+          {
+            "node": "Parse Pending Consent Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Already Opted-Out Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Pending Consent Reply": {
+      "main": [
+        [
+          {
+            "node": "Route Consent Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Consent Reply": {
+      "main": [
+        [
+          {
+            "node": "Grant Consent in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Refuse Consent in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle DPA Before Consent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Consent Request Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grant Consent in Twenty": {
+      "main": [
+        [
+          {
+            "node": "Route by Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refuse Consent in Twenty": {
+      "main": [
+        [
+          {
+            "node": "Send Consent Refusal Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Consent Refusal Ack": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Consent Refused",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Consent Request Template": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Consent Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Already Opted-Out Reply": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Refused or Revoked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Message Type": {
+      "main": [
+        [
+          {
+            "node": "Language Detection \u2014 Short Clip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clear Voice Note Retry Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Language Detection \u2014 Short Clip": {
+      "main": [
+        [
+          {
+            "node": "Check Language Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Language Code": {
+      "main": [
+        [
+          {
+            "node": "Full Transcription \u2014 Groq Whisper",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route Local Language to Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Local Language to Review": {
+      "main": [
+        [
+          {
+            "node": "Send Please Retype \u2014 Local Language",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Please Retype \u2014 Local Language": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Local Language",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Full Transcription \u2014 Groq Whisper": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Transcript Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Transcript Confidence": {
+      "main": [
+        [
+          {
+            "node": "Route by Transcript Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Transcript Quality": {
+      "main": [
+        [
+          {
+            "node": "Clear Voice Note Retry Flag",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Voice Note Retry State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Voice Note Retry State": {
+      "main": [
+        [
+          {
+            "node": "Is Second Strike",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Second Strike": {
+      "main": [
+        [
+          {
+            "node": "Create Manual Review Task \u2014 Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Please Retype \u2014 Low Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Manual Review Task \u2014 Audio": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Second Strike Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Please Retype \u2014 Low Quality": {
+      "main": [
+        [
+          {
+            "node": "Set Voice Note Retry Flag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Voice Note Retry Flag": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Low Quality Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Voice Note Retry Flag": {
+      "main": [
+        [
+          {
+            "node": "Upsert Conversation Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Conversation Record": {
+      "main": [
+        [
+          {
+            "node": "Store Inbound Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Inbound Message": {
+      "main": [
+        [
+          {
+            "node": "Fetch Last 20 Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Last 20 Messages": {
+      "main": [
+        [
+          {
+            "node": "Fetch Conversation Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Conversation Summary": {
+      "main": [
+        [
+          {
+            "node": "Classify Intent \u2014 Claude Haiku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Intent \u2014 Claude Haiku": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent and Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent and Confidence": {
+      "main": [
+        [
+          {
+            "node": "Route by Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Intent": {
+      "main": [
+        [
+          {
+            "node": "Create Low-Confidence Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Distress Holding Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle DPA Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Workflow Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Spam Intent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Reply \u2014 Claude Sonnet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Low-Confidence Review Task": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Low Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Distress Holding Reply": {
+      "main": [
+        [
+          {
+            "node": "Create Distress Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Distress Review Task": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Distress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Spam Intent": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Spam",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Workflow Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Workflow Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Reply \u2014 Claude Sonnet": {
+      "main": [
+        [
+          {
+            "node": "Store Outbound Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Outbound Message": {
+      "main": [
+        [
+          {
+            "node": "Calibration Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calibration Gate": {
+      "main": [
+        [
+          {
+            "node": "Create Calibration Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Reply \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calibration Review Task": {
+      "main": [
+        [
+          {
+            "node": "Send Holding Reply \u2014 Calibration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Holding Reply \u2014 Calibration": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply \u2014 WA": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Dedupe Key": {
+      "main": [
+        [
+          {
+            "node": "Is New Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Dedupe Key": {
+      "main": [
+        [
+          {
+            "node": "Resolve Candidate by Phone",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conv Lock": {
+      "main": [
+        [
+          {
+            "node": "Lock Acquired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Conv Lock": {
+      "main": [
+        [
+          {
+            "node": "Write Lock Acquired Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock on Error": {
+      "main": [
+        [
+          {
+            "node": "Check Token on Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token on Error": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock on Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Write Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Lock on Error": {
+      "main": [
+        [
+          {
+            "node": "Write Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock \u2014 Consent Refused": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Consent Refused",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Consent Refused": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Consent Refused",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Consent Pending": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Consent Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Consent Pending": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Consent Pending",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Refused or Revoked": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Refused or Revoked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Refused or Revoked": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Refused or Revoked",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Local Language": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Local Language",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Local Language": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Local Language",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Second Strike Audio": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Second Strike Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Second Strike Audio": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Second Strike Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Low Quality Audio": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Low Quality Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Low Quality Audio": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Low Quality Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Low Confidence": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Low Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Low Confidence": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Low Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Distress": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Distress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Distress": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Distress",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Spam": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Spam",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Spam": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Spam",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Workflow Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Workflow Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Workflow Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Workflow Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Lock \u2014 Open Conversation": {
+      "main": [
+        [
+          {
+            "node": "Check Token \u2014 Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Token \u2014 Open Conversation": {
+      "main": [
+        [
+          {
+            "node": "Delete Lock \u2014 Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "tags": [
-    { "name": "hr-automation" },
-    { "name": "workflow-a" },
-    { "name": "version-1.0" }
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-a"
+    },
+    {
+      "name": "version-1.0"
+    }
   ],
   "pinData": {},
   "meta": {}

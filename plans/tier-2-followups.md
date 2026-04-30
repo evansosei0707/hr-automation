@@ -175,6 +175,24 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Target window:** Pre-launch.
 - **Owner:** workflow-builder.
 
+### T2-18. Replace two-step GET+SET conv-lock acquire with atomic SETNX
+
+- **Description:** n8n 1.85.0's Redis node has no NX flag on the Set operation. The current acquire pattern (Redis Get → If value empty → Redis Set + Expire) has a TOCTOU race: two executions can both read empty and both SET, the second silently overwriting the first's lock token. At v1 volume (one candidate per conversation, sequential n8n execution) this race window is negligible. The fix requires either: (a) n8n upgrade to a version with `executeCommand` support, (b) a custom Redis integration node, or (c) switch to n8n queue mode which serialises per-candidate execution naturally.
+- **Files affected:** `n8n-workflows/communications/a-communications.json` (replace Get Conv Lock → If → Set Conv Lock with single atomic Redis Set NX node), update rule #16 in `.claude/rules/n8n-workflows.md`.
+- **Blocking:** No. TOCTOU window is small and worst case produces a duplicate reply (the second acquirer sends a second message), not data loss.
+- **Target window:** Post-Week-1. Natural trigger: n8n upgrade or queue mode adoption.
+- **Owner:** workflow-builder.
+- **Reference:** Workflow A live test 2026-04-30; `n8n-workflows/communications/a-communications-NOTES.md` §3.
+
+### T2-19. Replace two-step GET+DELETE conv-lock release with atomic Lua CAS DEL
+
+- **Description:** The current release pattern (Redis Get → If value === token → Redis Delete) has a TOCTOU race: the lock could expire and be re-acquired by another execution between the Get and Delete steps, causing a spurious release of the new holder's lock. The original Lua CAS DEL was atomic and immune to this. Fix requires `executeCommand` support in the Redis node (same prerequisite as T2-18).
+- **Files affected:** `n8n-workflows/communications/a-communications.json` (all 11 release lock chains), `n8n-workflows/communications/dpa-handler.json`.
+- **Blocking:** No. The spurious release scenario requires: (1) lock expires naturally before release node runs AND (2) another execution acquires the same lock in that narrow window. Extremely unlikely at v1 volume.
+- **Target window:** Post-Week-1. Bundle with T2-18 — same root cause and same prerequisite.
+- **Owner:** workflow-builder.
+- **Reference:** Workflow A live test 2026-04-30; `n8n-workflows/communications/a-communications-NOTES.md` §3.
+
 ---
 
 ## How to use this plan

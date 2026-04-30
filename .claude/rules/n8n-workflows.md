@@ -81,6 +81,20 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
 15. **Conv-lock token must be `$execution.id` alone — not `$execution.id + ':' + random`.** The execution ID is globally unique per n8n execution. Random suffixes create token-tracking inconsistencies when the same token must be passed to the acquire node, the `event_log` write, and all CAS DEL release nodes. The Phase 5 conv-lock test used `uuidgen` to simulate two competing processes — that's the only scenario where distinct random tokens per-locker matter. Within a single n8n execution, use the execution ID only.
 
+16. **n8n 1.85.0 Redis node does NOT support `executeCommand`.** Available operations: Delete, Get, Increment, Info, Keys, Pop, Publish, Push, Set. The Set operation supports Expire (TTL in seconds) but has **no NX flag**.
+
+    **Use two-step patterns instead:**
+    - **SETNX behaviour (dedupe, lock acquire):** Redis Get → If (value empty) → Redis Set with Expire. TOCTOU race window exists but is acceptable at v1 volume.
+    - **CAS DEL behaviour (lock release):** Redis Get → If (value === expected token) → Redis Delete. Same TOCTOU caveat.
+    
+    **Redis Get output:** result is in `$json.value`. Key not found → `$json.value` is `null`. Use `$json.value ?? ''` in If conditions.
+    
+    **Redis Set parameters:** `key`, `value`, `expire` (boolean), `ttl` (seconds when expire is true).
+    
+    Both patterns have TOCTOU races — document as known v1 limitations in the workflow NOTES file and add T2 items for the atomic upgrade path. T2-18 (acquire) and T2-19 (release) are the current tracking items for Workflow A.
+    
+    **Surfaced 2026-04-30** during Workflow A live test — all 14 `executeCommand` Redis nodes had to be replaced post-commit.
+
 ## Before committing an n8n workflow
 
 Run the validator:

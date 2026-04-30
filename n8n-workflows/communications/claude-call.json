@@ -1,20 +1,26 @@
 {
-  "name": "Subflow — Claude Call",
+  "name": "Subflow \u2014 Claude Call",
   "nodes": [
     {
       "id": "cc000001-0001-0001-0001-000000000001",
       "name": "Claude Call Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [200, 300],
+      "position": [
+        200,
+        300
+      ],
       "parameters": {}
     },
     {
       "id": "cc000002-0002-0002-0002-000000000002",
       "name": "Check Daily Budget",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [440, 300],
+      "typeVersion": 2.6,
+      "position": [
+        440,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -32,7 +38,10 @@
       "name": "Budget Gate",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 300],
+      "position": [
+        680,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -67,10 +76,13 @@
     },
     {
       "id": "cc000004-0004-0004-0004-000000000004",
-      "name": "Budget Exceeded — Return Empty",
+      "name": "Budget Exceeded \u2014 Return Empty",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
-      "position": [920, 420],
+      "position": [
+        920,
+        420
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -98,16 +110,28 @@
       "name": "Call Claude API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [920, 200],
+      "position": [
+        920,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-api-key", "value": "={{ $env.ANTHROPIC_API_KEY }}" },
-            { "name": "anthropic-version", "value": "2023-06-01" },
-            { "name": "content-type", "value": "application/json" }
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -127,8 +151,11 @@
       "id": "cc000006-0006-0006-0006-000000000006",
       "name": "Write AI Call Log",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [1160, 200],
+      "typeVersion": 2.6,
+      "position": [
+        1160,
+        200
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -148,7 +175,10 @@
       "name": "Return Claude Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3,
-      "position": [1400, 200],
+      "position": [
+        1400,
+        200
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -181,38 +211,84 @@
   "connections": {
     "Claude Call Trigger": {
       "main": [
-        [{ "node": "Check Daily Budget", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Check Daily Budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check Daily Budget": {
       "main": [
-        [{ "node": "Budget Gate", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Budget Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Budget Gate": {
       "main": [
-        [{ "node": "Call Claude API", "type": "main", "index": 0 }],
-        [{ "node": "Budget Exceeded — Return Empty", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Call Claude API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Budget Exceeded \u2014 Return Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Call Claude API": {
       "main": [
-        [{ "node": "Write AI Call Log", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Write AI Call Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Write AI Call Log": {
       "main": [
-        [{ "node": "Return Claude Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Return Claude Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "tags": [
-    { "name": "hr-automation" },
-    { "name": "workflow-a" },
-    { "name": "subflow" },
-    { "name": "version-1.0" }
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-a"
+    },
+    {
+      "name": "subflow"
+    },
+    {
+      "name": "version-1.0"
+    }
   ],
   "pinData": {},
   "meta": {}

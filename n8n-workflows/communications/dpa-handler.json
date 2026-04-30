@@ -22,10 +22,9 @@
         300
       ],
       "parameters": {
-        "mode": "expression",
-        "output": "single",
+        "mode": "rules",
         "rules": {
-          "rules": [
+          "values": [
             {
               "outputKey": "data_access",
               "conditions": {
@@ -92,14 +91,16 @@
             }
           ]
         },
-        "fallbackOutput": "extra"
+        "options": {
+          "fallbackOutput": "extra"
+        }
       }
     },
     {
       "id": "dpa00003-0003-0003-0003-000000000003",
       "name": "Send Data Access Ack",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         680,
         200
@@ -134,7 +135,7 @@
       "id": "dpa00004-0004-0004-0004-000000000004",
       "name": "Send Deletion Ack",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         680,
         400
@@ -207,7 +208,7 @@
       "id": "dpa00006-0006-0006-0006-000000000006",
       "name": "Log DPA Event",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         1160,
         300
@@ -262,7 +263,7 @@
       "id": "dpa00009-0009-0009-0009-000000000009",
       "name": "Log DPA Error",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         440,
         500

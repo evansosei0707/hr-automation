@@ -170,7 +170,7 @@
       "id": "a0000008-0008-0008-0008-000000000008",
       "name": "Log Inbound Event",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         920,
         380
@@ -210,7 +210,7 @@
       "id": "a0000010-0010-0010-0010-000000000010",
       "name": "Log POST Validation Failure",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         920,
         580
@@ -261,7 +261,7 @@
       "id": "ac_e001-e001-e001-e001-000000000001",
       "name": "Query Lock Value from Event Log",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         440,
         900
@@ -305,7 +305,7 @@
       "id": "a0000013-0013-0013-0013-000000000013",
       "name": "Write Workflow Error",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         920,
         900
@@ -360,7 +360,7 @@
       "id": "ac_e004-e004-e004-e004-000000000004",
       "name": "Log Retry Hint",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         1400,
         800
@@ -468,7 +468,7 @@
       "id": "ac00003-0003-ac03-0003-000000000003",
       "name": "Log Invalid Phone",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         1640,
         600
@@ -544,7 +544,7 @@
       "id": "ac00006-0006-ac06-0006-000000000006",
       "name": "Log Dedupe Hit",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         2120,
         600
@@ -596,10 +596,9 @@
     },
     {
       "parameters": {
-        "mode": "expression",
-        "output": "single",
+        "mode": "rules",
         "rules": {
-          "rules": [
+          "values": [
             {
               "outputKey": "zero",
               "conditions": {
@@ -648,7 +647,9 @@
             }
           ]
         },
-        "fallbackOutput": "extra"
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "id": "ac00008-0008-ac08-0008-000000000008",
       "name": "Count Candidate Results",
@@ -746,7 +747,7 @@
       "id": "ac00011-0011-ac11-0011-000000000011",
       "name": "Log Stop \u2014 Duplicate Candidate",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         2840,
         580
@@ -898,7 +899,7 @@
       "id": "ac00015-0015-ac15-0015-000000000015",
       "name": "Log Lock Contention",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         3560,
         600
@@ -921,7 +922,7 @@
       "id": "ac00016-0016-ac16-0016-000000000016",
       "name": "Write Lock Acquired Event",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         3560,
         480
@@ -935,10 +936,9 @@
     },
     {
       "parameters": {
-        "mode": "expression",
-        "output": "single",
+        "mode": "rules",
         "rules": {
-          "rules": [
+          "values": [
             {
               "outputKey": "pending",
               "conditions": {
@@ -996,7 +996,9 @@
             }
           ]
         },
-        "fallbackOutput": "extra"
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "id": "ac00017-0017-ac17-0017-000000000017",
       "name": "Check Consent Status",
@@ -1023,10 +1025,9 @@
     },
     {
       "parameters": {
-        "mode": "expression",
-        "output": "single",
+        "mode": "rules",
         "rules": {
-          "rules": [
+          "values": [
             {
               "outputKey": "yes",
               "conditions": {
@@ -1098,7 +1099,9 @@
             }
           ]
         },
-        "fallbackOutput": "extra"
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "id": "ac00019-0019-ac19-0019-000000000019",
       "name": "Route Consent Reply",
@@ -1214,7 +1217,7 @@
       "id": "ac00022-0022-ac22-0022-000000000022",
       "name": "Send Consent Refusal Ack",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         4760,
         480
@@ -1274,7 +1277,7 @@
       "id": "ac00024-0024-ac24-0024-000000000024",
       "name": "Send Consent Request Template",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         4520,
         680
@@ -1342,7 +1345,7 @@
       "id": "ac00026-0026-ac26-0026-000000000026",
       "name": "Handle DPA Before Consent",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         4520,
         880
@@ -1377,7 +1380,7 @@
       "id": "ac00027-0027-ac27-0027-000000000027",
       "name": "Send Already Opted-Out Reply",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         4040,
         580
@@ -1597,7 +1600,7 @@
       "id": "ac00033-0033-ac33-0033-000000000033",
       "name": "Send Please Retype \u2014 Local Language",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         5480,
         180
@@ -1693,10 +1696,9 @@
     },
     {
       "parameters": {
-        "mode": "expression",
-        "output": "single",
+        "mode": "rules",
         "rules": {
-          "rules": [
+          "values": [
             {
               "outputKey": "high",
               "conditions": {
@@ -1722,7 +1724,9 @@
             }
           ]
         },
-        "fallbackOutput": "extra"
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "id": "ac00037-0037-ac37-0037-000000000037",
       "name": "Route by Transcript Quality",
@@ -1744,7 +1748,7 @@
       "id": "ac00038-0038-ac38-0038-000000000038",
       "name": "Check Voice Note Retry State",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         5960,
         480
@@ -1876,7 +1880,7 @@
       "id": "ac00042-0042-ac42-0042-000000000042",
       "name": "Send Please Retype \u2014 Low Quality",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         6440,
         580
@@ -1893,7 +1897,7 @@
       "id": "ac00043-0043-ac43-0043-000000000043",
       "name": "Set Voice Note Retry Flag",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         6680,
         580
@@ -1937,7 +1941,7 @@
       "id": "ac00045-0045-ac45-0045-000000000045",
       "name": "Clear Voice Note Retry Flag",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         5960,
         280
@@ -1960,7 +1964,7 @@
       "id": "ac00046-0046-ac46-0046-000000000046",
       "name": "Upsert Conversation Record",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         6200,
         280
@@ -1983,7 +1987,7 @@
       "id": "ac00047-0047-ac47-0047-000000000047",
       "name": "Store Inbound Message",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         6440,
         280
@@ -2006,7 +2010,7 @@
       "id": "ac00048-0048-ac48-0048-000000000048",
       "name": "Fetch Last 20 Messages",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         6680,
         280
@@ -2029,7 +2033,7 @@
       "id": "ac00049-0049-ac49-0049-000000000049",
       "name": "Fetch Conversation Summary",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         6920,
         280
@@ -2078,7 +2082,7 @@
       "id": "ac00050-0050-ac50-0050-000000000050",
       "name": "Classify Intent \u2014 Claude Haiku",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         7160,
         280
@@ -2100,10 +2104,9 @@
     },
     {
       "parameters": {
-        "mode": "expression",
-        "output": "single",
+        "mode": "rules",
         "rules": {
-          "rules": [
+          "values": [
             {
               "outputKey": "low_confidence",
               "conditions": {
@@ -2222,7 +2225,9 @@
             }
           ]
         },
-        "fallbackOutput": "extra"
+        "options": {
+          "fallbackOutput": "extra"
+        }
       },
       "id": "ac00052-0052-ac52-0052-000000000052",
       "name": "Route by Intent",
@@ -2321,7 +2326,7 @@
       "id": "ac00055-0055-ac55-0055-000000000055",
       "name": "Send Distress Holding Reply",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         7880,
         380
@@ -2427,7 +2432,7 @@
       "id": "ac00058-0058-ac58-0058-000000000058",
       "name": "Handle DPA Request",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         7880,
         480
@@ -2444,7 +2449,7 @@
       "id": "ac00059-0059-ac59-0059-000000000059",
       "name": "Log Spam Intent",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         7880,
         580
@@ -2488,7 +2493,7 @@
       "id": "ac00061-0061-ac61-0061-000000000061",
       "name": "Log Workflow Dispatch",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         7880,
         680
@@ -2558,7 +2563,7 @@
       "id": "ac00063-0063-ac63-0063-000000000063",
       "name": "Generate Reply \u2014 Claude Sonnet",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         7880,
         780
@@ -2575,7 +2580,7 @@
       "id": "ac00064-0064-ac64-0064-000000000064",
       "name": "Store Outbound Message",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
+      "typeVersion": 2.6,
       "position": [
         8120,
         780
@@ -2616,7 +2621,7 @@
       "id": "ac00065-0065-ac65-0065-000000000065",
       "name": "Send Reply \u2014 WA",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         8360,
         780
@@ -2742,7 +2747,7 @@
       "id": "ac00069-0069-ac69-0069-000000000069",
       "name": "Send Holding Reply \u2014 Calibration",
       "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
+      "typeVersion": 1.3,
       "position": [
         8840,
         680

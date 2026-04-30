@@ -1,20 +1,26 @@
 {
-  "name": "Subflow — WA Send",
+  "name": "Subflow \u2014 WA Send",
   "nodes": [
     {
       "id": "was00001-0001-0001-0001-000000000001",
       "name": "WA Send Trigger",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
-      "position": [200, 300],
+      "position": [
+        200,
+        300
+      ],
       "parameters": {}
     },
     {
       "id": "was00002-0002-0002-0002-000000000002",
       "name": "Fetch Last Inbound Time",
       "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.5,
-      "position": [440, 300],
+      "typeVersion": 2.6,
+      "position": [
+        440,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
@@ -34,7 +40,10 @@
       "name": "Route Free-Form vs Template",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 300],
+      "position": [
+        680,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -72,15 +81,24 @@
       "name": "Send Free-Form Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [920, 200],
+      "position": [
+        920,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -88,7 +106,11 @@
         "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'text', text: { body: $('WA Send Trigger').item.json.body } }) }}",
         "options": {
           "timeout": 20000,
-          "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 },
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          },
           "response": {
             "response": {
               "neverError": true
@@ -102,7 +124,10 @@
       "name": "Check Error 131047",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1160, 200],
+      "position": [
+        1160,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -132,15 +157,24 @@
       "name": "Send Template Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1400, 200],
+      "position": [
+        1400,
+        200
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -148,24 +182,37 @@
         "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName, language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
         "options": {
           "timeout": 20000,
-          "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 }
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
         }
       }
     },
     {
       "id": "was00007-0007-0007-0007-000000000007",
-      "name": "Force Template — Window Expired",
+      "name": "Force Template \u2014 Window Expired",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [920, 400],
+      "position": [
+        920,
+        400
+      ],
       "parameters": {
         "method": "POST",
         "url": "=https://graph.facebook.com/v20.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.WHATSAPP_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -173,7 +220,11 @@
         "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName || 'still_interested_10d', language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
         "options": {
           "timeout": 20000,
-          "retry": { "enabled": true, "maxTries": 2, "waitBetweenTries": 1000 }
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
         }
       }
     }
@@ -181,39 +232,85 @@
   "connections": {
     "WA Send Trigger": {
       "main": [
-        [{ "node": "Fetch Last Inbound Time", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Fetch Last Inbound Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Fetch Last Inbound Time": {
       "main": [
-        [{ "node": "Route Free-Form vs Template", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Route Free-Form vs Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Route Free-Form vs Template": {
       "main": [
-        [{ "node": "Send Free-Form Message", "type": "main", "index": 0 }],
-        [{ "node": "Force Template — Window Expired", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Send Free-Form Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Force Template \u2014 Window Expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Send Free-Form Message": {
       "main": [
-        [{ "node": "Check Error 131047", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Check Error 131047",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Check Error 131047": {
       "main": [
-        [{ "node": "Send Template Message", "type": "main", "index": 0 }],
+        [
+          {
+            "node": "Send Template Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
         []
       ]
     }
   },
   "active": false,
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "tags": [
-    { "name": "hr-automation" },
-    { "name": "workflow-a" },
-    { "name": "subflow" },
-    { "name": "version-1.0" }
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-a"
+    },
+    {
+      "name": "subflow"
+    },
+    {
+      "name": "version-1.0"
+    }
   ],
   "pinData": {},
   "meta": {}

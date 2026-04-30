@@ -95,6 +95,10 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
     
     **Surfaced 2026-04-30** during Workflow A live test — all 14 `executeCommand` Redis nodes had to be replaced post-commit.
 
+17. **n8n 2.x blocks `$env.*` access in expressions by default.** The n8n service must have `N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"` set in `infrastructure/docker-compose.yml` to allow env var access in expressions. All workflows that read API keys via `$env.ANTHROPIC_API_KEY`, `$env.WHATSAPP_TOKEN`, `$env.GROQ_API_KEY`, etc. depend on this setting. Without it, every expression referencing `$env.*` silently resolves to `undefined` at runtime, causing silent API call failures. Set once on the container; no per-workflow change needed.
+
+    **Surfaced 2026-04-30** during n8n 2.18.5 live test re-import — claude-call.json HTTP Request headers evaluated `$env.ANTHROPIC_API_KEY` to `undefined`.
+
 ## Before committing an n8n workflow
 
 Run the validator:

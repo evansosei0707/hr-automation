@@ -178,6 +178,12 @@ services:
 
       N8N_RUNNERS_ENABLED: "true"
 
+      # n8n 2.x blocks $env.* access in expressions by default. Set to "false"
+      # to restore 1.x behaviour. Required because all workflows read API keys
+      # via $env.ANTHROPIC_API_KEY, $env.WHATSAPP_TOKEN, etc.
+      # See .claude/rules/n8n-workflows.md rule #17.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+
       # Allowlist Node.js stdlib modules accessible to Code nodes via require().
       # Default n8n sandbox blocks ALL require() of stdlib. We need crypto for
       # HMAC validation in webhook handlers (Workflow A). Add comma-separated

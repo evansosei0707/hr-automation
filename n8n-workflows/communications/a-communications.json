@@ -399,7 +399,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $('Query Lock Value from Event Log').first()?.json?.candidate_id || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } } }}"
+        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { where: { id: $('Query Lock Value from Event Log').first()?.json?.candidate_id || '' } } }, dueBy: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() } } } }}"
       },
       "id": "ac_e005-e005-e005-e005-000000000005",
       "name": "Create Workflow Error Review Task",
@@ -583,7 +583,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'query FindCandidateByPhone($phone: String!) { candidates(filter: { whatsappNumberE164: { eq: $phone } }) { edges { node { id firstName consentStatus } } } }', variables: { phone: $('Normalise Phone Number').first()?.json?.phoneE164 } } }}"
+        "jsonBody": "={{ { query: 'query FindCandidateByPhone($phone: String!) { candidates(filter: { whatsappNumberE164: { eq: $phone } }) { edges { node { id name consentStatus } } } }', variables: { phone: $('Normalise Phone Number').first()?.json?.phoneE164 } } }}"
       },
       "id": "ac00007-0007-ac07-0007-000000000007",
       "name": "Resolve Candidate by Phone",
@@ -687,7 +687,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation CreateCandidate($data: CandidateCreateInput!) { createOneCandidate(data: $data) { id firstName consentStatus } }', variables: { data: { whatsappNumberE164: $('Normalise Phone Number').first()?.json?.phoneE164, consentStatus: 'PENDING' } } } }}"
+        "jsonBody": "={{ { query: 'mutation CreateCandidate($data: CandidateCreateInput!) { createCandidate(data: $data) { id name consentStatus } }', variables: { data: { whatsappNumberE164: $('Normalise Phone Number').first()?.json?.phoneE164, consentStatus: 'PENDING' } } } }}"
       },
       "id": "ac00009-0009-ac09-0009-000000000009",
       "name": "Create Candidate in Twenty",
@@ -725,7 +725,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation FlagDup($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $json.data.candidates.edges?.[0]?.node?.id } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation FlagDup($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { where: { id: $json.data?.candidates?.edges?.[0]?.node?.id ?? '' } } } } } } }}"
       },
       "id": "ac00010-0010-ac10-0010-000000000010",
       "name": "Flag Duplicate Candidate",
@@ -768,19 +768,19 @@
             {
               "id": "ctx-cid",
               "name": "candidateId",
-              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.id : $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id }}",
+              "value": "={{ $json.data && $json.data.createCandidate ? $json.data.createCandidate.id : $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id }}",
               "type": "string"
             },
             {
               "id": "ctx-fn",
               "name": "firstName",
-              "value": "={{ $json.data && $json.data.createOneCandidate ? ($json.data.createOneCandidate.firstName || '') : ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.firstName || '') }}",
+              "value": "={{ $json.data && $json.data.createCandidate ? ($json.data.createCandidate.name || '') : ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.name || '') }}",
               "type": "string"
             },
             {
               "id": "ctx-cs",
               "name": "consentStatus",
-              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.consentStatus : $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.consentStatus }}",
+              "value": "={{ $json.data && $json.data.createCandidate ? $json.data.createCandidate.consentStatus : $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.consentStatus }}",
               "type": "string"
             },
             {
@@ -1139,7 +1139,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation GrantConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
+        "jsonBody": "={{ { query: 'mutation GrantConsent($id: UUID!) { updateCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
       },
       "id": "ac00020-0020-ac20-0020-000000000020",
       "name": "Grant Consent in Twenty",
@@ -1177,7 +1177,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation RefuseConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
+        "jsonBody": "={{ { query: 'mutation RefuseConsent($id: UUID!) { updateCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
       },
       "id": "ac00021-0021-ac21-0021-000000000021",
       "name": "Refuse Consent in Twenty",
@@ -1309,7 +1309,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "fXqkqpVEuLXDR2NQ",
+          "value": "3dGg55GLoFklkU1L",
           "mode": "id"
         },
         "options": {},
@@ -1560,7 +1560,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'OTHER', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
       },
       "id": "ac00032-0032-ac32-0032-000000000032",
       "name": "Route Local Language to Review",
@@ -1819,7 +1819,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'VOICE_NOTE_MANUAL_REVIEW', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
       },
       "id": "ac00040-0040-ac40-0040-000000000040",
       "name": "Create Manual Review Task — Audio",
@@ -2265,7 +2265,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'LOW_CONFIDENCE_SCORE', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
       },
       "id": "ac00053-0053-ac53-0053-000000000053",
       "name": "Create Low-Confidence Review Task",
@@ -2359,7 +2359,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation Distress($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation Distress($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
       },
       "id": "ac00056-0056-ac56-0056-000000000056",
       "name": "Create Distress Review Task",
@@ -2396,7 +2396,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "fXqkqpVEuLXDR2NQ",
+          "value": "3dGg55GLoFklkU1L",
           "mode": "id"
         },
         "options": {},
@@ -2707,7 +2707,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } }, body: $('Generate Reply — Claude Sonnet').first()?.json?.content } } } }}"
+        "jsonBody": "={{ { query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'OTHER', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
       },
       "id": "ac00068-0068-ac68-0068-000000000068",
       "name": "Create Calibration Review Task",

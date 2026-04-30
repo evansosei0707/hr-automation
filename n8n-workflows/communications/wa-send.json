@@ -31,7 +31,7 @@
         "operation": "executeQuery",
         "query": "SELECT COALESCE(EXTRACT(EPOCH FROM (NOW() - MAX(occurred_at))), 0) AS seconds_since_last_inbound FROM conversation_message WHERE conversation_id = $1 AND direction = 'inbound'",
         "options": {
-          "queryReplacement": "={{ $json.conversationId ?? '' }}"
+          "queryReplacement": "={{ $json.conversationId ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       }
     },
@@ -64,7 +64,7 @@
             },
             {
               "id": "cond-no-template",
-              "leftValue": "={{ $('WA Send Trigger').item.json.templateName ?? '' }}",
+              "leftValue": "={{ $('WA Send Trigger').first()?.json?.templateName ?? '' }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -103,7 +103,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'text', text: { body: $('WA Send Trigger').item.json.body } }) }}",
+        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').first()?.json?.to, type: 'text', text: { body: $('WA Send Trigger').first()?.json?.body } }) }}",
         "options": {
           "timeout": 20000,
           "retry": {
@@ -179,7 +179,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName, language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
+        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').first()?.json?.to, type: 'template', template: { name: $('WA Send Trigger').first()?.json?.templateName, language: { code: 'en' }, components: ($('WA Send Trigger').first()?.json?.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').first()?.json?.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
         "options": {
           "timeout": 20000,
           "retry": {
@@ -217,7 +217,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').item.json.to, type: 'template', template: { name: $('WA Send Trigger').item.json.templateName || 'still_interested_10d', language: { code: 'en' }, components: ($('WA Send Trigger').item.json.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').item.json.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
+        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').first()?.json?.to, type: 'template', template: { name: $('WA Send Trigger').first()?.json?.templateName || 'still_interested_10d', language: { code: 'en' }, components: ($('WA Send Trigger').first()?.json?.templateVars || []).length > 0 ? [{ type: 'body', parameters: ($('WA Send Trigger').first()?.json?.templateVars || []).map(v => ({ type: 'text', text: String(v) })) }] : [] } }) }}",
         "options": {
           "timeout": 20000,
           "retry": {

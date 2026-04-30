@@ -223,14 +223,14 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('subflow_dpa_handler', $1, 'info', 'dpa_request_received', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('DPA Handler Trigger').item.json.candidateId }},={{ $('DPA Handler Trigger').item.json.intent }}"
+          "queryReplacement": "={{ $execution.id }},={{ $('DPA Handler Trigger').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }},={{ $('DPA Handler Trigger').first()?.json?.intent }}"
         }
       }
     },
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('DPA Handler Trigger').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('DPA Handler Trigger').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "dpa00007-0007-0007-0007-000000000007",
@@ -278,7 +278,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack) VALUES ('subflow_dpa_handler', $1, $2, $3, $4)",
         "options": {
-          "queryReplacement": "={{ $json.execution.id }},={{ $json.execution.lastNodeExecuted }},={{ $json.execution.error.message }},={{ $json.execution.error.stack }}"
+          "queryReplacement": "={{ $json.execution?.id ?? '' }},={{ $json.execution?.lastNodeExecuted ?? '' }},={{ $json.execution?.error?.message ?? '' }},={{ $json.execution?.error?.stack ?? '' }}"
         }
       }
     },
@@ -294,7 +294,7 @@
           "conditions": [
             {
               "id": "cond-has-cid",
-              "leftValue": "={{ $('DPA Handler Trigger').item.json.candidateId ?? '' }}",
+              "leftValue": "={{ $('DPA Handler Trigger').first()?.json?.candidateId ?? '' }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -304,7 +304,7 @@
             {
               "id": "cond-token",
               "leftValue": "={{ $json.value ?? '' }}",
-              "rightValue": "={{ $('DPA Handler Trigger').item.json.lockValue ?? '' }}",
+              "rightValue": "={{ $('DPA Handler Trigger').first()?.json?.lockValue ?? '' }}",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -326,7 +326,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('DPA Handler Trigger').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('DPA Handler Trigger').first()?.json?.candidateId }}"
       },
       "id": "dpa00007dl-0007-0007-0007-000000000007",
       "name": "Delete Lock \u2014 DPA",

@@ -62,7 +62,7 @@
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "={{ $('WhatsApp Webhook (GET)').item.json.query['hub.challenge'] }}",
+        "responseBody": "={{ $('WhatsApp Webhook (GET)').first()?.json?.query['hub.challenge'] }}",
         "options": {
           "responseCode": 200
         }
@@ -255,7 +255,7 @@
         "operation": "executeQuery",
         "query": "SELECT candidate_id, message AS lock_value FROM event_log WHERE execution_id = $1 AND event = 'lock_acquired' ORDER BY ts DESC LIMIT 1",
         "options": {
-          "queryReplacement": "={{ $json.execution.id }}"
+          "queryReplacement": "={{ $json.execution?.id ?? '' }}"
         }
       },
       "id": "ac_e001-e001-e001-e001-000000000001",
@@ -276,7 +276,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').item.json.candidate_id ?? '') }}",
+        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').first()?.json?.candidate_id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac_e002-e002-e002-e002-000000000002",
@@ -299,7 +299,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ('workflow_a_communications', $1, $2, $3, $4, $5::jsonb);",
         "options": {
-          "queryReplacement": "={{ $json.execution.id }},={{ $json.execution.lastNodeExecuted }},={{ $json.execution.error.message }},={{ $json.execution.error.stack }},={{ JSON.stringify($json.execution || {}) }}"
+          "queryReplacement": "={{ $json.execution?.id ?? '' }},={{ $json.execution?.lastNodeExecuted ?? '' }},={{ $json.execution?.error?.message ?? '' }},={{ $json.execution?.error?.stack ?? '' }},={{ JSON.stringify($json.execution || {}) }}"
         }
       },
       "id": "a0000013-0013-0013-0013-000000000013",
@@ -354,7 +354,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message) VALUES ('workflow_a_communications', $1, 'warn', 'retry_scheduled', $2)",
         "options": {
-          "queryReplacement": "={{ $json.execution.id }},={{ 'retry attempt ' + (($json.attempt_count || 1) + 1) + ' of 3' }}"
+          "queryReplacement": "={{ $json.execution?.id ?? '' }},={{ 'retry attempt ' + (($json.attempt_count || 1) + 1) + ' of 3' }}"
         }
       },
       "id": "ac_e004-e004-e004-e004-000000000004",
@@ -391,7 +391,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $('Query Lock Value from Event Log').item.json.candidate_id || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'WORKFLOW_ERROR', subjectCandidate: { connect: { id: $('Query Lock Value from Event Log').first()?.json?.candidate_id || '' } }, dueAt: new Date(Date.now() + 4 * 3600000).toISOString() } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -483,7 +483,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').item.json.waMessageId }}",
+        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').first()?.json?.waMessageId }}",
         "propertyName": "value"
       },
       "id": "ac00004-0004-ac04-0004-000000000004",
@@ -538,7 +538,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message) VALUES ('workflow_a_communications', $1, 'info', 'dedupe_hit', $2)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Normalise Phone Number').item.json.waMessageId }}"
+          "queryReplacement": "={{ $execution.id }},={{ $('Normalise Phone Number').first()?.json?.waMessageId }}"
         }
       },
       "id": "ac00006-0006-ac06-0006-000000000006",
@@ -575,7 +575,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'query FindCandidateByPhone($phone: String!) { candidates(filter: { whatsappNumberE164: { eq: $phone } }) { edges { node { id firstName consentStatus } } } }', variables: { phone: $('Normalise Phone Number').item.json.phoneE164 } }) }}",
+        "body": "={{ JSON.stringify({ query: 'query FindCandidateByPhone($phone: String!) { candidates(filter: { whatsappNumberE164: { eq: $phone } }) { edges { node { id firstName consentStatus } } } }', variables: { phone: $('Normalise Phone Number').first()?.json?.phoneE164 } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -611,7 +611,7 @@
                 "conditions": [
                   {
                     "id": "cond-zero",
-                    "leftValue": "={{ $json.data && $json.data.candidates && $json.data.candidates.edges ? $json.data.candidates.edges.length : 0 }}",
+                    "leftValue": "={{ $json.data && $json.data.candidates && $json.data.candidates.edges ? $json.data.candidates.edges?.length ?? 0 : 0 }}",
                     "rightValue": 0,
                     "operator": {
                       "type": "number",
@@ -634,7 +634,7 @@
                 "conditions": [
                   {
                     "id": "cond-one",
-                    "leftValue": "={{ $json.data && $json.data.candidates && $json.data.candidates.edges ? $json.data.candidates.edges.length : 0 }}",
+                    "leftValue": "={{ $json.data && $json.data.candidates && $json.data.candidates.edges ? $json.data.candidates.edges?.length ?? 0 : 0 }}",
                     "rightValue": 1,
                     "operator": {
                       "type": "number",
@@ -679,7 +679,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CreateCandidate($data: CandidateCreateInput!) { createOneCandidate(data: $data) { id firstName consentStatus } }', variables: { data: { whatsappNumberE164: $('Normalise Phone Number').item.json.phoneE164, consentStatus: 'PENDING' } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation CreateCandidate($data: CandidateCreateInput!) { createOneCandidate(data: $data) { id firstName consentStatus } }', variables: { data: { whatsappNumberE164: $('Normalise Phone Number').first()?.json?.phoneE164, consentStatus: 'PENDING' } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -717,7 +717,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation FlagDup($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $json.data.candidates.edges[0].node.id } } } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation FlagDup($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $json.data.candidates.edges?.[0]?.node?.id } } } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -741,7 +741,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, error_message, context) VALUES ('workflow_a_communications', $1, 'multiple_candidates_same_phone', $2::jsonb)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ JSON.stringify({ count: $('Resolve Candidate by Phone').item.json.data.candidates.edges.length }) }}"
+          "queryReplacement": "={{ $execution.id }},={{ JSON.stringify({ count: $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.length ?? 0 }) }}"
         }
       },
       "id": "ac00011-0011-ac11-0011-000000000011",
@@ -768,49 +768,49 @@
             {
               "id": "ctx-cid",
               "name": "candidateId",
-              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.id : $('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.id }}",
+              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.id : $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id }}",
               "type": "string"
             },
             {
               "id": "ctx-fn",
               "name": "firstName",
-              "value": "={{ $json.data && $json.data.createOneCandidate ? ($json.data.createOneCandidate.firstName || '') : ($('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.firstName || '') }}",
+              "value": "={{ $json.data && $json.data.createOneCandidate ? ($json.data.createOneCandidate.firstName || '') : ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.firstName || '') }}",
               "type": "string"
             },
             {
               "id": "ctx-cs",
               "name": "consentStatus",
-              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.consentStatus : $('Resolve Candidate by Phone').item.json.data.candidates.edges[0].node.consentStatus }}",
+              "value": "={{ $json.data && $json.data.createOneCandidate ? $json.data.createOneCandidate.consentStatus : $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.consentStatus }}",
               "type": "string"
             },
             {
               "id": "ctx-phone",
               "name": "phoneE164",
-              "value": "={{ $('Normalise Phone Number').item.json.phoneE164 }}",
+              "value": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}",
               "type": "string"
             },
             {
               "id": "ctx-waid",
               "name": "waMessageId",
-              "value": "={{ $('Normalise Phone Number').item.json.waMessageId }}",
+              "value": "={{ $('Normalise Phone Number').first()?.json?.waMessageId }}",
               "type": "string"
             },
             {
               "id": "ctx-type",
               "name": "messageType",
-              "value": "={{ $('Normalise Phone Number').item.json.messageType }}",
+              "value": "={{ $('Normalise Phone Number').first()?.json?.messageType }}",
               "type": "string"
             },
             {
               "id": "ctx-body",
               "name": "messageBody",
-              "value": "={{ $('Normalise Phone Number').item.json.messageBody }}",
+              "value": "={{ $('Normalise Phone Number').first()?.json?.messageBody }}",
               "type": "string"
             },
             {
               "id": "ctx-media",
               "name": "mediaUrl",
-              "value": "={{ $('Normalise Phone Number').item.json.mediaUrl }}",
+              "value": "={{ $('Normalise Phone Number').first()?.json?.mediaUrl }}",
               "type": "string"
             }
           ]
@@ -893,7 +893,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'warn', 'lock_contention', $2, 'lock held by another execution')",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').item.json.candidateId }}"
+          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00015-0015-ac15-0015-000000000015",
@@ -916,7 +916,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'info', 'lock_acquired', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').item.json.candidateId }},={{ $execution.id }}"
+          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }},={{ $execution.id }}"
         }
       },
       "id": "ac00016-0016-ac16-0016-000000000016",
@@ -951,7 +951,7 @@
                 "conditions": [
                   {
                     "id": "c-p",
-                    "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}",
+                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
                     "rightValue": "PENDING",
                     "operator": {
                       "type": "string",
@@ -974,7 +974,7 @@
                 "conditions": [
                   {
                     "id": "c-r",
-                    "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}",
+                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
                     "rightValue": "REFUSED",
                     "operator": {
                       "type": "string",
@@ -983,7 +983,7 @@
                   },
                   {
                     "id": "c-rv",
-                    "leftValue": "={{ $('Set Candidate Context').item.json.consentStatus }}",
+                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
                     "rightValue": "REVOKED",
                     "operator": {
                       "type": "string",
@@ -1131,7 +1131,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation GrantConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').item.json.candidateId } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation GrantConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1169,7 +1169,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation RefuseConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').item.json.candidateId } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation RefuseConsent($id: ID!) { updateOneCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1201,11 +1201,11 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
-              "stringValue": "={{ 'No problem at all, ' + ($('Set Candidate Context').item.json.firstName || 'there') + \". We won't contact you again via WhatsApp. If you change your mind later, just send us a message and we'll start fresh.\" }}"
+              "stringValue": "={{ 'No problem at all, ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + \". We won't contact you again via WhatsApp. If you change your mind later, just send us a message and we'll start fresh.\" }}"
             },
             {
               "name": "conversationId",
@@ -1226,7 +1226,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00023-0023-ac23-0023-000000000023",
@@ -1257,7 +1257,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "templateName",
@@ -1265,7 +1265,7 @@
             },
             {
               "name": "templateVars",
-              "arrayValue": "={{ [$('Set Candidate Context').item.json.firstName || 'there'] }}"
+              "arrayValue": "={{ [$('Set Candidate Context').first()?.json?.firstName || 'there'] }}"
             },
             {
               "name": "conversationId",
@@ -1286,7 +1286,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00025-0025-ac25-0025-000000000025",
@@ -1317,15 +1317,15 @@
           "values": [
             {
               "name": "candidateId",
-              "stringValue": "={{ $('Set Candidate Context').item.json.candidateId }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
             },
             {
               "name": "phoneE164",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "firstName",
-              "stringValue": "={{ $('Set Candidate Context').item.json.firstName }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.firstName }}"
             },
             {
               "name": "intent",
@@ -1364,11 +1364,11 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
-              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + ', you previously asked not to be contacted via WhatsApp. We respect that. If you change your mind, you can send us a message to get started again.' }}"
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + ', you previously asked not to be contacted via WhatsApp. We respect that. If you change your mind, you can send us a message to get started again.' }}"
             },
             {
               "name": "conversationId",
@@ -1389,7 +1389,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00028-0028-ac28-0028-000000000028",
@@ -1419,7 +1419,7 @@
           "conditions": [
             {
               "id": "cond-audio",
-              "leftValue": "={{ $('Set Candidate Context').item.json.messageType }}",
+              "leftValue": "={{ $('Set Candidate Context').first()?.json?.messageType }}",
               "rightValue": "audio",
               "operator": {
                 "type": "string",
@@ -1462,7 +1462,7 @@
             },
             {
               "name": "url",
-              "value": "={{ $('Set Candidate Context').item.json.mediaUrl }}"
+              "value": "={{ $('Set Candidate Context').first()?.json?.mediaUrl }}"
             },
             {
               "name": "response_format",
@@ -1552,7 +1552,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1584,11 +1584,11 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
-              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}"
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}"
             },
             {
               "name": "conversationId",
@@ -1609,7 +1609,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00034-0034-ac34-0034-000000000034",
@@ -1650,7 +1650,7 @@
             },
             {
               "name": "url",
-              "value": "={{ $('Set Candidate Context').item.json.mediaUrl }}"
+              "value": "={{ $('Set Candidate Context').first()?.json?.mediaUrl }}"
             },
             {
               "name": "response_format",
@@ -1742,7 +1742,7 @@
         "operation": "executeQuery",
         "query": "SELECT voice_note_retry_at FROM candidate_facts WHERE twenty_candidate_id = $1",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').item.json.candidateId }}"
+          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00038-0038-ac38-0038-000000000038",
@@ -1811,7 +1811,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1833,7 +1833,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00041-0041-ac41-0041-000000000041",
@@ -1864,11 +1864,11 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
-              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}"
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + \", we couldn't quite make that out. Could you type your message instead? That'll help us get back to you faster.\" }}"
             },
             {
               "name": "conversationId",
@@ -1891,7 +1891,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO candidate_facts (twenty_candidate_id, voice_note_retry_at, updated_at) VALUES ($1, NOW(), NOW()) ON CONFLICT (twenty_candidate_id) DO UPDATE SET voice_note_retry_at = NOW(), updated_at = NOW()",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').item.json.candidateId }}"
+          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00043-0043-ac43-0043-000000000043",
@@ -1912,7 +1912,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00044-0044-ac44-0044-000000000044",
@@ -1935,7 +1935,7 @@
         "operation": "executeQuery",
         "query": "UPDATE candidate_facts SET voice_note_retry_at = NULL, updated_at = NOW() WHERE twenty_candidate_id = $1 AND voice_note_retry_at IS NOT NULL",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').item.json.candidateId }}"
+          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00045-0045-ac45-0045-000000000045",
@@ -1958,7 +1958,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation (twenty_candidate_id) VALUES ($1) ON CONFLICT (twenty_candidate_id) DO UPDATE SET updated_at = NOW() RETURNING id",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').item.json.candidateId }}"
+          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00046-0046-ac46-0046-000000000046",
@@ -1981,7 +1981,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation_message (conversation_id, direction, body, wa_message_id, media_type, transcript, transcript_quality, occurred_at) VALUES ($1, 'inbound', $2, $3, $4, $5, $6, NOW()) ON CONFLICT (wa_message_id) DO NOTHING",
         "options": {
-          "queryReplacement": "={{ $json.id }},={{ $('Set Candidate Context').item.json.messageBody || $('Evaluate Transcript Confidence').item.json.transcript || '' }},={{ $('Set Candidate Context').item.json.waMessageId }},={{ $('Set Candidate Context').item.json.messageType === 'audio' ? 'audio' : null }},={{ $('Evaluate Transcript Confidence').item.json.transcript || null }},={{ $('Evaluate Transcript Confidence').item.json.transcriptQuality || null }}"
+          "queryReplacement": "={{ $json.id }},={{ $('Set Candidate Context').first()?.json?.messageBody || $('Evaluate Transcript Confidence').first()?.json?.transcript || '' }},={{ $('Set Candidate Context').first()?.json?.waMessageId }},={{ $('Set Candidate Context').first()?.json?.messageType === 'audio' ? 'audio' : null }},={{ $('Evaluate Transcript Confidence').first()?.json?.transcript || null }},={{ $('Evaluate Transcript Confidence').first()?.json?.transcriptQuality || null }}"
         }
       },
       "id": "ac00047-0047-ac47-0047-000000000047",
@@ -2004,7 +2004,7 @@
         "operation": "executeQuery",
         "query": "SELECT body, direction, occurred_at FROM conversation_message WHERE conversation_id = $1 ORDER BY occurred_at DESC LIMIT 20",
         "options": {
-          "queryReplacement": "={{ $('Upsert Conversation Record').item.json.id }}"
+          "queryReplacement": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00048-0048-ac48-0048-000000000048",
@@ -2027,7 +2027,7 @@
         "operation": "executeQuery",
         "query": "SELECT summary FROM conversation WHERE id = $1",
         "options": {
-          "queryReplacement": "={{ $('Upsert Conversation Record').item.json.id }}"
+          "queryReplacement": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00049-0049-ac49-0049-000000000049",
@@ -2074,7 +2074,7 @@
             },
             {
               "name": "messages",
-              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-5).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: $('Set Candidate Context').item.json.messageBody}]) }}"
+              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-5).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: $('Set Candidate Context').first()?.json?.messageBody}]) }}"
             }
           ]
         }
@@ -2257,7 +2257,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -2279,7 +2279,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00054-0054-ac54-0054-000000000054",
@@ -2310,15 +2310,15 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
-              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + ', thank you for reaching out. We want to make sure you are okay. One of our team will be in touch with you shortly.' }}"
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + ', thank you for reaching out. We want to make sure you are okay. One of our team will be in touch with you shortly.' }}"
             },
             {
               "name": "conversationId",
-              "stringValue": "={{ $('Upsert Conversation Record').item.json.id ?? '' }}"
+              "stringValue": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
             }
           ]
         }
@@ -2351,7 +2351,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation Distress($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } } } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation Distress($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } } } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -2373,7 +2373,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00057-0057-ac57-0057-000000000057",
@@ -2404,15 +2404,15 @@
           "values": [
             {
               "name": "candidateId",
-              "stringValue": "={{ $('Set Candidate Context').item.json.candidateId }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
             },
             {
               "name": "phoneE164",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "firstName",
-              "stringValue": "={{ $('Set Candidate Context').item.json.firstName }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.firstName }}"
             },
             {
               "name": "intent",
@@ -2424,7 +2424,7 @@
             },
             {
               "name": "conversationId",
-              "stringValue": "={{ $('Upsert Conversation Record').item.json.id ?? '' }}"
+              "stringValue": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
             }
           ]
         }
@@ -2443,7 +2443,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'info', 'spam_detected', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').item.json.candidateId }},={{ $json.intent + ' confidence=' + $json.confidence }}"
+          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }},={{ $json.intent + ' confidence=' + $json.confidence }}"
         }
       },
       "id": "ac00059-0059-ac59-0059-000000000059",
@@ -2464,7 +2464,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00060-0060-ac60-0060-000000000060",
@@ -2487,7 +2487,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id) VALUES ('workflow_a_communications', $1, 'info', 'workflow_dispatch', $2)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').item.json.candidateId }}"
+          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00061-0061-ac61-0061-000000000061",
@@ -2508,7 +2508,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00062-0062-ac62-0062-000000000062",
@@ -2551,11 +2551,11 @@
             },
             {
               "name": "systemPrompt",
-              "stringValue": "You are a warm, professional assistant for a Ghanaian HR and recruiting firm in Accra. Keep replies to 1-3 sentences for WhatsApp. Use plain Ghanaian English. Never promise a placement, salary, interview outcome, or timeline. If you are unsure, say you will check with the team. Conversation history follows, then the candidate's new message. Previous summary: <<SUMMARY_BEGIN>>{{ $('Fetch Conversation Summary').item.json.summary }}<<SUMMARY_END>>"
+              "stringValue": "You are a warm, professional assistant for a Ghanaian HR and recruiting firm in Accra. Keep replies to 1-3 sentences for WhatsApp. Use plain Ghanaian English. Never promise a placement, salary, interview outcome, or timeline. If you are unsure, say you will check with the team. Conversation history follows, then the candidate's new message. Previous summary: <<SUMMARY_BEGIN>>{{ $('Fetch Conversation Summary').first()?.json?.summary ?? '' }}<<SUMMARY_END>>"
             },
             {
               "name": "messages",
-              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-10).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: '<<CANDIDATE_MESSAGE_BEGIN>>' + $('Set Candidate Context').item.json.messageBody + '<<CANDIDATE_MESSAGE_END>>'}]) }}"
+              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-10).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: '<<CANDIDATE_MESSAGE_BEGIN>>' + $('Set Candidate Context').first()?.json?.messageBody + '<<CANDIDATE_MESSAGE_END>>'}]) }}"
             }
           ]
         }
@@ -2574,7 +2574,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation_message (conversation_id, direction, body, occurred_at) VALUES ($1, 'outbound', $2, NOW())",
         "options": {
-          "queryReplacement": "={{ $('Upsert Conversation Record').item.json.id }},={{ $json.content }}"
+          "queryReplacement": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }},={{ $json.content }}"
         }
       },
       "id": "ac00064-0064-ac64-0064-000000000064",
@@ -2605,15 +2605,15 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
-              "stringValue": "={{ $('Generate Reply \u2014 Claude Sonnet').item.json.content }}"
+              "stringValue": "={{ $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content }}"
             },
             {
               "name": "conversationId",
-              "stringValue": "={{ $('Upsert Conversation Record').item.json.id }}"
+              "stringValue": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
             }
           ]
         }
@@ -2630,7 +2630,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "propertyName": "value"
       },
       "id": "ac00066-0066-ac66-0066-000000000066",
@@ -2699,7 +2699,7 @@
         },
         "sendBody": true,
         "specifyBody": "string",
-        "body": "={{ JSON.stringify({ query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').item.json.candidateId } }, body: $('Generate Reply \u2014 Claude Sonnet').item.json.content } } }) }}",
+        "body": "={{ JSON.stringify({ query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createOneReviewTask(data: $data) { id } }', variables: { data: { kind: 'MANUAL_REVIEW', subjectCandidate: { connect: { id: $('Set Candidate Context').first()?.json?.candidateId } }, body: $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content } } }) }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -2731,15 +2731,15 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').item.json.phoneE164 }}"
+              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
-              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').item.json.firstName || 'there') + \", thanks for your message. One of our team will get back to you shortly.\" }}"
+              "stringValue": "={{ 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + \", thanks for your message. One of our team will get back to you shortly.\" }}"
             },
             {
               "name": "conversationId",
-              "stringValue": "={{ $('Upsert Conversation Record').item.json.id }}"
+              "stringValue": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
             }
           ]
         }
@@ -2756,7 +2756,7 @@
     {
       "parameters": {
         "operation": "set",
-        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').item.json.waMessageId }}",
+        "key": "={{ 'hra:dedupe:' + $('Normalise Phone Number').first()?.json?.waMessageId }}",
         "value": "1",
         "expire": true,
         "ttl": 86400
@@ -2779,7 +2779,7 @@
     {
       "parameters": {
         "operation": "set",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}",
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
         "value": "={{ $execution.id }}",
         "expire": true,
         "ttl": 180
@@ -2811,7 +2811,7 @@
           "conditions": [
             {
               "id": "cond-has-cid",
-              "leftValue": "={{ $('Query Lock Value from Event Log').item.json.candidate_id ?? '' }}",
+              "leftValue": "={{ $('Query Lock Value from Event Log').first()?.json?.candidate_id ?? '' }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -2821,7 +2821,7 @@
             {
               "id": "cond-token-match",
               "leftValue": "={{ $json.value ?? '' }}",
-              "rightValue": "={{ $('Query Lock Value from Event Log').item.json.lock_value ?? '' }}",
+              "rightValue": "={{ $('Query Lock Value from Event Log').first()?.json?.lock_value ?? '' }}",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -2843,7 +2843,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').item.json.candidate_id ?? '') }}"
+        "key": "={{ 'hra:conv:' + ($('Query Lock Value from Event Log').first()?.json?.candidate_id ?? '') }}"
       },
       "id": "ac_e002dl-e002-e002-e002-000000000002",
       "name": "Delete Lock on Error",
@@ -2895,7 +2895,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00023dl-00023-00023-00023-000230000000",
       "name": "Delete Lock \u2014 Consent Refused",
@@ -2947,7 +2947,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00025dl-00025-00025-00025-000250000000",
       "name": "Delete Lock \u2014 Consent Pending",
@@ -2999,7 +2999,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00028dl-00028-00028-00028-000280000000",
       "name": "Delete Lock \u2014 Refused or Revoked",
@@ -3051,7 +3051,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00034dl-00034-00034-00034-000340000000",
       "name": "Delete Lock \u2014 Local Language",
@@ -3103,7 +3103,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00041dl-00041-00041-00041-000410000000",
       "name": "Delete Lock \u2014 Second Strike Audio",
@@ -3155,7 +3155,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00044dl-00044-00044-00044-000440000000",
       "name": "Delete Lock \u2014 Low Quality Audio",
@@ -3207,7 +3207,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00054dl-00054-00054-00054-000540000000",
       "name": "Delete Lock \u2014 Low Confidence",
@@ -3259,7 +3259,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00057dl-00057-00057-00057-000570000000",
       "name": "Delete Lock \u2014 Distress",
@@ -3311,7 +3311,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00060dl-00060-00060-00060-000600000000",
       "name": "Delete Lock \u2014 Spam",
@@ -3363,7 +3363,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00062dl-00062-00062-00062-000620000000",
       "name": "Delete Lock \u2014 Workflow Dispatch",
@@ -3415,7 +3415,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').item.json.candidateId }}"
+        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
       },
       "id": "ac00066dl-00066-00066-00066-000660000000",
       "name": "Delete Lock \u2014 Open Conversation",

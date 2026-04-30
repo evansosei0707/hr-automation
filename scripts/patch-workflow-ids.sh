@@ -8,13 +8,13 @@ cd "$(dirname "$0")/.."
 echo "=== Fetching current workflow IDs from n8n DB ==="
 
 WA_SEND_ID=$(docker exec hr-bookings-db psql -U n8n_bookings -d n8n -tA \
-  -c "SELECT id FROM workflow_entity WHERE name = 'Subflow — WA Send' ORDER BY \"createdAt\" DESC LIMIT 1;")
+  -c "SELECT id FROM workflow_entity WHERE name = 'Subflow — WA Send' ORDER BY active DESC, \"createdAt\" DESC LIMIT 1;")
 
 CLAUDE_CALL_ID=$(docker exec hr-bookings-db psql -U n8n_bookings -d n8n -tA \
-  -c "SELECT id FROM workflow_entity WHERE name = 'Subflow — Claude Call' ORDER BY \"createdAt\" DESC LIMIT 1;")
+  -c "SELECT id FROM workflow_entity WHERE name = 'Subflow — Claude Call' ORDER BY active DESC, \"createdAt\" DESC LIMIT 1;")
 
 DPA_HANDLER_ID=$(docker exec hr-bookings-db psql -U n8n_bookings -d n8n -tA \
-  -c "SELECT id FROM workflow_entity WHERE name = 'Subflow — DPA Handler' ORDER BY \"createdAt\" DESC LIMIT 1;")
+  -c "SELECT id FROM workflow_entity WHERE name = 'Subflow — DPA Handler' ORDER BY active DESC, \"createdAt\" DESC LIMIT 1;")
 
 BOOKINGS_CRED_ID=$(docker exec hr-bookings-db psql -U n8n_bookings -d n8n -tA \
   -c "SELECT id FROM credentials_entity WHERE name = 'Bookings DB (n8n_bookings)' LIMIT 1;")

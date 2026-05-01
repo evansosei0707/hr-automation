@@ -187,19 +187,19 @@
             {
               "id": "resp-content",
               "name": "content",
-              "value": "={{ $json.content && $json.content[0] && $json.content[0].text }}",
+              "value": "={{ $('Call Claude API').first()?.json?.content?.[0]?.text ?? '' }}",
               "type": "string"
             },
             {
               "id": "resp-input-tokens",
               "name": "input_tokens",
-              "value": "={{ $json.usage && $json.usage.input_tokens }}",
+              "value": "={{ $('Call Claude API').first()?.json?.usage?.input_tokens ?? 0 }}",
               "type": "number"
             },
             {
               "id": "resp-output-tokens",
               "name": "output_tokens",
-              "value": "={{ $json.usage && $json.usage.output_tokens }}",
+              "value": "={{ $('Call Claude API').first()?.json?.usage?.output_tokens ?? 0 }}",
               "type": "number"
             }
           ]

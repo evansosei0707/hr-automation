@@ -47,13 +47,13 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "or",
           "conditions": [
             {
               "id": "cond-under-gate",
-              "leftValue": "={{ $json.daily_spend_usd }}",
+              "leftValue": "={{ Number($json.daily_spend_usd) }}",
               "rightValue": 10,
               "operator": {
                 "type": "number",

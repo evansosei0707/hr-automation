@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Query n8n execution logs and workflow state via the REST API.
+# Query n8n execution logs and workflow state.
+# - executions / last-error / workflow-status use the REST API.
+# - execution <id> queries the n8n DB directly (execution_data table) because
+#   n8n 2.x REST API returns empty runData in includeData responses.
 # Usage:
 #   ./scripts/n8n-debug.sh executions           — last 10 executions
-#   ./scripts/n8n-debug.sh execution <id>       — error details for one execution
+#   ./scripts/n8n-debug.sh execution <id>       — all nodes + error details for one execution
 #   ./scripts/n8n-debug.sh last-error           — full details of the most recent failure
 #   ./scripts/n8n-debug.sh workflow-status      — all workflows with active/archived state
 
@@ -62,46 +65,112 @@ PY
 # ── execution <id> ───────────────────────────────────────────────────────────
 elif [ "$CMD" = "execution" ]; then
   ID="${2:?'Usage: n8n-debug.sh execution <id>'}"
-  n8n_get "executions/$ID?includeData=true" > "$TMPDIR_LOCAL/ex.json"
-  python3 - "$TMPDIR_LOCAL/ex.json" <<'PY'
+  # n8n 2.x REST API returns empty runData; query the DB directly instead.
+  N8N_DB_CONTAINER="${N8N_DB_CONTAINER:-hr-bookings-db}"
+  N8N_DB_USER="${N8N_DB_USER:-n8n_bookings}"
+  N8N_DB_NAME="${N8N_DB_NAME:-n8n}"
+  # Metadata query: small fields only (no JSON blobs to avoid | collisions)
+  docker exec "$N8N_DB_CONTAINER" psql -U "$N8N_DB_USER" -d "$N8N_DB_NAME" -tA \
+    -c "SELECT e.id, e.status, e.\"startedAt\", e.\"stoppedAt\",
+               (d.\"workflowData\"->>'name')
+        FROM execution_entity e
+        JOIN execution_data d ON d.\"executionId\" = e.id
+        WHERE e.id = $ID;" \
+    > "$TMPDIR_LOCAL/ex_meta.txt" 2>&1
+  # Data column in its own query to avoid | separator collision with JSON content
+  docker exec "$N8N_DB_CONTAINER" psql -U "$N8N_DB_USER" -d "$N8N_DB_NAME" -tA \
+    -c "SELECT data FROM execution_data WHERE \"executionId\" = $ID;" \
+    > "$TMPDIR_LOCAL/ex_data.txt" 2>&1
+  python3 - "$TMPDIR_LOCAL/ex_meta.txt" "$TMPDIR_LOCAL/ex_data.txt" <<'PY'
 import json, sys
 
-with open(sys.argv[1]) as f: ex = json.load(f)
-wf_name = (ex.get("workflowData") or {}).get("name") or ex.get("workflowId","?")
-print("Execution : %s" % ex["id"])
-print("Workflow  : %s" % wf_name)
-print("Status    : %s" % ex.get("status","?"))
-print("Started   : %s" % (ex.get("startedAt") or "?")[:19].replace("T"," "))
-print("Stopped   : %s" % (ex.get("stoppedAt") or "?")[:19].replace("T"," "))
+meta_raw = open(sys.argv[1]).read().strip()
+data_raw = open(sys.argv[2]).read().strip()
 
-rdata = (ex.get("data") or {}).get("resultData") or {}
-last_node = rdata.get("lastNodeExecuted")
+if meta_raw.startswith("ERROR") or meta_raw.startswith("psql:"):
+    print("ERROR: DB query failed:")
+    print(meta_raw)
+    sys.exit(1)
+if not meta_raw:
+    print("ERROR: execution %s not found in n8n DB" % sys.argv[1].split("/")[-1])
+    sys.exit(1)
+
+parts = meta_raw.split("|", 4)
+if len(parts) < 4:
+    print("ERROR: unexpected metadata format: %r" % meta_raw)
+    sys.exit(1)
+
+ex_id    = parts[0]
+status   = parts[1]
+started  = parts[2]
+stopped  = parts[3]
+wf_name  = parts[4] if len(parts) > 4 else "?"
+
+print("Execution : %s" % ex_id)
+print("Workflow  : %s" % wf_name)
+print("Status    : %s" % status)
+print("Started   : %s" % started[:19].replace("T", " "))
+print("Stopped   : %s" % (stopped[:19].replace("T", " ") if stopped else "—"))
+
+# Deserialise n8n's reference-compressed execution data array.
+# Format: JSON array where numeric string values are back-references by index.
+if not data_raw or data_raw.startswith("psql:"):
+    print("ERROR: could not fetch execution data from DB")
+    sys.exit(1)
+arr = json.loads(data_raw)
+
+def deref(val, arr):
+    if isinstance(val, str) and val.isdigit():
+        idx = int(val)
+        return deref(arr[idx], arr) if idx < len(arr) else val
+    if isinstance(val, dict):
+        return {k: deref(v, arr) for k, v in val.items()}
+    if isinstance(val, list):
+        return [deref(v, arr) for v in val]
+    return val
+
+root       = deref(arr[0], arr)
+rdata      = root.get("resultData", {})
+run_data   = rdata.get("runData", {}) or {}
+last_node  = rdata.get("lastNodeExecuted", "")
+error      = rdata.get("error")
+
 if last_node:
     print("Last node : %s" % last_node)
 
-err = rdata.get("error")
-if err:
+if error:
     print()
     print("─── ERROR ───────────────────────────────────────")
-    print("Message    : %s" % err.get("message",""))
-    print("Description: %s" % err.get("description",""))
-    node = err.get("node")
+    print("Message    : %s" % error.get("message", ""))
+    print("Description: %s" % error.get("description", ""))
+    node = error.get("node")
     if isinstance(node, dict):
-        print("Node       : %s" % node.get("name",""))
+        print("Node       : %s" % node.get("name", ""))
     elif node:
         print("Node       : %s" % node)
-    ctx = err.get("context")
+    ctx = error.get("context")
     if ctx:
         print("Context    :")
         print(json.dumps(ctx, indent=2)[:800])
-else:
-    print()
-    print("No top-level error. Run data summary (last 8 nodes):")
-    run_data = rdata.get("runData") or {}
-    for name in list(run_data.keys())[-8:]:
-        entries = run_data[name]
-        st = entries[-1].get("executionStatus","?") if entries else "?"
-        print("  %-42s %s" % (name, st))
+
+print()
+print("─── NODES EXECUTED (%d) ─────────────────────────" % len(run_data))
+
+# Sort by executionIndex (insertion order fallback for older entries)
+def sort_key(item):
+    name, entries = item
+    if entries and isinstance(entries, list):
+        return entries[-1].get("executionIndex", 0)
+    return 0
+
+for name, entries in sorted(run_data.items(), key=sort_key):
+    st = "?"
+    ms = ""
+    if entries and isinstance(entries, list):
+        e = entries[-1]
+        st = e.get("executionStatus", "?")
+        ms = ("%dms" % e.get("executionTime", 0)) if e.get("executionTime") else ""
+    print("  %-10s  %-6s  %s" % (st, ms, name))
 PY
 
 # ── last-error ───────────────────────────────────────────────────────────────
@@ -188,11 +257,13 @@ else
 Usage: ./scripts/n8n-debug.sh <command> [args]
 
   executions              List last 10 executions (all statuses)
-  execution <id>          Full error/run details for a specific execution ID
+  execution <id>          All nodes executed + error details (reads n8n DB directly)
   last-error              Fetch and display the most recent failed execution
   workflow-status         List all workflows with active and archived state
   cleanup                 Delete all archived (inactive) workflow versions
 
-Reads N8N_API_KEY and N8N_API_URL from infrastructure/.env
+Reads N8N_API_KEY, N8N_API_URL from infrastructure/.env
+Reads N8N_DB_CONTAINER (default: hr-bookings-db), N8N_DB_USER (default: n8n_bookings),
+      N8N_DB_NAME (default: n8n) from environment or infrastructure/.env
 USAGE
 fi

@@ -1,5 +1,5 @@
 {
-  "name": "Subflow — WA Send",
+  "name": "Subflow \u2014 WA Send",
   "nodes": [
     {
       "id": "was00001-0001-0001-0001-000000000001",
@@ -102,8 +102,7 @@
           ]
         },
         "sendBody": true,
-        "specifyBody": "string",
-        "body": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: $('WA Send Trigger').first()?.json?.to, type: 'text', text: { body: $('WA Send Trigger').first()?.json?.body } }) }}",
+        "specifyBody": "json",
         "options": {
           "timeout": 20000,
           "retry": {
@@ -116,7 +115,8 @@
               "neverError": true
             }
           }
-        }
+        },
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $('WA Send Trigger').first()?.json?.to, type: 'text', text: { body: $('WA Send Trigger').first()?.json?.body } } }}"
       }
     },
     {
@@ -192,7 +192,7 @@
     },
     {
       "id": "was00007-0007-0007-0007-000000000007",
-      "name": "Force Template — Window Expired",
+      "name": "Force Template \u2014 Window Expired",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -263,7 +263,7 @@
         ],
         [
           {
-            "node": "Force Template — Window Expired",
+            "node": "Force Template \u2014 Window Expired",
             "type": "main",
             "index": 0
           }

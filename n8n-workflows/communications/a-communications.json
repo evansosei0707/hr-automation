@@ -1118,7 +1118,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
@@ -1280,7 +1280,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
@@ -1500,7 +1500,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
@@ -1780,7 +1780,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
@@ -2226,7 +2226,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
@@ -2455,7 +2455,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "BpFdmkPuqOueATOd",
           "mode": "id"
         },
         "options": {},
@@ -2521,7 +2521,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
@@ -2533,7 +2533,7 @@
             },
             {
               "name": "body",
-              "stringValue": "={{ $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content }}"
+              "stringValue": "={{ ($('Generate Reply \u2014 Claude Sonnet').first()?.json?.content?.[0]?.text ?? $('Generate Reply \u2014 Claude Sonnet').first()?.json?.content ?? '') }}"
             },
             {
               "name": "conversationId",
@@ -2647,7 +2647,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},

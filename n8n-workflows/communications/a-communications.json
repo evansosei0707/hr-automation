@@ -1268,43 +1268,42 @@
       }
     },
     {
-      "parameters": {
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
-          "mode": "id"
-        },
-        "options": {},
-        "fields": {
-          "values": [
-            {
-              "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
-            },
-            {
-              "name": "templateName",
-              "stringValue": "consent_request"
-            },
-            {
-              "name": "templateVars",
-              "arrayValue": "={{ [$('Set Candidate Context').first()?.json?.firstName || 'there'] }}"
-            },
-            {
-              "name": "conversationId",
-              "stringValue": ""
-            }
-          ]
-        }
-      },
       "id": "ac00024-0024-ac24-0024-000000000024",
       "name": "Send Consent Request Template",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         4520,
         680
-      ]
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v20.0/' + $env.WHATSAPP_PHONE_NUMBER_ID + '/messages' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.WHATSAPP_ACCESS_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $('Set Candidate Context').first()?.json?.phoneE164, type: 'text', text: { body: 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + '! \\u{1F44B} Before we continue, we need your consent to store and process your data as part of our recruitment process, in line with Ghana\\'s Data Protection Act. Do you agree? Reply YES to continue or NO to opt out.' } } }}",
+        "options": {
+          "timeout": 20000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      }
     },
     {
       "parameters": {

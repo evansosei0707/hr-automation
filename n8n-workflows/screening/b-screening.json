@@ -1,12 +1,15 @@
 {
-  "name": "Workflow B — Screening",
+  "name": "Workflow B \u2014 Screening",
   "nodes": [
     {
       "id": "b000001-0001-b001-0001-000000000001",
-      "name": "Cron — Poll Screening Inbox",
+      "name": "Cron \u2014 Poll Screening Inbox",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [200, 300],
+      "position": [
+        200,
+        300
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -23,7 +26,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [200, 520],
+      "position": [
+        200,
+        520
+      ],
       "parameters": {}
     },
     {
@@ -31,10 +37,13 @@
       "name": "Claim Inbox Row",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [440, 300],
+      "position": [
+        440,
+        300
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -51,7 +60,10 @@
       "name": "Row Claimed?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 300],
+      "position": [
+        680,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -77,10 +89,13 @@
     },
     {
       "id": "b000005-0005-b005-0005-000000000005",
-      "name": "No Row — Exit",
+      "name": "No Row \u2014 Exit",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [920, 420],
+      "position": [
+        920,
+        420
+      ],
       "parameters": {}
     },
     {
@@ -88,7 +103,10 @@
       "name": "Has Application ID?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [920, 300],
+      "position": [
+        920,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -117,7 +135,10 @@
       "name": "Fetch Application from Twenty",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1160, 220],
+      "position": [
+        1160,
+        220
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://twenty:3000/graphql",
@@ -152,7 +173,10 @@
       "name": "Set Application Context",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1400, 220],
+      "position": [
+        1400,
+        220
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -195,10 +219,13 @@
     },
     {
       "id": "b000009-0009-b009-0009-000000000009",
-      "name": "Set Context — No Application",
+      "name": "Set Context \u2014 No Application",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [1160, 380],
+      "position": [
+        1160,
+        380
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -244,10 +271,13 @@
       "name": "Fetch Candidate Facts",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [1640, 300],
+      "position": [
+        1640,
+        300
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -264,7 +294,10 @@
       "name": "Has CV Text?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1880, 300],
+      "position": [
+        1880,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -290,10 +323,13 @@
     },
     {
       "id": "b000012-0012-b012-0012-000000000012",
-      "name": "No CV — Create Parse Failure Task",
+      "name": "No CV \u2014 Create Parse Failure Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2120, 420],
+      "position": [
+        2120,
+        420
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://twenty:3000/graphql",
@@ -325,13 +361,16 @@
     },
     {
       "id": "b000013-0013-b013-0013-000000000013",
-      "name": "Mark Processed — Parse Failure",
+      "name": "Mark Processed \u2014 Parse Failure",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [2360, 420],
+      "position": [
+        2360,
+        420
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -348,7 +387,10 @@
       "name": "Prepare CV Text",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [2120, 300],
+      "position": [
+        2120,
+        300
+      ],
       "parameters": {
         "mode": "manual",
         "duplicateItem": false,
@@ -367,15 +409,18 @@
     },
     {
       "id": "b000015-0015-b015-0015-000000000015",
-      "name": "Extract Structured Facts — Claude Sonnet",
+      "name": "Extract Structured Facts \u2014 Claude Sonnet",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [2360, 300],
+      "position": [
+        2360,
+        300
+      ],
       "parameters": {
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},
@@ -446,10 +491,13 @@
       "name": "Parse Fact Extraction Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2600, 300],
+      "position": [
+        2600,
+        300
+      ],
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const content = $('Extract Structured Facts — Claude Sonnet').first()?.json?.content ?? '';\nlet facts = {};\ntry {\n  const match = content.match(/\\{[\\s\\S]*\\}/);\n  facts = match ? JSON.parse(match[0]) : {};\n} catch(e) {\n  facts = {};\n}\nconst cvText = $('Prepare CV Text').first()?.json?.cvText ?? '';\nreturn [{ json: { extractedFacts: facts, cvText } }];"
+        "jsCode": "const content = $('Extract Structured Facts \u2014 Claude Sonnet').first()?.json?.content ?? '';\nlet facts = {};\ntry {\n  const match = content.match(/\\{[\\s\\S]*\\}/);\n  facts = match ? JSON.parse(match[0]) : {};\n} catch(e) {\n  facts = {};\n}\nconst cvText = $('Prepare CV Text').first()?.json?.cvText ?? '';\nreturn [{ json: { extractedFacts: facts, cvText } }];"
       }
     },
     {
@@ -457,10 +505,13 @@
       "name": "Store Extracted Facts",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [2840, 300],
+      "position": [
+        2840,
+        300
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -474,15 +525,18 @@
     },
     {
       "id": "b000018-0018-b018-0018-000000000018",
-      "name": "Score Against Rubric — Claude Sonnet",
+      "name": "Score Against Rubric \u2014 Claude Sonnet",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [3080, 300],
+      "position": [
+        3080,
+        300
+      ],
       "parameters": {
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},
@@ -493,7 +547,7 @@
             "workflowName": "workflow_b_screening",
             "maxTokens": 1000,
             "systemPrompt": "You are a CV scoring assistant for a Ghanaian HR firm. Score this candidate's CV against the job requirements. Return ONLY valid JSON with exactly these keys: score (integer 0-100), tier (string, one of: STRONG, BORDERLINE, WEAK), rationale (string, max 200 chars, must cite evidence from the CV), breakdown (object with keys: skills (integer 0-100), experience (integer 0-100), education (integer 0-100)). No other text, no markdown.",
-            "messages": "={{ JSON.stringify([{ role: 'user', content: 'Job title: ' + ($('Set Application Context').first()?.json?.jobTitle ?? $('Set Context — No Application').first()?.json?.jobTitle ?? 'General position') + '\\n\\nCandidate facts:\\n' + JSON.stringify($('Parse Fact Extraction Response').first()?.json?.extractedFacts ?? {}) + '\\n\\nCV text (first 2000 chars):\\n' + ($('Parse Fact Extraction Response').first()?.json?.cvText ?? '').slice(0, 2000) }]) }}"
+            "messages": "={{ JSON.stringify([{ role: 'user', content: 'Job title: ' + ($('Set Application Context').first()?.json?.jobTitle ?? $('Set Context \u2014 No Application').first()?.json?.jobTitle ?? 'General position') + '\\n\\nCandidate facts:\\n' + JSON.stringify($('Parse Fact Extraction Response').first()?.json?.extractedFacts ?? {}) + '\\n\\nCV text (first 2000 chars):\\n' + ($('Parse Fact Extraction Response').first()?.json?.cvText ?? '').slice(0, 2000) }]) }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -553,10 +607,13 @@
       "name": "Parse Score Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3320, 300],
+      "position": [
+        3320,
+        300
+      ],
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const content = $('Score Against Rubric — Claude Sonnet').first()?.json?.content ?? '';\nlet scoreData = { score: 0, tier: 'WEAK', rationale: 'Score parse failed', breakdown: { skills: 0, experience: 0, education: 0 } };\ntry {\n  const match = content.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    const parsed = JSON.parse(match[0]);\n    scoreData = {\n      score: Number(parsed.score ?? 0),\n      tier: ['STRONG','BORDERLINE','WEAK'].includes(parsed.tier) ? parsed.tier : 'WEAK',\n      rationale: String(parsed.rationale ?? '').slice(0, 200),\n      breakdown: {\n        skills: Number(parsed.breakdown?.skills ?? 0),\n        experience: Number(parsed.breakdown?.experience ?? 0),\n        education: Number(parsed.breakdown?.education ?? 0)\n      }\n    };\n  }\n} catch(e) {\n  scoreData.rationale = 'Parse error: ' + String(e.message).slice(0, 100);\n}\nreturn [{ json: scoreData }];"
+        "jsCode": "const content = $('Score Against Rubric \u2014 Claude Sonnet').first()?.json?.content ?? '';\nlet scoreData = { score: 0, tier: 'WEAK', rationale: 'Score parse failed', breakdown: { skills: 0, experience: 0, education: 0 } };\ntry {\n  const match = content.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    const parsed = JSON.parse(match[0]);\n    scoreData = {\n      score: Number(parsed.score ?? 0),\n      tier: ['STRONG','BORDERLINE','WEAK'].includes(parsed.tier) ? parsed.tier : 'WEAK',\n      rationale: String(parsed.rationale ?? '').slice(0, 200),\n      breakdown: {\n        skills: Number(parsed.breakdown?.skills ?? 0),\n        experience: Number(parsed.breakdown?.experience ?? 0),\n        education: Number(parsed.breakdown?.education ?? 0)\n      }\n    };\n  }\n} catch(e) {\n  scoreData.rationale = 'Parse error: ' + String(e.message).slice(0, 100);\n}\nreturn [{ json: scoreData }];"
       }
     },
     {
@@ -564,10 +621,13 @@
       "name": "Store Score",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [3560, 300],
+      "position": [
+        3560,
+        300
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -584,7 +644,10 @@
       "name": "Update Application in Twenty",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3800, 300],
+      "position": [
+        3800,
+        300
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://twenty:3000/graphql",
@@ -603,7 +666,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { query: 'mutation UpdateApplication($id: ID!, $data: ApplicationUpdateInput!) { updateApplication(id: $id, data: $data) { id status score updatedAt } }', variables: { id: $('Set Application Context').first()?.json?.applicationId ?? $('Set Context — No Application').first()?.json?.applicationId ?? '', data: { status: $('Parse Score Response').first()?.json?.tier === 'STRONG' ? 'SHORTLISTED' : 'SCREENED', score: $('Parse Score Response').first()?.json?.score ?? 0 } } } }}",
+        "jsonBody": "={{ { query: 'mutation UpdateApplication($id: ID!, $data: ApplicationUpdateInput!) { updateApplication(id: $id, data: $data) { id status score updatedAt } }', variables: { id: $('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId ?? '', data: { status: $('Parse Score Response').first()?.json?.tier === 'STRONG' ? 'SHORTLISTED' : 'SCREENED', score: $('Parse Score Response').first()?.json?.score ?? 0 } } } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -616,10 +679,13 @@
     },
     {
       "id": "b000021if-0021-b021-0021-000000000021",
-      "name": "Has Application ID — Skip Update?",
+      "name": "Has Application ID \u2014 Skip Update?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3620, 200],
+      "position": [
+        3620,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -631,7 +697,7 @@
           "conditions": [
             {
               "id": "cond-has-app-for-update",
-              "leftValue": "={{ ($('Set Application Context').first()?.json?.applicationId ?? $('Set Context — No Application').first()?.json?.applicationId ?? '') }}",
+              "leftValue": "={{ ($('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId ?? '') }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -648,7 +714,10 @@
       "name": "Needs Human Review?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [4040, 300],
+      "position": [
+        4040,
+        300
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -695,7 +764,10 @@
       "name": "Create Review Task",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4280, 220],
+      "position": [
+        4280,
+        220
+      ],
       "parameters": {
         "method": "POST",
         "url": "http://twenty:3000/graphql",
@@ -714,7 +786,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'LOW_CONFIDENCE_SCORE', status: 'PENDING_REVIEW', notes: 'Score: ' + ($('Parse Score Response').first()?.json?.score ?? 0) + '/100 (' + ($('Parse Score Response').first()?.json?.tier ?? '') + '). ' + ($('Parse Score Response').first()?.json?.rationale ?? ''), subjectApplication: ($('Set Application Context').first()?.json?.applicationId ?? $('Set Context — No Application').first()?.json?.applicationId) ? { connect: { where: { id: $('Set Application Context').first()?.json?.applicationId ?? $('Set Context — No Application').first()?.json?.applicationId } } } : undefined } } } }}",
+        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'LOW_CONFIDENCE_SCORE', status: 'PENDING_REVIEW', notes: 'Score: ' + ($('Parse Score Response').first()?.json?.score ?? 0) + '/100 (' + ($('Parse Score Response').first()?.json?.tier ?? '') + '). ' + ($('Parse Score Response').first()?.json?.rationale ?? ''), subjectApplication: ($('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId) ? { connect: { where: { id: $('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId } } } : undefined } } } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -730,20 +802,23 @@
       "name": "Send WA Ack",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [4520, 300],
+      "position": [
+        4520,
+        300
+      ],
       "parameters": {
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "to": "={{ $('Set Application Context').first()?.json?.candidatePhone ?? $('Set Context — No Application').first()?.json?.candidatePhone ?? '' }}",
-            "body": "={{ 'Hi ' + ($('Set Application Context').first()?.json?.candidateName ?? $('Set Context — No Application').first()?.json?.candidateName ?? 'there') + ', thank you for submitting your CV. Our team will review it and get back to you shortly.' }}",
+            "to": "={{ $('Set Application Context').first()?.json?.candidatePhone ?? $('Set Context \u2014 No Application').first()?.json?.candidatePhone ?? '' }}",
+            "body": "={{ 'Hi ' + ($('Set Application Context').first()?.json?.candidateName ?? $('Set Context \u2014 No Application').first()?.json?.candidateName ?? 'there') + ', thank you for submitting your CV. Our team will review it and get back to you shortly.' }}",
             "conversationId": ""
           },
           "matchingColumns": [],
@@ -786,10 +861,13 @@
       "name": "Mark Inbox Processed",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [4760, 300],
+      "position": [
+        4760,
+        300
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -806,10 +884,13 @@
       "name": "Log Screening Error",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [440, 520],
+      "position": [
+        440,
+        520
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -826,10 +907,13 @@
       "name": "Release Claim on Error",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [680, 520],
+      "position": [
+        680,
+        520
+      ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -843,92 +927,304 @@
     }
   ],
   "connections": {
-    "Cron — Poll Screening Inbox": {
-      "main": [[{ "node": "Claim Inbox Row", "type": "main", "index": 0 }]]
+    "Cron \u2014 Poll Screening Inbox": {
+      "main": [
+        [
+          {
+            "node": "Claim Inbox Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Claim Inbox Row": {
-      "main": [[{ "node": "Row Claimed?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Row Claimed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Row Claimed?": {
       "main": [
-        [{ "node": "Has Application ID?", "type": "main", "index": 0 }],
-        [{ "node": "No Row — Exit", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Has Application ID?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Row \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Has Application ID?": {
       "main": [
-        [{ "node": "Fetch Application from Twenty", "type": "main", "index": 0 }],
-        [{ "node": "Set Context — No Application", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Fetch Application from Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Context \u2014 No Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Fetch Application from Twenty": {
-      "main": [[{ "node": "Set Application Context", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Set Application Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Set Application Context": {
-      "main": [[{ "node": "Fetch Candidate Facts", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Fetch Candidate Facts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Set Context — No Application": {
-      "main": [[{ "node": "Fetch Candidate Facts", "type": "main", "index": 0 }]]
+    "Set Context \u2014 No Application": {
+      "main": [
+        [
+          {
+            "node": "Fetch Candidate Facts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Fetch Candidate Facts": {
-      "main": [[{ "node": "Has CV Text?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Has CV Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Has CV Text?": {
       "main": [
-        [{ "node": "Prepare CV Text", "type": "main", "index": 0 }],
-        [{ "node": "No CV — Create Parse Failure Task", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Prepare CV Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No CV \u2014 Create Parse Failure Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "No CV — Create Parse Failure Task": {
-      "main": [[{ "node": "Mark Processed — Parse Failure", "type": "main", "index": 0 }]]
+    "No CV \u2014 Create Parse Failure Task": {
+      "main": [
+        [
+          {
+            "node": "Mark Processed \u2014 Parse Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare CV Text": {
-      "main": [[{ "node": "Extract Structured Facts — Claude Sonnet", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Extract Structured Facts \u2014 Claude Sonnet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Extract Structured Facts — Claude Sonnet": {
-      "main": [[{ "node": "Parse Fact Extraction Response", "type": "main", "index": 0 }]]
+    "Extract Structured Facts \u2014 Claude Sonnet": {
+      "main": [
+        [
+          {
+            "node": "Parse Fact Extraction Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Fact Extraction Response": {
-      "main": [[{ "node": "Store Extracted Facts", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Store Extracted Facts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Store Extracted Facts": {
-      "main": [[{ "node": "Score Against Rubric — Claude Sonnet", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Score Against Rubric \u2014 Claude Sonnet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Score Against Rubric — Claude Sonnet": {
-      "main": [[{ "node": "Parse Score Response", "type": "main", "index": 0 }]]
+    "Score Against Rubric \u2014 Claude Sonnet": {
+      "main": [
+        [
+          {
+            "node": "Parse Score Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Score Response": {
-      "main": [[{ "node": "Store Score", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Store Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Store Score": {
-      "main": [[{ "node": "Has Application ID — Skip Update?", "type": "main", "index": 0 }]]
-    },
-    "Has Application ID — Skip Update?": {
       "main": [
-        [{ "node": "Update Application in Twenty", "type": "main", "index": 0 }],
-        [{ "node": "Needs Human Review?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Has Application ID \u2014 Skip Update?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Application ID \u2014 Skip Update?": {
+      "main": [
+        [
+          {
+            "node": "Update Application in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Needs Human Review?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Update Application in Twenty": {
-      "main": [[{ "node": "Needs Human Review?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Needs Human Review?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Needs Human Review?": {
       "main": [
-        [{ "node": "Create Review Task", "type": "main", "index": 0 }],
-        [{ "node": "Send WA Ack", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Create Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send WA Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Create Review Task": {
-      "main": [[{ "node": "Send WA Ack", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Send WA Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Send WA Ack": {
-      "main": [[{ "node": "Mark Inbox Processed", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Mark Inbox Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Error Trigger": {
-      "main": [[{ "node": "Log Screening Error", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Log Screening Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Log Screening Error": {
-      "main": [[{ "node": "Release Claim on Error", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Release Claim on Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -936,9 +1232,15 @@
     "executionOrder": "v1"
   },
   "tags": [
-    { "name": "hr-automation" },
-    { "name": "workflow-b" },
-    { "name": "version-1.0" }
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-b"
+    },
+    {
+      "name": "version-1.0"
+    }
   ],
   "pinData": {},
   "meta": {}

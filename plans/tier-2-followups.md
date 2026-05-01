@@ -193,6 +193,15 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** workflow-builder.
 - **Reference:** Workflow A live test 2026-04-30; `n8n-workflows/communications/a-communications-NOTES.md` §3.
 
+### T2-20. Soft-deleted candidate re-messages — workflow falls through to null candidateId
+
+- **Description:** If a candidate has been soft-deleted in Twenty (e.g., DPA erasure request processed) and then messages again, `Resolve Candidate by Phone` returns empty edges (Twenty hides soft-deleted records) AND `Create Candidate in Twenty` fails with "duplicate entry" (unique constraint on `whatsappNumberE164` ignores `deletedAt`). Both legs of the `Set Candidate Context` fallback chain evaluate to null → `candidateId = null` → all downstream Postgres writes and Twenty updates silently store null. Surfaced 2026-05-01 as the "zero UUID" bug during live testing; root cause was the test candidate having been manually soft-deleted during early test runs. Fix: add an `IF` node after `Create Candidate in Twenty` checking `$json.data.createCandidate !== null`; on the false branch, run a `Re-Resolve Deleted Candidate` HTTP query with `deletedAt: { is: NOT_NULL }` filter to find the archived record and restore it (or log a DPA-conflict error if the candidate explicitly requested erasure).
+- **Files affected:** `n8n-workflows/communications/a-communications.json` (new IF + HTTP node after `Create Candidate in Twenty`; update `Set Candidate Context` candidateId expression to add third fallback).
+- **Blocking:** No for v1 — the test candidate was restored manually; clean new candidates are unaffected. Becomes blocking if DPA erasure requests are fulfilled before the patch lands, since that candidate cannot re-engage.
+- **Target window:** Pre-launch. Must ship before DPA deletion handler (Workflow A DPA branch) is enabled for real traffic.
+- **Owner:** workflow-builder.
+- **Reference:** 2026-05-01 live test; `n8n-workflows/communications/a-communications.json` `Set Candidate Context` expressions.
+
 ---
 
 ## How to use this plan

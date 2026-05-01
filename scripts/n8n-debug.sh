@@ -137,6 +137,51 @@ for wf in sorted(workflows, key=lambda w: w["name"]):
 print("\nTotal: %d workflow(s)" % len(workflows))
 PY
 
+# ── cleanup ──────────────────────────────────────────────────────────────────
+elif [ "$CMD" = "cleanup" ]; then
+  n8n_get "workflows" > "$TMPDIR_LOCAL/wf.json"
+  # Identify archived workflow IDs — these are old import versions, safe to delete
+  TO_DELETE=$(python3 - "$TMPDIR_LOCAL/wf.json" <<'PY'
+import json, sys
+
+workflows = json.load(open(sys.argv[1])).get("data", [])
+archived = [wf for wf in workflows if wf.get("isArchived")]
+active   = [wf for wf in workflows if not wf.get("isArchived")]
+
+print("Archived (will delete): %d" % len(archived), flush=True)
+print("Active   (will keep):   %d" % len(active),   flush=True)
+print("---")
+for wf in archived:
+    print(wf["id"])
+PY
+)
+
+  # Print header lines and collect IDs
+  echo "$TO_DELETE" | head -3
+  IDS=$(echo "$TO_DELETE" | tail -n +4)
+
+  if [ -z "$IDS" ]; then
+    echo "Nothing to clean up."
+    exit 0
+  fi
+
+  COUNT=0
+  FAIL=0
+  while IFS= read -r wf_id; do
+    [ -z "$wf_id" ] && continue
+    HTTP=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+           "$N8N_URL/api/v1/workflows/$wf_id" \
+           -H "X-N8N-API-KEY: $API_KEY")
+    if [ "$HTTP" = "200" ]; then
+      COUNT=$((COUNT + 1))
+    else
+      echo "  WARN: DELETE $wf_id returned HTTP $HTTP" >&2
+      FAIL=$((FAIL + 1))
+    fi
+  done <<< "$IDS"
+
+  echo "Deleted $COUNT archived workflow(s). Failed: $FAIL"
+
 # ── help ─────────────────────────────────────────────────────────────────────
 else
   cat <<'USAGE'
@@ -146,6 +191,7 @@ Usage: ./scripts/n8n-debug.sh <command> [args]
   execution <id>          Full error/run details for a specific execution ID
   last-error              Fetch and display the most recent failed execution
   workflow-status         List all workflows with active and archived state
+  cleanup                 Delete all archived (inactive) workflow versions
 
 Reads N8N_API_KEY and N8N_API_URL from infrastructure/.env
 USAGE

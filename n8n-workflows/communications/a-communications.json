@@ -3752,6 +3752,29 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "ac00200-0200-ac20-0200-000000000200",
+      "name": "Enqueue Screening Inbox",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        8840,
+        680
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO screening_inbox (candidate_id, application_id, trigger_kind) VALUES ($1, $2, 'new_application') ON CONFLICT (candidate_id) WHERE processed_at IS NULL DO NOTHING",
+        "options": {
+          "queryReplacement": "={{ [$('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? '', null] }}"
+        }
+      }
     }
   ],
   "connections": {
@@ -4934,6 +4957,17 @@
         [
           {
             "node": "Parse Pending Consent Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Lock \u2014 Workflow Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Enqueue Screening Inbox",
             "type": "main",
             "index": 0
           }

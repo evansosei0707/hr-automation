@@ -51,6 +51,7 @@ PRESERVE_CREDS = {bookings_cred, redis_cred}
 for filepath in [
     'n8n-workflows/communications/a-communications.json',
     'n8n-workflows/communications/dpa-handler.json',
+    'n8n-workflows/screening/b-screening.json',
 ]:
     with open(filepath) as f:
         data = json.load(f)
@@ -82,6 +83,10 @@ for filepath in [
         'Handle DPA Request': dpa_id,
         'Send Data Access Ack': wa_id,
         'Send Deletion Ack': wa_id,
+        # Workflow B — Screening
+        'Extract Structured Facts — Claude Sonnet': cc_id,
+        'Score Against Rubric — Claude Sonnet': cc_id,
+        'Send WA Ack': wa_id,
     }
 
     for node in data.get('nodes', []):

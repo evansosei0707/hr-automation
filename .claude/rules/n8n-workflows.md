@@ -152,6 +152,31 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-05-01** — consent flow was routing GRANTED candidates to PENDING branch until `Is Consent Granted?` IF node was updated to read from the GraphQL result node directly.
 
+24. **`alwaysOutputData: true` on Postgres executeQuery nodes must be at the NODE ROOT LEVEL, not inside `parameters.options`.** Any Postgres node that may return zero rows (e.g. a poll that finds no work, a lookup that finds no match) will halt the execution chain if it emits no items. Setting `alwaysOutputData` inside `parameters.options` has no effect — n8n reads it only from the node's top-level JSON object.
+
+    **Correct JSON shape:**
+    ```json
+    {
+      "name": "Claim Inbox Row",
+      "type": "n8n-nodes-base.postgres",
+      "alwaysOutputData": true,
+      "parameters": { ... }
+    }
+    ```
+
+    **Wrong (silently ignored):**
+    ```json
+    {
+      "name": "Claim Inbox Row",
+      "type": "n8n-nodes-base.postgres",
+      "parameters": {
+        "options": { "alwaysOutputData": true }
+      }
+    }
+    ```
+
+    **Surfaced 2026-05-01** during Workflow B v1 live test — `Claim Inbox Row` (FOR UPDATE SKIP LOCKED) returned zero rows on an empty inbox and halted the execution instead of flowing to the `Row Claimed?` IF node's false branch.
+
 ## Before committing an n8n workflow
 
 Run the validator:

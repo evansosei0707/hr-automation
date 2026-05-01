@@ -35,10 +35,15 @@ Current build state. Updated at the end of every work session.
 
 - ✅ **Workflow B design (2026-05-01).** Design note at `docs/02-workflows/b-white-collar-design-v1.md` (status: Ready). OQ-1 resolved — Twenty Application resolvers confirmed at `docs/03-integrations/twenty-application-schema.md` (`de875e2`). OQ-6 resolved — ADR-0010 at `docs/05-decisions/ADR-0010-cv-parser.md` (`8a3ec6e`): n8n "Extract from File" + Claude Sonnet, DPA-clean, no new container. Closing arc: `ce46654` + `de875e2` + `8a3ec6e` + `b0d68ea`.
 
+- ✅ **Workflow B v1 build (2026-05-01).** `n8n-workflows/screening/b-screening.json` (28 nodes) + `database/migrations/V008__screening_inbox.sql` + `a-communications.json` inbox INSERT on both `workflow_reply` and `open_conversation` branches. Rules #19–#24 added. Key fixes during build/test: `alwaysOutputData` at node root level (rule #24), `wa-send` Return Success node, n8n-debug.sh RecursionError fix.
+
+- [~] **Workflow B v1 live test (2026-05-01) — parse failure path ✅ proven.** Empty screening_inbox → no-row exit → parse failure ReviewTask created end-to-end. Happy path (CV text → Extract from File → Claude Sonnet scoring) not yet tested — requires candidate to send actual CV. Unblocked.
+
 ## What's next
 
-- **Workflow B build** — dispatch `workflow-builder` with `docs/02-workflows/b-white-collar-design-v1.md`. Paired deliverables: `n8n-workflows/communications/b-screening.json` + `database/migrations/V008__screening_inbox.sql` + a small change-request to `a-communications.json` (`workflow_reply` branch inserts into `screening_inbox`).
-- **Week 1 close-out tasks** (T2-18/T2-19 atomic Redis lock upgrade) — can run in parallel with B build or after.
+- **Workflow B happy path test** — trigger by having a candidate send CV text; OR proceed to Workflow C.
+- **Workflow C architect dispatch** — spec at `docs/02-workflows/c-interview-scheduling.md`.
+- **Week 1 close-out tasks** (T2-18/T2-19 atomic Redis lock upgrade) — can run in parallel.
 
 ## What's blocked
 

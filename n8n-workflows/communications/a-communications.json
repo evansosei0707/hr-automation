@@ -4612,11 +4612,6 @@
             "node": "Parse Pending Consent Reply",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Send Consent Request Template",
-            "type": "main",
-            "index": 0
           }
         ]
       ]

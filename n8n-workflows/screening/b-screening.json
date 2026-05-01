@@ -572,7 +572,7 @@
             "workflowName": "workflow_b_screening",
             "maxTokens": 1000,
             "systemPrompt": "You are a CV scoring assistant for a Ghanaian HR firm. Score this candidate's CV against the job requirements. Return ONLY valid JSON with exactly these keys: score (integer 0-100), tier (string, one of: STRONG, BORDERLINE, WEAK), rationale (string, max 200 chars, must cite evidence from the CV), breakdown (object with keys: skills (integer 0-100), experience (integer 0-100), education (integer 0-100)). No other text, no markdown.",
-            "messages": "={{ JSON.stringify([{ role: 'user', content: 'Job title: ' + (($('Set Application Context').first()?.json ?? $('Set Context \\u2014 No Application').first()?.json ?? {}).jobTitle ?? 'General position') + '\\n\\nCandidate facts:\\n' + JSON.stringify($('Parse Fact Extraction Response').first()?.json?.extractedFacts ?? {}) + '\\n\\nCV text (first 2000 chars):\\n' + ($('Parse Fact Extraction Response').first()?.json?.cvText ?? '').slice(0, 2000) }]) }}"
+            "messages": "={{ JSON.stringify([{ role: 'user', content: 'Job title: ' + (((() => { try { return $('Set Application Context').first()?.json; } catch(e) { return null; } })() ?? $('Set Context \\u2014 No Application').first()?.json ?? {}).jobTitle ?? 'General position') + '\\n\\nCandidate facts:\\n' + JSON.stringify($('Parse Fact Extraction Response').first()?.json?.extractedFacts ?? {}) + '\\n\\nCV text (first 2000 chars):\\n' + ($('Parse Fact Extraction Response').first()?.json?.cvText ?? '').slice(0, 2000) }]) }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -691,7 +691,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { query: 'mutation UpdateApplication($id: ID!, $data: ApplicationUpdateInput!) { updateApplication(id: $id, data: $data) { id status score updatedAt } }', variables: { id: $('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId ?? '', data: { status: $('Parse Score Response').first()?.json?.tier === 'STRONG' ? 'SHORTLISTED' : 'SCREENED', score: $('Parse Score Response').first()?.json?.score ?? 0 } } } }}",
+        "jsonBody": "={{ { query: 'mutation UpdateApplication($id: ID!, $data: ApplicationUpdateInput!) { updateApplication(id: $id, data: $data) { id status score updatedAt } }', variables: { id: (() => { try { return $('Set Application Context').first()?.json; } catch(e) { return null; } })()?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId ?? '', data: { status: $('Parse Score Response').first()?.json?.tier === 'STRONG' ? 'SHORTLISTED' : 'SCREENED', score: $('Parse Score Response').first()?.json?.score ?? 0 } } } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -722,7 +722,7 @@
           "conditions": [
             {
               "id": "cond-has-app-for-update",
-              "leftValue": "={{ ($('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId ?? '') }}",
+              "leftValue": "={{ ((() => { try { return $('Set Application Context').first()?.json; } catch(e) { return null; } })()?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId ?? '') }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -811,7 +811,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'LOW_CONFIDENCE_SCORE', status: 'PENDING_REVIEW', notes: 'Score: ' + ($('Parse Score Response').first()?.json?.score ?? 0) + '/100 (' + ($('Parse Score Response').first()?.json?.tier ?? '') + '). ' + ($('Parse Score Response').first()?.json?.rationale ?? ''), subjectApplication: ($('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId) ? { connect: { where: { id: $('Set Application Context').first()?.json?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId } } } : undefined } } } }}",
+        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'LOW_CONFIDENCE_SCORE', status: 'PENDING_REVIEW', notes: 'Score: ' + ($('Parse Score Response').first()?.json?.score ?? 0) + '/100 (' + ($('Parse Score Response').first()?.json?.tier ?? '') + '). ' + ($('Parse Score Response').first()?.json?.rationale ?? ''), subjectApplication: ((() => { try { return $('Set Application Context').first()?.json; } catch(e) { return null; } })()?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId) ? { connect: { where: { id: (() => { try { return $('Set Application Context').first()?.json; } catch(e) { return null; } })()?.applicationId ?? $('Set Context \u2014 No Application').first()?.json?.applicationId } } } : undefined } } } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -842,8 +842,8 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "to": "={{ $('Set Application Context').first()?.json?.candidatePhone ?? $('Set Context \u2014 No Application').first()?.json?.candidatePhone ?? '' }}",
-            "body": "={{ 'Hi ' + ($('Set Application Context').first()?.json?.candidateName ?? $('Set Context \u2014 No Application').first()?.json?.candidateName ?? 'there') + ', thank you for submitting your CV. Our team will review it and get back to you shortly.' }}",
+            "to": "={{ (() => { try { return $('Set Application Context').first()?.json; } catch(e) { return null; } })()?.candidatePhone ?? $('Set Context \u2014 No Application').first()?.json?.candidatePhone ?? '' }}",
+            "body": "={{ 'Hi ' + ((() => { try { return $('Set Application Context').first()?.json; } catch(e) { return null; } })()?.candidateName ?? $('Set Context \u2014 No Application').first()?.json?.candidateName ?? 'there') + ', thank you for submitting your CV. Our team will review it and get back to you shortly.' }}",
             "conversationId": ""
           },
           "matchingColumns": [],

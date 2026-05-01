@@ -334,6 +334,17 @@
           }
         ]
       ]
+    },
+    "Force Template \u2014 Window Expired": {
+      "main": [
+        [
+          {
+            "node": "Return Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,

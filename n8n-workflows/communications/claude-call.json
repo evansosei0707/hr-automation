@@ -144,7 +144,7 @@
             "waitBetweenTries": 2000
           }
         },
-        "jsonBody": "={{ { model: ($('Claude Call Trigger').first()?.json?.model ?? 'claude-haiku-4-5-20251001'), max_tokens: ($('Claude Call Trigger').first()?.json?.maxTokens ?? 1000), system: ($('Claude Call Trigger').first()?.json?.systemPrompt ?? ''), messages: ($('Claude Call Trigger').first()?.json?.messages ?? []) } }}"
+        "jsonBody": "={{ { model: ($('Claude Call Trigger').first()?.json?.model ?? 'claude-haiku-4-5-20251001'), max_tokens: ($('Claude Call Trigger').first()?.json?.maxTokens ?? 1000), system: ($('Claude Call Trigger').first()?.json?.systemPrompt ?? ''), messages: ($json.messages ?? []) } }}"
       }
     },
     {
@@ -166,7 +166,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO ai_call_log (workflow_name, model, input_tokens, output_tokens, cost_usd, prompt_excerpt) VALUES ($1, $2, $3, $4, $5, $6)",
         "options": {
-          "queryReplacement": "={{ $('Claude Call Trigger').first()?.json?.workflowName }},={{ $('Claude Call Trigger').first()?.json?.model }},={{ $json.usage && $json.usage.input_tokens }},={{ $json.usage && $json.usage.output_tokens }},={{ $json.usage ? (($json.usage.input_tokens * ($('Claude Call Trigger').first()?.json?.model === 'claude-haiku-4-5' ? 0.80 : 3.00) + $json.usage.output_tokens * ($('Claude Call Trigger').first()?.json?.model === 'claude-haiku-4-5' ? 4.00 : 15.00)) / 1000000) : 0 }},={{ ($('Claude Call Trigger').first()?.json?.messages ?? [])[($('Claude Call Trigger').first()?.json?.messages?.length ?? 1) - 1]?.content?.slice(0, 200) ?? '' }}"
+          "queryReplacement": "={{ [$('Claude Call Trigger').first()?.json?.workflowName ?? '',$('Claude Call Trigger').first()?.json?.model ?? '',($json.usage?.input_tokens ?? 0),($json.usage?.output_tokens ?? 0),($json.usage ? (($json.usage.input_tokens * ($('Claude Call Trigger').first()?.json?.model === 'claude-haiku-4-5-20251001' ? 0.80 : 3.00) + $json.usage.output_tokens * ($('Claude Call Trigger').first()?.json?.model === 'claude-haiku-4-5-20251001' ? 4.00 : 15.00)) / 1000000) : 0),(($('Normalise Messages').first()?.json?.messages ?? [])[($('Normalise Messages').first()?.json?.messages?.length ?? 1) - 1]?.content?.slice(0, 200) ?? '')] }}"
         }
       }
     },
@@ -221,13 +221,13 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "combinator": "and",
           "conditions": [
             {
               "id": "cond-has-messages",
-              "leftValue": "={{ ($('Claude Call Trigger').first()?.json?.messages ?? []).length }}",
+              "leftValue": "={{ ($json.messages ?? []).length }}",
               "rightValue": 0,
               "operator": {
                 "type": "number",
@@ -275,6 +275,20 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "cc000010-0010-0010-0010-000000000010",
+      "name": "Normalise Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        300
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const trigger = $('Claude Call Trigger').first()?.json ?? {};\nlet messages = trigger.messages ?? [];\nif (typeof messages === 'string') {\n  try { messages = JSON.parse(messages); } catch(e) { messages = []; }\n}\nif (!Array.isArray(messages)) messages = [];\nreturn [{ json: { ...trigger, messages } }];"
+      }
     }
   ],
   "connections": {
@@ -304,7 +318,7 @@
       "main": [
         [
           {
-            "node": "Has Messages?",
+            "node": "Normalise Messages",
             "type": "main",
             "index": 0
           }
@@ -352,6 +366,17 @@
         [
           {
             "node": "Return Empty Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise Messages": {
+      "main": [
+        [
+          {
+            "node": "Has Messages?",
             "type": "main",
             "index": 0
           }

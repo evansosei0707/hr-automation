@@ -37,11 +37,10 @@ Current build state. Updated at the end of every work session.
 
 - ✅ **Workflow B v1 build (2026-05-01).** `n8n-workflows/screening/b-screening.json` (28 nodes) + `database/migrations/V008__screening_inbox.sql` + `a-communications.json` inbox INSERT on both `workflow_reply` and `open_conversation` branches. Rules #19–#24 added. Key fixes during build/test: `alwaysOutputData` at node root level (rule #24), `wa-send` Return Success node, n8n-debug.sh RecursionError fix.
 
-- [~] **Workflow B v1 live test (2026-05-01) — parse failure path ✅ proven.** Empty screening_inbox → no-row exit → parse failure ReviewTask created end-to-end. Happy path (CV text → Extract from File → Claude Sonnet scoring) not yet tested — requires candidate to send actual CV. Unblocked.
+- ✅ **Workflow B v1 live test (2026-05-01) — complete.** Parse failure path proven (empty inbox → no-row exit → ReviewTask). Happy path proven: CV text → Extract Structured Facts (Claude Sonnet) → Score Against Rubric (Claude Sonnet) → score stored in candidate_facts → ReviewTask created → WA Ack sent → inbox row marked processed. Rules #25 added. **Workflow B v1 DONE.**
 
 ## What's next
 
-- **Workflow B happy path test** — trigger by having a candidate send CV text; OR proceed to Workflow C.
 - **Workflow C architect dispatch** — spec at `docs/02-workflows/c-interview-scheduling.md`.
 - **Week 1 close-out tasks** (T2-18/T2-19 atomic Redis lock upgrade) — can run in parallel.
 

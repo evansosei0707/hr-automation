@@ -9,8 +9,8 @@
 - [x] **Workflow A v1** — DONE. Build 2026-04-30; live test PASSED 2026-05-01. Closing arc: `f811dd6` + `4325099` + `17080c8` + `29aeb5f`. T2-13–T2-17 in `plans/tier-2-followups.md`.
 - [x] **Workflow B design** — DONE 2026-05-01. Design note ready at `docs/02-workflows/b-white-collar-design-v1.md`. OQ-1 (Twenty resolvers) and OQ-6 (CV parser, ADR-0010) resolved. Closing arc: `ce46654`..`b0d68ea`.
 - [x] **Workflow B build** — DONE 2026-05-01. `b-screening.json` + V008 migration + `a-communications.json` inbox INSERT on both `workflow_reply` and `open_conversation` branches. Rules #19–#24 added.
-- [~] **Workflow B v1 live test** — parse failure path ✅ proven 2026-05-01 (empty screening_inbox → no-row exit → parse failure ReviewTask created). Happy path (CV scoring) not yet tested — requires candidate to send actual CV text. Unblocked but deferred.
-- [ ] **Next: Workflow B happy path test** OR **Workflow C architect dispatch** — user to decide. Workflow C spec: `docs/02-workflows/c-interview-scheduling.md`.
+- [x] **Workflow B v1 live test** — ✅ complete 2026-05-01. Parse failure path proven earlier. Happy path proven: CV text → Extract Structured Facts (Claude Sonnet) → Score Against Rubric (Claude Sonnet) → score stored in candidate_facts → ReviewTask created → WA Ack sent → inbox row marked processed end-to-end.
+- [ ] **Workflow C architect dispatch** — next. Spec: `docs/02-workflows/c-interview-scheduling.md`.
 - [ ] **Week 1 close-out tasks** — T2-18/T2-19 atomic Redis lock upgrade (can run in parallel)
 
 ---

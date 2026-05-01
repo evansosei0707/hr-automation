@@ -177,6 +177,12 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-05-01** during Workflow B v1 live test — `Claim Inbox Row` (FOR UPDATE SKIP LOCKED) returned zero rows on an empty inbox and halted the execution instead of flowing to the `Row Claimed?` IF node's false branch.
 
+25. **Add every new workflow file that references subflow IDs to `scripts/patch-workflow-ids.sh`'s file list.** The patch script only processes the files explicitly listed in its Python heredoc. A workflow file that is not in the list will retain stale subflow IDs after reimport, causing `"Workflow does not exist"` errors at runtime whenever a subflow is reimported and its ID changes.
+
+    **When adding a new workflow that calls Execute Workflow nodes:** add the file path to the `for filepath in [...]` list in `patch-workflow-ids.sh` AND add each Execute Workflow node name → subflow ID mapping to the `NODE_TO_SUBFLOW` dict (rule #21).
+
+    **Surfaced 2026-05-01** — `b-screening.json` was not in the patch script's file list after initial build; `Extract Structured Facts — Claude Sonnet` and `Score Against Rubric — Claude Sonnet` retained stale Claude Call subflow IDs after wa-send was reimported, causing `"Workflow does not exist"` on the first happy-path test run.
+
 ## Before committing an n8n workflow
 
 Run the validator:

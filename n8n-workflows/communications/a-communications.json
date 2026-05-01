@@ -164,7 +164,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message, data) VALUES ('workflow_a_communications', $1, 'info', 'webhook_received', $2, $3::jsonb);",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ 'entry_count=' + (($json.body_parsed?.entry?.length) || 0) }},={{ '{\"entry_count\":' + (($json.body_parsed?.entry?.length) || 0) + ',\"raw_body_length\":' + ($json.raw_body_length || 0) + '}' }}"
+          "queryReplacement": "={{ [$execution.id, 'entry_count=' + (($json.body_parsed?.entry?.length) || 0), '{\"entry_count\":' + (($json.body_parsed?.entry?.length) || 0) + ',\"raw_body_length\":' + ($json.raw_body_length || 0) + '}'] }}"
         }
       },
       "id": "a0000008-0008-0008-0008-000000000008",
@@ -204,7 +204,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, context) VALUES ('workflow_a_communications', $1, 'Validate HMAC', $2, $3::jsonb);",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $json.reason ? $json.reason : 'X-Hub-Signature-256 mismatch' }},={{ '{\"raw_body_length\":' + ($json.raw_body_length || 0) + '}' }}"
+          "queryReplacement": "={{ [$execution.id, $json.reason ? $json.reason : 'X-Hub-Signature-256 mismatch', '{\"raw_body_length\":' + ($json.raw_body_length || 0) + '}'] }}"
         }
       },
       "id": "a0000010-0010-0010-0010-000000000010",
@@ -255,7 +255,7 @@
         "operation": "executeQuery",
         "query": "SELECT candidate_id, message AS lock_value FROM event_log WHERE execution_id = $1 AND event = 'lock_acquired' ORDER BY ts DESC LIMIT 1",
         "options": {
-          "queryReplacement": "={{ $json.execution?.id ?? '' }}"
+          "queryReplacement": "={{ [$json.execution?.id ?? ''] }}"
         }
       },
       "id": "ac_e001-e001-e001-e001-000000000001",
@@ -462,7 +462,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message) VALUES ('workflow_a_communications', $1, 'warn', 'invalid_phone', $2)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $json.reason + ': ' + ($json.raw_from || '') }}"
+          "queryReplacement": "={{ [$execution.id, $json.reason + ': ' + ($json.raw_from || '')] }}"
         }
       },
       "id": "ac00003-0003-ac03-0003-000000000003",
@@ -538,7 +538,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message) VALUES ('workflow_a_communications', $1, 'info', 'dedupe_hit', $2)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Normalise Phone Number').first()?.json?.waMessageId }}"
+          "queryReplacement": "={{ [$execution.id, $('Normalise Phone Number').first()?.json?.waMessageId] }}"
         }
       },
       "id": "ac00006-0006-ac06-0006-000000000006",
@@ -741,7 +741,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, error_message, context) VALUES ('workflow_a_communications', $1, 'multiple_candidates_same_phone', $2::jsonb)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ '{\"count\":' + ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.length ?? 0) + '}' }}"
+          "queryReplacement": "={{ [$execution.id, '{\"count\":' + ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.length ?? 0) + '}'] }}"
         }
       },
       "id": "ac00011-0011-ac11-0011-000000000011",
@@ -893,7 +893,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'warn', 'lock_contention', $2, 'lock held by another execution')",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [$execution.id, ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00015-0015-ac15-0015-000000000015",
@@ -916,7 +916,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'info', 'lock_acquired', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }},={{ $execution.id }}"
+          "queryReplacement": "={{ [$execution.id, ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '00000000-0000-0000-0000-000000000000'), $execution.id] }}"
         }
       },
       "id": "ac00016-0016-ac16-0016-000000000016",
@@ -1780,7 +1780,7 @@
         "operation": "executeQuery",
         "query": "SELECT voice_note_retry_at FROM candidate_facts WHERE twenty_candidate_id = $1",
         "options": {
-          "queryReplacement": "={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00038-0038-ac38-0038-000000000038",
@@ -1953,7 +1953,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO candidate_facts (twenty_candidate_id, voice_note_retry_at, updated_at) VALUES ($1, NOW(), NOW()) ON CONFLICT (twenty_candidate_id) DO UPDATE SET voice_note_retry_at = NOW(), updated_at = NOW()",
         "options": {
-          "queryReplacement": "={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00043-0043-ac43-0043-000000000043",
@@ -1997,7 +1997,7 @@
         "operation": "executeQuery",
         "query": "UPDATE candidate_facts SET voice_note_retry_at = NULL, updated_at = NOW() WHERE twenty_candidate_id = $1 AND voice_note_retry_at IS NOT NULL",
         "options": {
-          "queryReplacement": "={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00045-0045-ac45-0045-000000000045",
@@ -2020,7 +2020,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation (twenty_candidate_id) VALUES ($1) ON CONFLICT (twenty_candidate_id) DO UPDATE SET updated_at = NOW() RETURNING id",
         "options": {
-          "queryReplacement": "={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00046-0046-ac46-0046-000000000046",
@@ -2066,7 +2066,7 @@
         "operation": "executeQuery",
         "query": "SELECT body, direction, occurred_at FROM conversation_message WHERE conversation_id = $1 ORDER BY occurred_at DESC LIMIT 20",
         "options": {
-          "queryReplacement": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [$('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00048-0048-ac48-0048-000000000048",
@@ -2089,7 +2089,7 @@
         "operation": "executeQuery",
         "query": "SELECT summary FROM conversation WHERE id = $1",
         "options": {
-          "queryReplacement": "={{ $('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [$('Upsert Conversation Record').first()?.json?.id ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00049-0049-ac49-0049-000000000049",
@@ -2607,7 +2607,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'info', 'spam_detected', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }},={{ $json.intent + ' confidence=' + $json.confidence }}"
+          "queryReplacement": "={{ [$execution.id, ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000', $json.intent + ' confidence=' + $json.confidence] }}"
         }
       },
       "id": "ac00059-0059-ac59-0059-000000000059",
@@ -2651,7 +2651,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id) VALUES ('workflow_a_communications', $1, 'info', 'workflow_dispatch', $2)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [$execution.id, ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '') ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       },
       "id": "ac00061-0061-ac61-0061-000000000061",

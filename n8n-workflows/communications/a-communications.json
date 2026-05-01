@@ -820,7 +820,7 @@
       "id": "ac00012-0012-ac12-0012-000000000012",
       "name": "Set Candidate Context",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
+      "typeVersion": 3.4,
       "position": [
         2840,
         480
@@ -2112,7 +2112,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "pOvUsYO6W7v729lf",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},
@@ -2695,7 +2695,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "pOvUsYO6W7v729lf",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},

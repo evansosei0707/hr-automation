@@ -78,7 +78,7 @@
       "id": "cc000004-0004-0004-0004-000000000004",
       "name": "Budget Exceeded \u2014 Return Empty",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
+      "typeVersion": 3.4,
       "position": [
         920,
         420
@@ -174,7 +174,7 @@
       "id": "cc000007-0007-0007-0007-000000000007",
       "name": "Return Claude Response",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
+      "typeVersion": 3.4,
       "position": [
         1640,
         200
@@ -243,7 +243,7 @@
       "id": "cc000009-0009-0009-0009-000000000009",
       "name": "Return Empty Response",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3,
+      "typeVersion": 3.4,
       "position": [
         1160,
         440

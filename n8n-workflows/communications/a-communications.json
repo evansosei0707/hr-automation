@@ -893,7 +893,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'warn', 'lock_contention', $2, 'lock held by another execution')",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ $execution.id }},={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00015-0015-ac15-0015-000000000015",
@@ -916,7 +916,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'info', 'lock_acquired', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }},={{ $execution.id }}"
+          "queryReplacement": "={{ $execution.id }},={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }},={{ $execution.id }}"
         }
       },
       "id": "ac00016-0016-ac16-0016-000000000016",
@@ -933,104 +933,6 @@
           "name": "Bookings DB (n8n_bookings)"
         }
       }
-    },
-    {
-      "parameters": {
-        "mode": "rules",
-        "rules": {
-          "values": [
-            {
-              "outputKey": "pending",
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose"
-                },
-                "combinator": "and",
-                "conditions": [
-                  {
-                    "id": "c-p",
-                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
-                    "rightValue": "PENDING",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ]
-              },
-              "renameOutput": true
-            },
-            {
-              "outputKey": "refused",
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose"
-                },
-                "combinator": "or",
-                "conditions": [
-                  {
-                    "id": "c-r",
-                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
-                    "rightValue": "REFUSED",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  },
-                  {
-                    "id": "c-rv",
-                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
-                    "rightValue": "REVOKED",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ]
-              },
-              "renameOutput": true
-            },
-            {
-              "conditions": {
-                "combinator": "and",
-                "conditions": [
-                  {
-                    "id": "c-g",
-                    "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
-                    "operator": {
-                      "operation": "equals",
-                      "type": "string"
-                    },
-                    "rightValue": "GRANTED"
-                  }
-                ],
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose"
-                }
-              },
-              "outputKey": "granted",
-              "renameOutput": true
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra"
-        }
-      },
-      "id": "ac00017-0017-ac17-0017-000000000017",
-      "name": "Check Consent Status",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
-      "position": [
-        3800,
-        480
-      ]
     },
     {
       "parameters": {
@@ -1162,7 +1064,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation GrantConsent($id: UUID!) { updateCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
+        "jsonBody": "={{ { query: 'mutation GrantConsent($id: UUID!) { updateCandidate(id: $id, data: { consentStatus: GRANTED }) { id consentStatus } }', variables: { id: ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') } } }}"
       },
       "id": "ac00020-0020-ac20-0020-000000000020",
       "name": "Grant Consent in Twenty",
@@ -1200,7 +1102,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation RefuseConsent($id: UUID!) { updateCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: $('Set Candidate Context').first()?.json?.candidateId } } }}"
+        "jsonBody": "={{ { query: 'mutation RefuseConsent($id: UUID!) { updateCandidate(id: $id, data: { consentStatus: REFUSED, dataRetentionPolicy: PENDING_DELETION }) { id } }', variables: { id: ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') } } }}"
       },
       "id": "ac00021-0021-ac21-0021-000000000021",
       "name": "Refuse Consent in Twenty",
@@ -1249,7 +1151,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00023-0023-ac23-0023-000000000023",
@@ -1308,7 +1210,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00025-0025-ac25-0025-000000000025",
@@ -1339,7 +1241,7 @@
           "values": [
             {
               "name": "candidateId",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+              "stringValue": "={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
             },
             {
               "name": "phoneE164",
@@ -1411,7 +1313,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00028-0028-ac28-0028-000000000028",
@@ -1582,7 +1484,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'OTHER', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation LocalLang($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'OTHER', subjectCandidate: { connect: { where: { id: ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '' } } } } } } }}"
       },
       "id": "ac00032-0032-ac32-0032-000000000032",
       "name": "Route Local Language to Review",
@@ -1631,7 +1533,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00034-0034-ac34-0034-000000000034",
@@ -1764,7 +1666,7 @@
         "operation": "executeQuery",
         "query": "SELECT voice_note_retry_at FROM candidate_facts WHERE twenty_candidate_id = $1",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00038-0038-ac38-0038-000000000038",
@@ -1841,7 +1743,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'VOICE_NOTE_MANUAL_REVIEW', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation AudioManual($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'VOICE_NOTE_MANUAL_REVIEW', subjectCandidate: { connect: { where: { id: ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '' } } } } } } }}"
       },
       "id": "ac00040-0040-ac40-0040-000000000040",
       "name": "Create Manual Review Task \u2014 Audio",
@@ -1855,7 +1757,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00041-0041-ac41-0041-000000000041",
@@ -1913,7 +1815,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO candidate_facts (twenty_candidate_id, voice_note_retry_at, updated_at) VALUES ($1, NOW(), NOW()) ON CONFLICT (twenty_candidate_id) DO UPDATE SET voice_note_retry_at = NOW(), updated_at = NOW()",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00043-0043-ac43-0043-000000000043",
@@ -1934,7 +1836,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00044-0044-ac44-0044-000000000044",
@@ -1957,7 +1859,7 @@
         "operation": "executeQuery",
         "query": "UPDATE candidate_facts SET voice_note_retry_at = NULL, updated_at = NOW() WHERE twenty_candidate_id = $1 AND voice_note_retry_at IS NOT NULL",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00045-0045-ac45-0045-000000000045",
@@ -1980,7 +1882,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation (twenty_candidate_id) VALUES ($1) ON CONFLICT (twenty_candidate_id) DO UPDATE SET updated_at = NOW() RETURNING id",
         "options": {
-          "queryReplacement": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00046-0046-ac46-0046-000000000046",
@@ -2287,7 +2189,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'LOW_CONFIDENCE_SCORE', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation LowConf($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'LOW_CONFIDENCE_SCORE', subjectCandidate: { connect: { where: { id: ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '' } } } } } } }}"
       },
       "id": "ac00053-0053-ac53-0053-000000000053",
       "name": "Create Low-Confidence Review Task",
@@ -2301,7 +2203,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00054-0054-ac54-0054-000000000054",
@@ -2381,7 +2283,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation Distress($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation Distress($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'COMPLIANCE_FLAG', subjectCandidate: { connect: { where: { id: ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '' } } } } } } }}"
       },
       "id": "ac00056-0056-ac56-0056-000000000056",
       "name": "Create Distress Review Task",
@@ -2395,7 +2297,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00057-0057-ac57-0057-000000000057",
@@ -2426,7 +2328,7 @@
           "values": [
             {
               "name": "candidateId",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+              "stringValue": "={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
             },
             {
               "name": "phoneE164",
@@ -2465,7 +2367,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id, message) VALUES ('workflow_a_communications', $1, 'info', 'spam_detected', $2, $3)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }},={{ $json.intent + ' confidence=' + $json.confidence }}"
+          "queryReplacement": "={{ $execution.id }},={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }},={{ $json.intent + ' confidence=' + $json.confidence }}"
         }
       },
       "id": "ac00059-0059-ac59-0059-000000000059",
@@ -2486,7 +2388,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00060-0060-ac60-0060-000000000060",
@@ -2509,7 +2411,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, candidate_id) VALUES ('workflow_a_communications', $1, 'info', 'workflow_dispatch', $2)",
         "options": {
-          "queryReplacement": "={{ $execution.id }},={{ $('Set Candidate Context').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ $execution.id }},={{ ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '00000000-0000-0000-0000-000000000000' }}"
         }
       },
       "id": "ac00061-0061-ac61-0061-000000000061",
@@ -2530,7 +2432,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00062-0062-ac62-0062-000000000062",
@@ -2652,7 +2554,7 @@
     {
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "propertyName": "value"
       },
       "id": "ac00066-0066-ac66-0066-000000000066",
@@ -2729,7 +2631,7 @@
             "waitBetweenTries": 1000
           }
         },
-        "jsonBody": "={{ { query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'OTHER', subjectCandidate: { connect: { where: { id: $('Set Candidate Context').first()?.json?.candidateId ?? '' } } } } } } }}"
+        "jsonBody": "={{ { query: 'mutation CalibReview($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { kind: 'OTHER', subjectCandidate: { connect: { where: { id: ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') ?? '' } } } } } } }}"
       },
       "id": "ac00068-0068-ac68-0068-000000000068",
       "name": "Create Calibration Review Task",
@@ -2801,7 +2703,7 @@
     {
       "parameters": {
         "operation": "set",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}",
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}",
         "value": "={{ $execution.id }}",
         "expire": true,
         "ttl": 180
@@ -2917,7 +2819,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00023dl-00023-00023-00023-000230000000",
       "name": "Delete Lock \u2014 Consent Refused",
@@ -2969,7 +2871,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00025dl-00025-00025-00025-000250000000",
       "name": "Delete Lock \u2014 Consent Pending",
@@ -3021,7 +2923,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00028dl-00028-00028-00028-000280000000",
       "name": "Delete Lock \u2014 Refused or Revoked",
@@ -3073,7 +2975,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00034dl-00034-00034-00034-000340000000",
       "name": "Delete Lock \u2014 Local Language",
@@ -3125,7 +3027,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00041dl-00041-00041-00041-000410000000",
       "name": "Delete Lock \u2014 Second Strike Audio",
@@ -3177,7 +3079,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00044dl-00044-00044-00044-000440000000",
       "name": "Delete Lock \u2014 Low Quality Audio",
@@ -3229,7 +3131,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00054dl-00054-00054-00054-000540000000",
       "name": "Delete Lock \u2014 Low Confidence",
@@ -3281,7 +3183,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00057dl-00057-00057-00057-000570000000",
       "name": "Delete Lock \u2014 Distress",
@@ -3333,7 +3235,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00060dl-00060-00060-00060-000600000000",
       "name": "Delete Lock \u2014 Spam",
@@ -3385,7 +3287,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00062dl-00062-00062-00062-000620000000",
       "name": "Delete Lock \u2014 Workflow Dispatch",
@@ -3437,7 +3339,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + $('Set Candidate Context').first()?.json?.candidateId }}"
+        "key": "={{ 'hra:conv:' + ($('Set Candidate Context').first()?.json?.candidateId ?? $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id ?? '') }}"
       },
       "id": "ac00066dl-00066-00066-00066-000660000000",
       "name": "Delete Lock \u2014 Open Conversation",
@@ -3452,6 +3354,79 @@
           "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
+      }
+    },
+    {
+      "id": "ac_cg01-cg01-cg01-cg01-000000cg0100",
+      "name": "Is Consent Granted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3800,
+        480
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c-granted",
+              "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
+              "rightValue": "GRANTED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ac_cr01-cr01-cr01-cr01-000000cr0100",
+      "name": "Is Consent Refused?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4040,
+        580
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "c-refused",
+              "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
+              "rightValue": "REFUSED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c-revoked",
+              "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
+              "rightValue": "REVOKED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
       }
     }
   ],
@@ -3741,39 +3716,7 @@
       "main": [
         [
           {
-            "node": "Check Consent Status",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Consent Status": {
-      "main": [
-        [
-          {
-            "node": "Parse Pending Consent Reply",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Send Already Opted-Out Reply",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Route by Message Type",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Send Consent Request Template",
+            "node": "Is Consent Granted?",
             "type": "main",
             "index": 0
           }
@@ -4635,6 +4578,47 @@
           }
         ],
         []
+      ]
+    },
+    "Is Consent Granted?": {
+      "main": [
+        [
+          {
+            "node": "Route by Message Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Consent Refused?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Consent Refused?": {
+      "main": [
+        [
+          {
+            "node": "Send Already Opted-Out Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Pending Consent Reply",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Consent Request Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },

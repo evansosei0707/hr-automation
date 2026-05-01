@@ -62,20 +62,37 @@ for filepath in [
     # value is and mapping it to the correct current ID.
     # Since we don't know old→new mapping in advance, we patch via node names.
 
+    # Explicit node-name → subflow mapping. Keyword-based matching previously
+    # routed "Generate Reply" to WA Send because 'reply' is in the WA keyword
+    # list. Explicit names eliminate that whole class of bug.
+    NODE_TO_SUBFLOW = {
+        # WA Send
+        'Send Consent Refusal Ack': wa_id,
+        'Send Already Opted-Out Reply': wa_id,
+        'Send Please Retype — Local Language': wa_id,
+        'Send Please Retype — Low Quality': wa_id,
+        'Send Distress Holding Reply': wa_id,
+        'Send Reply — WA': wa_id,
+        'Send Holding Reply — Calibration': wa_id,
+        # Claude Call
+        'Generate Reply — Claude Sonnet': cc_id,
+        'Classify Intent — Claude Haiku': cc_id,
+        # DPA Handler
+        'Handle DPA Before Consent': dpa_id,
+        'Handle DPA Request': dpa_id,
+        'Send Data Access Ack': wa_id,
+        'Send Deletion Ack': wa_id,
+    }
+
     for node in data.get('nodes', []):
         if node.get('type') == 'n8n-nodes-base.executeWorkflow':
             node_name = node.get('name', '')
             params = node.get('parameters', {})
             wf_id_field = params.get('workflowId', {})
-            if isinstance(wf_id_field, dict):
-                # Determine correct ID by node name context
-                name_lower = node_name.lower()
-                if any(x in name_lower for x in ['wa', 'send', 'whatsapp', 'reply', 'ack', 'retype', 'template', 'distress', 'opted']):
-                    wf_id_field['value'] = wa_id
-                elif any(x in name_lower for x in ['claude', 'classify', 'intent', 'generate', 'haiku', 'sonnet']):
-                    wf_id_field['value'] = cc_id
-                elif any(x in name_lower for x in ['dpa', 'data', 'deletion', 'access', 'gdpr']):
-                    wf_id_field['value'] = dpa_id
+            if isinstance(wf_id_field, dict) and node_name in NODE_TO_SUBFLOW:
+                wf_id_field['value'] = NODE_TO_SUBFLOW[node_name]
+            elif isinstance(wf_id_field, dict):
+                print(f"  WARN: no subflow mapping for node {node_name!r}", file=sys.stderr)
 
     # Also patch credential IDs
     def patch_creds(obj):

@@ -109,25 +109,49 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
-        "fields": {
-          "values": [
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $json.phoneE164 }}",
+            "body": "={{ 'Hi ' + ($json.firstName || 'there') + \", we received your data access request. Our team will prepare and send your personal data within 30 days as required by data protection law. Thank you for reaching out.\" }}",
+            "conversationId": "={{ $json.conversationId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
             {
-              "name": "to",
-              "stringValue": "={{ $json.phoneE164 }}"
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             },
             {
-              "name": "body",
-              "stringValue": "={{ 'Hi ' + ($json.firstName || 'there') + \", we received your data access request. Our team will prepare and send your personal data within 30 days as required by data protection law. Thank you for reaching out.\" }}"
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             },
             {
-              "name": "conversationId",
-              "stringValue": "={{ $json.conversationId }}"
+              "id": "conversationId",
+              "displayName": "conversationId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
-          ]
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       }
     },
@@ -144,25 +168,49 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "IaeBQ05FwV1Jp2EF",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
-        "fields": {
-          "values": [
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $json.phoneE164 }}",
+            "body": "={{ 'Hi ' + ($json.firstName || 'there') + ', we have received your deletion request. Your personal data will be removed from our systems within 30 days. We will confirm once completed.' }}",
+            "conversationId": "={{ $json.conversationId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
             {
-              "name": "to",
-              "stringValue": "={{ $json.phoneE164 }}"
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             },
             {
-              "name": "body",
-              "stringValue": "={{ 'Hi ' + ($json.firstName || 'there') + ', we have received your deletion request. Your personal data will be removed from our systems within 30 days. We will confirm once completed.' }}"
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             },
             {
-              "name": "conversationId",
-              "stringValue": "={{ $json.conversationId }}"
+              "id": "conversationId",
+              "displayName": "conversationId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
-          ]
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         }
       }
     },

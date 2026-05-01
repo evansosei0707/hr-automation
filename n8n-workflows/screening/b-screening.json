@@ -291,6 +291,30 @@
       "alwaysOutputData": true
     },
     {
+      "id": "b000029-0029-b029-0029-000000000029",
+      "name": "Fetch Latest CV Message",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        1760,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT body as cv_text FROM conversation_message WHERE conversation_id = (SELECT id FROM conversation WHERE twenty_candidate_id = $1) AND direction = 'inbound' ORDER BY occurred_at DESC LIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.candidate_id ?? ''] }}"
+        }
+      }
+    },
+    {
       "id": "b000011-0011-b011-0011-000000000011",
       "name": "Has CV Text?",
       "type": "n8n-nodes-base.if",
@@ -310,7 +334,7 @@
           "conditions": [
             {
               "id": "cond-has-cv",
-              "leftValue": "={{ ($json.facts?.cv_text ?? '') }}",
+              "leftValue": "={{ ($json.cv_text ?? '') }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -377,7 +401,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE screening_inbox SET processed_at = NOW(), error_message = 'parse_failure: no cv_text in candidate_facts' WHERE id = $1",
+        "query": "UPDATE screening_inbox SET processed_at = NOW(), error_message = 'parse_failure: no cv_text in conversation_message' WHERE id = $1",
         "options": {
           "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.id] }}"
         }
@@ -400,7 +424,7 @@
             {
               "id": "cv-text",
               "name": "cvText",
-              "value": "={{ $json.facts?.cv_text ?? '' }}",
+              "value": "={{ $('Fetch Latest CV Message').first()?.json?.cv_text ?? '' }}",
               "type": "string"
             }
           ]
@@ -1023,7 +1047,7 @@
       "main": [
         [
           {
-            "node": "Has CV Text?",
+            "node": "Fetch Latest CV Message",
             "type": "main",
             "index": 0
           }
@@ -1221,6 +1245,17 @@
         [
           {
             "node": "Release Claim on Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Latest CV Message": {
+      "main": [
+        [
+          {
+            "node": "Has CV Text?",
             "type": "main",
             "index": 0
           }

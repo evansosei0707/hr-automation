@@ -117,60 +117,71 @@ print("Stopped   : %s" % (stopped[:19].replace("T", " ") if stopped else "—"))
 if not data_raw or data_raw.startswith("psql:"):
     print("ERROR: could not fetch execution data from DB")
     sys.exit(1)
+sys.setrecursionlimit(10000)
 arr = json.loads(data_raw)
 
-def deref(val, arr):
-    if isinstance(val, str) and val.isdigit():
+# n8n stores execution data as a JSON array where string-integer values are
+# back-references by index (e.g. "5" means arr[5]). n8n also back-references
+# repeated scalars — including numbers that appear in timestamps — so fully
+# expanding the tree re-expands shared subtrees exponentially and blows the
+# stack or hangs. Instead, use targeted single-chain resolution: follow refs
+# only for the specific fields needed for display.
+def resolve(val):
+    seen = set()
+    while isinstance(val, str) and val.isdigit():
         idx = int(val)
-        return deref(arr[idx], arr) if idx < len(arr) else val
-    if isinstance(val, dict):
-        return {k: deref(v, arr) for k, v in val.items()}
-    if isinstance(val, list):
-        return [deref(v, arr) for v in val]
+        if idx in seen or idx >= len(arr):
+            break
+        seen.add(idx)
+        val = arr[idx]
     return val
 
-root       = deref(arr[0], arr)
-rdata      = root.get("resultData", {})
-run_data   = rdata.get("runData", {}) or {}
-last_node  = rdata.get("lastNodeExecuted", "")
-error      = rdata.get("error")
+r0         = arr[0]
+rdata      = resolve(r0.get("resultData"))  or {}
+last_node  = resolve(rdata.get("lastNodeExecuted", "")) or ""
+error_ref  = rdata.get("error")
+error      = resolve(error_ref) if error_ref is not None else None
+run_data   = resolve(rdata.get("runData")) or {}
 
 if last_node:
     print("Last node : %s" % last_node)
 
-if error:
+if error and isinstance(error, dict):
     print()
     print("─── ERROR ───────────────────────────────────────")
-    print("Message    : %s" % error.get("message", ""))
-    print("Description: %s" % error.get("description", ""))
-    node = error.get("node")
+    print("Message    : %s" % resolve(error.get("message", "")))
+    print("Description: %s" % resolve(error.get("description", "")))
+    node = resolve(error.get("node"))
     if isinstance(node, dict):
-        print("Node       : %s" % node.get("name", ""))
+        print("Node       : %s" % resolve(node.get("name", "")))
     elif node:
         print("Node       : %s" % node)
-    ctx = error.get("context")
+    ctx = resolve(error.get("context"))
     if ctx:
         print("Context    :")
         print(json.dumps(ctx, indent=2)[:800])
 
+rows = []
+if isinstance(run_data, dict):
+    for name, entries_ref in run_data.items():
+        entries = resolve(entries_ref)
+        if not isinstance(entries, list) or not entries:
+            rows.append((0, 0, "?", name))
+            continue
+        entry = resolve(entries[-1])
+        if not isinstance(entry, dict):
+            rows.append((0, 0, "?", name))
+            continue
+        st  = resolve(entry.get("executionStatus", "?")) or "?"
+        idx = resolve(entry.get("executionIndex",  0))   or 0
+        ms  = resolve(entry.get("executionTime",   0))   or 0
+        rows.append((idx, ms, st, name))
+
 print()
-print("─── NODES EXECUTED (%d) ─────────────────────────" % len(run_data))
-
-# Sort by executionIndex (insertion order fallback for older entries)
-def sort_key(item):
-    name, entries = item
-    if entries and isinstance(entries, list):
-        return entries[-1].get("executionIndex", 0)
-    return 0
-
-for name, entries in sorted(run_data.items(), key=sort_key):
-    st = "?"
-    ms = ""
-    if entries and isinstance(entries, list):
-        e = entries[-1]
-        st = e.get("executionStatus", "?")
-        ms = ("%dms" % e.get("executionTime", 0)) if e.get("executionTime") else ""
-    print("  %-10s  %-6s  %s" % (st, ms, name))
+print("─── NODES EXECUTED (%d) ─────────────────────────" % len(rows))
+for _, ms, st, name in sorted(rows):
+    ms_str = ("%dms" % ms) if ms else ""
+    print("  %-10s  %-6s  %s" % (st, ms_str, name))
 PY
 
 # ── last-error ───────────────────────────────────────────────────────────────

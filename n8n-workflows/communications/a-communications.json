@@ -3376,7 +3376,7 @@
           "conditions": [
             {
               "id": "c-granted",
-              "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
+              "leftValue": "={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.consentStatus || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.consentStatus || '') }}",
               "rightValue": "GRANTED",
               "operator": {
                 "type": "string",
@@ -3408,7 +3408,7 @@
           "conditions": [
             {
               "id": "c-refused",
-              "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
+              "leftValue": "={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.consentStatus || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.consentStatus || '') }}",
               "rightValue": "REFUSED",
               "operator": {
                 "type": "string",
@@ -3417,7 +3417,7 @@
             },
             {
               "id": "c-revoked",
-              "leftValue": "={{ $('Set Candidate Context').first()?.json?.consentStatus }}",
+              "leftValue": "={{ ($('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.consentStatus || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.consentStatus || '') }}",
               "rightValue": "REVOKED",
               "operator": {
                 "type": "string",

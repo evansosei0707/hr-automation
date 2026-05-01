@@ -285,10 +285,10 @@
         "operation": "executeQuery",
         "query": "SELECT facts FROM candidate_facts WHERE twenty_candidate_id = $1",
         "options": {
-          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.candidate_id ?? ''] }}",
-          "alwaysOutputData": true
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.candidate_id ?? ''] }}"
         }
-      }
+      },
+      "alwaysOutputData": true
     },
     {
       "id": "b000011-0011-b011-0011-000000000011",

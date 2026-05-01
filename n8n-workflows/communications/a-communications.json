@@ -1905,7 +1905,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO conversation_message (conversation_id, direction, body, wa_message_id, media_type, transcript, transcript_quality, occurred_at) VALUES ($1, 'inbound', $2, $3, $4, $5, $6, NOW()) ON CONFLICT (wa_message_id) DO NOTHING",
         "options": {
-          "queryReplacement": "={{ [$json.id, $('Set Candidate Context').first()?.json?.messageBody || (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript || ''; } catch(e) { return ''; } })(), $('Set Candidate Context').first()?.json?.waMessageId, $('Set Candidate Context').first()?.json?.messageType === 'audio' ? 'audio' : null, (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript ?? null; } catch(e) { return null; } })(), (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcriptQuality ?? null; } catch(e) { return null; } })()] }}"
+          "queryReplacement": "={{ [$json.id, $('Normalise Phone Number').first()?.json?.messageBody || (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript || ''; } catch(e) { return ''; } })(), $('Normalise Phone Number').first()?.json?.waMessageId, $('Normalise Phone Number').first()?.json?.messageType === 'audio' ? 'audio' : null, (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcript ?? null; } catch(e) { return null; } })(), (() => { try { return $('Evaluate Transcript Confidence').first()?.json?.transcriptQuality ?? null; } catch(e) { return null; } })()] }}"
         }
       },
       "id": "ac00047-0047-ac47-0047-000000000047",
@@ -1998,7 +1998,7 @@
             },
             {
               "name": "messages",
-              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-5).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: $('Set Candidate Context').first()?.json?.messageBody}]) }}"
+              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-5).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: $('Normalise Phone Number').first()?.json?.messageBody}]) }}"
             }
           ]
         }
@@ -2455,7 +2455,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "BpFdmkPuqOueATOd",
+          "value": "dP5m6qFzglkytQ6I",
           "mode": "id"
         },
         "options": {},
@@ -2479,7 +2479,7 @@
             },
             {
               "name": "messages",
-              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-10).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: '<<CANDIDATE_MESSAGE_BEGIN>>' + $('Set Candidate Context').first()?.json?.messageBody + '<<CANDIDATE_MESSAGE_END>>'}]) }}"
+              "arrayValue": "={{ $('Fetch Last 20 Messages').all().slice(-10).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: '<<CANDIDATE_MESSAGE_BEGIN>>' + $('Normalise Phone Number').first()?.json?.messageBody + '<<CANDIDATE_MESSAGE_END>>'}]) }}"
             }
           ]
         }

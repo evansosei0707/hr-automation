@@ -285,7 +285,8 @@
         "operation": "executeQuery",
         "query": "SELECT facts FROM candidate_facts WHERE twenty_candidate_id = $1",
         "options": {
-          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.candidate_id ?? ''] }}"
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.candidate_id ?? ''] }}",
+          "alwaysOutputData": true
         }
       }
     },
@@ -810,7 +811,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "dP5m6qFzglkytQ6I",
+          "value": "XmerKy7v44ZIY1Nj",
           "mode": "id"
         },
         "options": {},

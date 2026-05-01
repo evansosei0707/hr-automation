@@ -31,7 +31,7 @@
         "operation": "executeQuery",
         "query": "SELECT COALESCE(EXTRACT(EPOCH FROM (NOW() - MAX(occurred_at))), 0) AS seconds_since_last_inbound FROM conversation_message WHERE conversation_id = $1 AND direction = 'inbound'",
         "options": {
-          "queryReplacement": "={{ $json.conversationId ?? '00000000-0000-0000-0000-000000000000' }}"
+          "queryReplacement": "={{ [$json.conversationId ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
       }
     },

@@ -3775,6 +3775,29 @@
           "queryReplacement": "={{ [$('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? '', null] }}"
         }
       }
+    },
+    {
+      "id": "ac00201-0201-ac21-0201-000000000201",
+      "name": "Enqueue Screening Inbox \u2014 Open Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        9800,
+        780
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO screening_inbox (candidate_id, application_id, trigger_kind) VALUES ($1, $2, 'new_application') ON CONFLICT (candidate_id) WHERE processed_at IS NULL DO NOTHING",
+        "options": {
+          "queryReplacement": "={{ [$('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id || $('Create Candidate in Twenty').first()?.json?.data?.createCandidate?.id || '', null] }}"
+        }
+      }
     }
   ],
   "connections": {
@@ -4968,6 +4991,17 @@
         [
           {
             "node": "Enqueue Screening Inbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Lock \u2014 Open Conversation": {
+      "main": [
+        [
+          {
+            "node": "Enqueue Screening Inbox \u2014 Open Conversation",
             "type": "main",
             "index": 0
           }

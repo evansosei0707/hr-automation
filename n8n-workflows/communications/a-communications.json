@@ -354,7 +354,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO event_log (workflow_name, execution_id, level, event, message) VALUES ('workflow_a_communications', $1, 'warn', 'retry_scheduled', $2)",
         "options": {
-          "queryReplacement": "={{ $json.execution?.id ?? '' }},={{ 'retry attempt ' + (($json.attempt_count || 1) + 1) + ' of 3' }}"
+          "queryReplacement": "={{ [$json.execution?.id ?? '', 'retry scheduled'] }}"
         }
       },
       "id": "ac_e004-e004-e004-e004-000000000004",
@@ -1294,7 +1294,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $('Set Candidate Context').first()?.json?.phoneE164, type: 'text', text: { body: 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + '! \\u{1F44B} Before we continue, we need your consent to store and process your data as part of our recruitment process, in line with Ghana\\'s Data Protection Act. Do you agree? Reply YES to continue or NO to opt out.' } } }}",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $('Set Candidate Context').first()?.json?.phoneE164 ?? '', type: 'text', text: { body: 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + '! Before we continue, we need your consent to store and process your data as part of our recruitment process, in line with Ghana Data Protection Act. Do you agree? Reply YES to continue or NO to opt out.' } } }}",
         "options": {
           "timeout": 20000,
           "retry": {

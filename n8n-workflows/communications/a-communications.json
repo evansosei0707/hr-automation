@@ -2122,7 +2122,7 @@
             "model": "claude-haiku-4-5",
             "workflowName": "workflow_a_communications",
             "maxTokens": 200,
-            "systemPrompt": "Classify the candidate message intent into exactly one of: workflow_reply, dpa_request, open_conversation, distress, spam. Return JSON only: {\"intent\": \"...\", \"confidence\": 0.0}. workflow_reply = responding to a specific workflow prompt (interview time, screening answer). dpa_request = asking about their data, deletion, access (words: DATA, DELETE, FORGET, ACCESS). open_conversation = general questions or conversation. distress = expressing suicidal ideation, crisis, severe distress. spam = commercial content, nonsense, links only.",
+            "systemPrompt": "Classify the candidate message intent into exactly one of: workflow_reply, dpa_request, open_conversation, distress, spam. Return JSON only: {\"intent\": \"...\", \"confidence\": 0.0}. workflow_reply = candidate is actively applying for a job OR responding to a screening/interview prompt. Signals: sharing CV/work history, stating job type wanted, listing qualifications/skills, responding to interview questions. dpa_request = asking about their data, deletion, access (words: DATA, DELETE, FORGET, ACCESS). open_conversation = general questions, greetings, or conversation not related to a job application. distress = expressing suicidal ideation, crisis, severe distress. spam = commercial content, nonsense, links only.",
             "messages": "={{ $('Fetch Last 20 Messages').all().slice(-5).map(m => ({role: m.json.direction === 'inbound' ? 'user' : 'assistant', content: m.json.body})).concat([{role: 'user', content: $('Normalise Phone Number').first()?.json?.messageBody}]) }}"
           },
           "matchingColumns": [],

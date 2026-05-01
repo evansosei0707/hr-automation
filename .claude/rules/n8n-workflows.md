@@ -116,6 +116,42 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-04-30** during Workflow A live test — `Store Inbound Message` body and `Store Outbound Message` content both receive user/LLM text with commas, corrupting parameter counts. `Log DPA Error` full stack trace broke similarly.
 
+19. **Execute Workflow nodes in n8n 2.x use `workflowInputs.value` (resourceMapper format), NOT `fields.values`.** In n8n typeVersion 1.3, the Execute Workflow node reads `workflowInputs.value` — a resourceMapper schema with `{mappingMode, value: {key: expr}, schema: [...]}`. The old `fields.values` key is silently ignored at runtime: the subflow receives no input data, and `$('Claude Call Trigger').first()?.json` is empty or only the bare trigger output. This affects every Execute Workflow node that passes parameters to a subflow.
+
+    **Required shape:**
+    ```json
+    "workflowInputs": {
+      "mappingMode": "defineBelow",
+      "value": { "key1": "={{ expr }}", "key2": "={{ expr }}" },
+      "schema": [ { "id": "key1", "displayName": "key1", "type": "string", ... }, ... ]
+    }
+    ```
+
+    **Surfaced 2026-04-30 and 2026-05-01** during Workflow A live test — all 13 Execute Workflow nodes had `fields.values`; subflows received no parameters until converted.
+
+20. **Set node `typeVersion` must be ≥ 3.3 for the `assignments` format to work.** `manual.mode.js` in n8n nodes-base branches on `node.typeVersion < 3.3`: the old path reads `fields.values` (legacy schema), the new path reads `assignments` (assignmentCollection schema). A Set node with `typeVersion: 3` and `assignments` in its parameters silently reads an empty `fields.values`, builds `newData = {}`, and returns the input item unchanged via `composeReturnItem`. This makes the node a transparent pass-through with no visible error.
+
+    **Fix:** set `typeVersion: 3.4` (current n8n default) on every Set node that uses the `assignments` parameter format. Verify in exported JSON: `"typeVersion": 3` + `"assignments": {...}` = broken. `"typeVersion": 3.4` + `"assignments": {...}` = correct.
+
+    **Surfaced 2026-05-01** — `Return Claude Response`, `Budget Exceeded — Return Empty`, `Return Empty Response` (claude-call.json), and `Set Candidate Context` (a-communications.json) all emitted `{success: true}` (the Postgres INSERT passthrough) until bumped to 3.4. Diagnosed via exec runData inspection + reading `manual.mode.js` source in the container.
+
+21. **`patch-workflow-ids.sh` uses explicit node-name → subflow mapping, NOT keyword matching.** Any keyword-based matching scheme will misroute nodes whose names contain a word from another subflow's keyword list (e.g. "Generate Reply" contains 'reply' — a WA Send keyword). The script at `scripts/patch-workflow-ids.sh` maintains an explicit `NODE_TO_SUBFLOW` dict. When adding new Execute Workflow nodes to any workflow, add the exact node name → subflow ID mapping to that dict. Nodes not in the dict print a warning to stderr and are NOT patched — verify the warning output after every patch run.
+
+    **Surfaced 2026-04-30** — "Generate Reply — Claude Sonnet" was patched to the WA Send subflow ID because 'reply' matched the WA Send keyword list; Claude Call received its own previous ID (stale), causing silent wrong-subflow routing.
+
+22. **Read source data directly from the node that produced it — never rely on Set Candidate Context as an intermediary for downstream expressions.** In n8n 2.x, a Set node that silently fails (see Rule #20) or that runs in a different branch produces stale or absent data when referenced from a downstream node via `$('Set Candidate Context').first()?.json.*`. Use the authoritative source node instead:
+    - `phoneE164` → `$('Normalise Phone Number').first()?.json?.phoneE164`
+    - `candidateId` / `consentStatus` → `$('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id` (or `.consentStatus`)
+    - `messageBody` → `$('Normalise Phone Number').first()?.json?.messageBody`
+
+    **How to apply:** audit every expression referencing `$('Set Candidate Context')` and replace with the direct source. Set nodes are fine for building payloads to send downstream (e.g. to a subflow), but they are an unreliable re-reference target in a long execution chain.
+
+    **Surfaced 2026-05-01** as a consequence of the Set node typeVersion bug — Set Candidate Context was a transparent pass-through whose outputs were used by multiple downstream nodes.
+
+23. **`consentStatus` must be read from the candidate query result node, not from any Set node.** IF/Switch nodes that gate the consent flow should reference `$('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.consentStatus` directly. Routing errors (e.g. always routing to PENDING when status is GRANTED) are the failure mode when the reference resolves to `null` or `undefined`, because loose-mode IF nodes treat those as falsy and fall through to the wrong branch.
+
+    **Surfaced 2026-05-01** — consent flow was routing GRANTED candidates to PENDING branch until `Is Consent Granted?` IF node was updated to read from the GraphQL result node directly.
+
 ## Before committing an n8n workflow
 
 Run the validator:

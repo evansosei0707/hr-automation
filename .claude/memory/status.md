@@ -4,9 +4,9 @@ Current build state. Updated at the end of every work session.
 
 ---
 
-**Last updated:** 2026-04-30
-**Current phase:** Week 1 — Workflow B (white-collar screening) next
-**Active plan:** `plans/active-plan.md` (Week 0 closed; Week 1 plan to be drafted at session start)
+**Last updated:** 2026-05-01
+**Current phase:** Week 1 — Workflow A v1 live test PASSED; Workflow B (white-collar screening) next
+**Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
 ## What's done
@@ -25,10 +25,17 @@ Current build state. Updated at the end of every work session.
 - ✅ **Week 0 / Phase 6 — Go/no-go review (2026-04-29).** Decision: **GO**. 20 findings reviewed (R1-R5, SD1-SD8, C1-C2, RC1-RC5) → 13 closed in commits → 7 carried forward with T2 tracking items. Full auditable record: `docs/05-decisions/week-0-go-no-go.md`. Closing arc: `5bd25c3`..`53361f9` (5 commits).
 - ✅ **Week 0 — CLOSED 2026-04-29.**
 
-- ✅ **Week 1 — Workflow A v1 (2026-04-30).** Four workflow JSON files shipped: `a-communications.json` (~70 nodes), `wa-send.json`, `claude-call.json`, `dpa-handler.json`. Design note `a-communications-design-v1.md` written; V003 migration applied (candidate_facts, conversation, conversation_message). Conv-lock Option C (180s flat TTL, CAS DEL on all exit paths). Calibration gate (ac00067) added for 2-week human-review window. Tester 14/14 PASS; code-reviewer APPROVE after 3 blocker fixes (B1: `updateOneCandidate` mutation name, B2: `ON CONFLICT DO NOTHING` on inbound INSERT, B3: PII scrubbed from event_log). Six pre-ship findings in total: lock token mismatch (random suffix in acquire), Error Trigger CAS DEL malformed key (`.params.queryReplacement` raw string), wrong GraphQL endpoint (`/metadata` → `/graphql`), PII in event_log payload, missing idempotency on inbound INSERT, missing calibration gate. T2-13 through T2-17 tracked in `plans/tier-2-followups.md`. Closing arc: `f811dd6` (initial ship) + `4325099` (post-APPROVE cleanup).
+- ✅ **Week 1 — Workflow A v1 (2026-04-30 build, 2026-05-01 live test PASSED).** End-to-end confirmed: WhatsApp message in → candidate lookup → consent flow → Claude Sonnet reply → WhatsApp message delivered. Four workflow JSON files: `a-communications.json`, `wa-send.json`, `claude-call.json`, `dpa-handler.json`. V003 migration applied. Tester 14/14 PASS; code-reviewer APPROVE. Live test surfaced five categories of n8n 2.x compatibility bugs (all fixed, rules #14–#23 added to `.claude/rules/n8n-workflows.md`):
+  1. **Execute Workflow schema mismatch** — n8n 2.x Execute Workflow typeV 1.3 reads `workflowInputs.value` (resourceMapper), silently ignores `fields.values`. All 13 Execute Workflow nodes converted.
+  2. **Set node typeVersion/assignments mismatch** — typeVersion 3 reads `fields.values` (old schema); `assignments` format requires typeVersion ≥ 3.3. `Return Claude Response` and 3 other nodes emitted `{success:true}` (the Postgres INSERT passthrough) until bumped to 3.4. Diagnosed by reading `manual.mode.js` in the container.
+  3. **patch-workflow-ids.sh keyword routing** — keyword-based matching misrouted "Generate Reply" (contains 'reply') to WA Send subflow. Replaced with explicit node-name → subflow map.
+  4. **n8n 2.x env var access** — `$env.*` silently `undefined` without `N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"` in docker-compose.
+  5. **queryReplacement comma-splitting** — user text and stack traces split on commas, corrupting Postgres parameter counts. Array form `={{ [...] }}` bypasses splitting.
+  Closing arc: `f811dd6` (initial ship) + `4325099` (post-APPROVE cleanup) + `17080c8` + `29aeb5f` (live-test fixes).
 
 ## What's next
 
+- **Week 1 close-out tasks** before Workflow B: T2-18/T2-19 atomic Redis lock upgrade (TOCTOU on acquire/release), calibration window monitoring setup.
 - **Week 1 — Workflow B (white-collar screening).** Spec at `docs/02-workflows/b-screening.md`.
 
 ## What's blocked

@@ -1224,7 +1224,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
@@ -1294,7 +1294,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $('Set Candidate Context').first()?.json?.phoneE164 ?? '', type: 'text', text: { body: 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + '! Before we continue, we need your consent to store and process your data as part of our recruitment process, in line with Ghana Data Protection Act. Do you agree? Reply YES to continue or NO to opt out.' } } }}",
+        "jsonBody": "={{ { messaging_product: 'whatsapp', to: $('Normalise Phone Number').first()?.json?.phoneE164 ?? '', type: 'text', text: { body: 'Hi ' + ($('Set Candidate Context').first()?.json?.firstName || 'there') + '! Before we continue, we need your consent to store and process your data as part of our recruitment process, in line with Ghana Data Protection Act. Do you agree? Reply YES to continue or NO to opt out.' } } }}",
         "options": {
           "timeout": 20000,
           "retry": {
@@ -1343,7 +1343,7 @@
             },
             {
               "name": "phoneE164",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "firstName",
@@ -1386,7 +1386,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
@@ -1606,7 +1606,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
@@ -1886,7 +1886,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
@@ -2332,7 +2332,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
@@ -2430,7 +2430,7 @@
             },
             {
               "name": "phoneE164",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "firstName",
@@ -2627,7 +2627,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",
@@ -2753,7 +2753,7 @@
           "values": [
             {
               "name": "to",
-              "stringValue": "={{ $('Set Candidate Context').first()?.json?.phoneE164 }}"
+              "stringValue": "={{ $('Normalise Phone Number').first()?.json?.phoneE164 }}"
             },
             {
               "name": "body",

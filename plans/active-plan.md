@@ -7,8 +7,9 @@
 ## Week 1 progress
 
 - [x] **Workflow A v1** — DONE. Build 2026-04-30; live test PASSED 2026-05-01. Closing arc: `f811dd6` + `4325099` + `17080c8` + `29aeb5f`. T2-13–T2-17 in `plans/tier-2-followups.md`.
-- [ ] **Week 1 close-out tasks** — T2-18/T2-19 atomic Redis lock upgrade; calibration window monitoring; Workflow A rules #19–#23 documented.
-- [ ] **Workflow B** — white-collar screening (next after close-out)
+- [x] **Workflow B design** — DONE 2026-05-01. Design note ready at `docs/02-workflows/b-white-collar-design-v1.md`. OQ-1 (Twenty resolvers) and OQ-6 (CV parser, ADR-0010) resolved. Closing arc: `ce46654`..`b0d68ea`.
+- [ ] **Workflow B build** — dispatch `workflow-builder`. Deliverables: `b-screening.json` + V008 migration + `a-communications.json` change-request (inbox INSERT on `workflow_reply` branch).
+- [ ] **Week 1 close-out tasks** — T2-18/T2-19 atomic Redis lock upgrade (can run in parallel with B build)
 - [ ] Remaining Week 1 workflows per dispatch order in `docs/05-decisions/week-0-go-no-go.md §6`
 
 ---

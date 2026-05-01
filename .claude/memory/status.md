@@ -5,7 +5,7 @@ Current build state. Updated at the end of every work session.
 ---
 
 **Last updated:** 2026-05-01
-**Current phase:** Week 1 — Workflow A v1 live test PASSED; Workflow B (white-collar screening) next
+**Current phase:** Week 1 — Workflow B design ready; workflow-builder + V008 migration next
 **Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -33,10 +33,12 @@ Current build state. Updated at the end of every work session.
   5. **queryReplacement comma-splitting** — user text and stack traces split on commas, corrupting Postgres parameter counts. Array form `={{ [...] }}` bypasses splitting.
   Closing arc: `f811dd6` (initial ship) + `4325099` (post-APPROVE cleanup) + `17080c8` + `29aeb5f` (live-test fixes).
 
+- ✅ **Workflow B design (2026-05-01).** Design note at `docs/02-workflows/b-white-collar-design-v1.md` (status: Ready). OQ-1 resolved — Twenty Application resolvers confirmed at `docs/03-integrations/twenty-application-schema.md` (`de875e2`). OQ-6 resolved — ADR-0010 at `docs/05-decisions/ADR-0010-cv-parser.md` (`8a3ec6e`): n8n "Extract from File" + Claude Sonnet, DPA-clean, no new container. Closing arc: `ce46654` + `de875e2` + `8a3ec6e` + `b0d68ea`.
+
 ## What's next
 
-- **Week 1 close-out tasks** before Workflow B: T2-18/T2-19 atomic Redis lock upgrade (TOCTOU on acquire/release), calibration window monitoring setup.
-- **Week 1 — Workflow B (white-collar screening).** Spec at `docs/02-workflows/b-screening.md`.
+- **Workflow B build** — dispatch `workflow-builder` with `docs/02-workflows/b-white-collar-design-v1.md`. Paired deliverables: `n8n-workflows/communications/b-screening.json` + `database/migrations/V008__screening_inbox.sql` + a small change-request to `a-communications.json` (`workflow_reply` branch inserts into `screening_inbox`).
+- **Week 1 close-out tasks** (T2-18/T2-19 atomic Redis lock upgrade) — can run in parallel with B build or after.
 
 ## What's blocked
 

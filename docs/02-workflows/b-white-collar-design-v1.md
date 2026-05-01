@@ -1,26 +1,24 @@
 # Workflow B — White-Collar Screening Design Note v1
 
-**Status:** Draft — OQ-1 (Twenty resolver) and OQ-6 (CV parser ADR-0010) PENDING resolution before workflow-builder dispatch
+**Status:** Ready for workflow-builder dispatch — OQ-1 resolved (`docs/03-integrations/twenty-application-schema.md`, commit `de875e2`), OQ-6 resolved (`docs/05-decisions/ADR-0010-cv-parser.md`, commit `8a3ec6e`)
 **Date:** 2026-05-01
 **Author:** architect subagent + Claude Code
 **Spec base:** `docs/02-workflows/b-white-collar.md`
 
-This note resolves the answerable design questions left open by the spec and fills in
+This note resolves the design questions left open by the spec and fills in
 the implementation detail Workflow B needs before workflow-builder can produce JSON.
-Read the spec first; this extends it, not replaces it. Two questions remain explicitly
-PENDING (see §14) and gate the build dispatch.
+Read the spec first; this extends it, not replaces it. All eight OQs are resolved
+(see §14); workflow-builder dispatch is unblocked.
 
-OQ answers baked in:
+OQ resolutions:
+- **OQ-1** Twenty v2.1.0 resolvers — `application(filter: { id: { eq: $id } })` for singular fetch (returns plain object, no Connection wrap), `applications(filter: ...)` for collection, `updateApplication(id, data)` for updates. Same pattern for Candidate. Full Application field list at `docs/03-integrations/twenty-application-schema.md` (commit `de875e2`).
 - **OQ-2** ReviewTask `kind` for score review = existing `LOW_CONFIDENCE_SCORE` option value (no new option).
 - **OQ-3** Workflow A's `workflow_reply` branch INSERTs the `screening_inbox` row.
 - **OQ-4** State coherence gap during scoring window accepted as v1 limitation; deferred to T2.
 - **OQ-5** Stay with JSONB in `candidate_facts.facts`; no new `Application.screeningState` field.
+- **OQ-6** CV parser = n8n's built-in "Extract from File" node (PDF/DOCX → text in-process) + Claude Sonnet for fact extraction and scoring. Image-only CVs route to `parse_failure` ReviewTask per spec. No new container; DPA-clean. Full rationale at `docs/05-decisions/ADR-0010-cv-parser.md` (commit `8a3ec6e`).
 - **OQ-7** Single scoring pass for v1; second-opinion pass deferred to T2.
 - **OQ-8** `scoreBreakdown` is JSON-stringified into a TEXT slot inside `candidate_facts.facts.score_breakdown`; no Twenty RAW_JSON field.
-
-OQs PENDING:
-- **OQ-1** correct Twenty v2.1.0 singular-by-ID resolver for `Application` and `Candidate` — researcher dispatched, will land at `docs/03-integrations/twenty-application-schema.md`.
-- **OQ-6** CV parser choice — ADR-0010 dispatched, will land at `docs/05-decisions/ADR-0010-cv-parser.md`.
 
 ---
 
@@ -51,7 +49,7 @@ Workflow B is **NOT a subflow of Workflow A.** Per `a-communications.md`, A writ
  reason]           v
    exit]      [HTTP: download CV bytes]   -- from Twenty Document URL
                    |
-              [CV parse → text]            -- OQ-6 PENDING (see §14)
+              [CV parse → text]            -- n8n "Extract from File" node (ADR-0010)
                    |
               [Validate rubric weights]    -- §6 invariant
                    |
@@ -128,7 +126,7 @@ Workflow B is **NOT a subflow of Workflow A.** Per `a-communications.md`, A writ
 1. `claude-call` — model routing, budget gate, `ai_call_log` write (V005). Two invocations per row: facts extraction, then scoring.
 2. `wa-send` — 24h service window enforcement, template fallback on error 131047.
 
-**No new subflows produced for Workflow B in v1.** CV parsing is in-line (or via a Code node calling out to a parser — pending OQ-6).
+**No new subflows produced for Workflow B in v1.** CV parsing is in-line via n8n's built-in "Extract from File" node (ADR-0010); fact extraction and scoring reuse the existing `Subflow — Claude Call`.
 
 ---
 
@@ -242,7 +240,7 @@ No new bookings-DB tables for state beyond `screening_inbox`. All transient stat
 
 Per CLAUDE.md invariant #1 and ADR-0005 conventions: all Twenty interaction goes through `/graphql` with the `TWENTY_API_KEY` Bearer header. Mutation names follow ADR-0005 (no `One` infix on data-API resolvers): `updateApplication`, `updateCandidate`, `createReviewTask`, `createCandidateSkillTag`, `updateCandidateSkillTag`.
 
-> ⚠️ **OQ-1 PENDING:** The exact singular-by-ID resolver name for fetching one Application or one Candidate (e.g. `application(id: $id)` vs `applications(filter: {id: {eq: $id}})`) is not yet confirmed for Twenty v2.1.0. Researcher dispatched; design assumes filter-form for now. Update this section before workflow-builder dispatch.
+> ✅ **OQ-1 RESOLVED:** Twenty v2.1.0 uses `application(filter: { id: { eq: $id } })` for singular fetch (returns plain object, no Connection unwrap) and `updateApplication(id, data)` for updates. Same pattern for Candidate. Full field list and example queries at `docs/03-integrations/twenty-application-schema.md`.
 
 **Mutations Workflow B issues:**
 
@@ -544,22 +542,17 @@ Every ReviewTask Workflow B writes has `subjectApplication` set, `subjectCandida
 
 ---
 
-## 14. Open questions PENDING
+## 14. Open questions — RESOLVED
 
-These two block workflow-builder dispatch:
+All eight OQs are resolved. Workflow-builder dispatch is unblocked.
 
-**OQ-1 — Twenty v2.1.0 singular-by-ID resolver names.**
-Researcher dispatched. Output lands at `docs/03-integrations/twenty-application-schema.md` with confirmed resolver names and full Application field list. Update §5 and the node graph fetch step before build.
+**OQ-1 — Twenty v2.1.0 singular-by-ID resolver names.** ✅ Resolved at `docs/03-integrations/twenty-application-schema.md` (commit `de875e2`). Singular fetch uses `application(filter: { id: { eq: $id } })` and returns a plain object (no `edges.node` unwrap). Updates use `updateApplication(id, data)` — no `One` infix on the data API. Same pattern for Candidate. The reference doc has the full Application field list and ready-to-paste example queries for the fetch + update nodes.
 
-**OQ-6 — CV parser choice.**
-ADR-0010 dispatched. Three options under evaluation:
-- Option A: Claude Sonnet text extraction in a Code node (simplest; assumes upstream provides text)
-- Option B: Python microservice (separate Docker container, handles PDF/DOCX binary)
-- Option C: SaaS API (Affinda et al; rejected on Ghana DPA grounds expected)
+**OQ-6 — CV parser choice.** ✅ Resolved at `docs/05-decisions/ADR-0010-cv-parser.md` (commit `8a3ec6e`). v1 uses **n8n's built-in "Extract from File" node** in-process for PDF/DOCX → text, then Claude Sonnet for fact extraction (step 2) and scoring (step 4) via the existing `Subflow — Claude Call`. No new container, no new credentials, all data stays in Ghana — DPA-clean.
 
-Output lands at `docs/05-decisions/ADR-0010-cv-parser.md` with final pick and integration shape. Update §1 node graph and §13 trap-points before build.
+**Image-only CV behaviour:** image CVs (no embedded text layer) trigger the existing `parse_failure` ReviewTask path per spec §"Edge cases" — no zero-score fallback. PDF/DOCX with text layers extract directly with no candidate-friction. PDF/DOCX with no text layer (rare; usually scanned-to-PDF) also route to `parse_failure`. **No "please send as text" branch is needed** for v1 — the spec already routes parse failures to ReviewTask, and the operator handles them during the calibration window.
 
-**Decided binary CV limitation:** v1 ships with text-CV only. If ADR-0010 chooses Option A, candidates whose CV is a PDF/image have to retype or paste text content. The acknowledgement message will need a "please send as text" branch — out of scope for this design note; flag for v2.
+**Tier 2 trigger:** if real candidate traffic shows >20% of CVs hitting `parse_failure`, ADR-0010 spec'd Option B (Python microservice with `pdfplumber` + `pytesseract` OCR) as the v2 path.
 
 ---
 
@@ -591,4 +584,4 @@ Spec acceptance criteria (from `b-white-collar.md` §"Acceptance criteria") to d
 
 **6. Conv-lock released during scoring (§11).** Accepted v1 race window of ~30s where a follow-up message from the same candidate could be processed by A while B is scoring. T2 follow-up: hold the lock through scoring, paying ~30s of WA-send latency in worst case.
 
-**7. No new subflows.** B reuses A's `claude-call` and `wa-send`. CV parsing is in-line (pending OQ-6). If ADR-0010 picks Option B (Python microservice), a thin `cv-parse` subflow MAY be introduced — but not before v1.
+**7. No new subflows.** B reuses A's `claude-call` and `wa-send`. CV parsing uses n8n's built-in "Extract from File" node in-process (ADR-0010 Option A). If real traffic forces ADR-0010 Option B (Python microservice) in v2, a thin `cv-parse` subflow MAY be introduced — but not before v1.

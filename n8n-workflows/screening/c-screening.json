@@ -2239,7 +2239,7 @@
       },
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}",
+        "key": "={{ 'hra:conv:' + ($json.candidate_id ?? '') }}",
         "propertyName": "value"
       }
     },
@@ -2292,7 +2292,7 @@
       },
       "parameters": {
         "operation": "set",
-        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}",
+        "key": "={{ 'hra:conv:' + ($json.candidate_id ?? '') }}",
         "value": "={{ $execution.id }}",
         "expire": true,
         "ttl": 180

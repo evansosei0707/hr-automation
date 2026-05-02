@@ -1,0 +1,3152 @@
+{
+  "name": "Workflow D \u2014 Scheduling",
+  "nodes": [
+    {
+      "id": "dc00001-0001-dc01-0001-000000000001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        900
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00002-0002-dc02-0002-000000000002",
+      "name": "Log Workflow Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        440,
+        900
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack) VALUES ($1, $2, $3, $4, $5)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_d_scheduling', $json.execution?.id ?? '', $json.node?.name ?? 'unknown', $json.error?.message ?? 'unknown error', $json.error?.stack?.split('\\n')[0] ?? ''] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00003-0003-dc03-0003-000000000003",
+      "name": "Release Conv Lock \u2014 Error",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        680,
+        900
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "HRA Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($json.execution?.data?.resultData?.runData?.['Claim Scheduling Reply Row']?.[0]?.data?.main?.[0]?.[0]?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "dc00010-0010-dc10-0010-000000000010",
+      "name": "Cron \u2014 Poll Scheduling Replies",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 120
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00011-0011-dc11-0011-000000000011",
+      "name": "Claim Scheduling Reply Row",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        440,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET claimed_by = $1, claimed_at = NOW() WHERE id = (SELECT id FROM screening_inbox WHERE trigger_kind = 'scheduling_reply' AND processed_at IS NULL AND (claimed_at IS NULL OR claimed_at < NOW() - INTERVAL '5 minutes') ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *",
+        "options": {
+          "queryReplacement": "={{ [$execution.id] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00012-0012-dc12-0012-000000000012",
+      "name": "Reply Row Claimed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-reply-row-claimed",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00013-0013-dc13-0013-000000000013",
+      "name": "No Reply Row \u2014 Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        920,
+        420
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00014-0014-dc14-0014-000000000014",
+      "name": "Get Conv Lock \u2014 Claim",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        920,
+        300
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "HRA Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Claim Scheduling Reply Row').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "dc00015-0015-dc15-0015-000000000015",
+      "name": "Lock Free? \u2014 Claim",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-free-claim",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00016-0016-dc16-0016-000000000016",
+      "name": "Lock Busy \u2014 Exit Claim",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        420
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00017-0017-dc17-0017-000000000017",
+      "name": "Set Conv Lock \u2014 Claim",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        300
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "HRA Redis"
+        }
+      },
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'hra:conv:' + ($('Claim Scheduling Reply Row').first()?.json?.candidate_id ?? '') }}",
+        "value": "={{ $execution.id }}",
+        "expire": true,
+        "ttl": 180
+      }
+    },
+    {
+      "id": "dc00018-0018-dc18-0018-000000000018",
+      "name": "Fetch Offered Slots for Application",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        1640,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.id, s.starts_at, s.ends_at, s.interviewer_id, s.offer_expires_at, i.display_name as interviewer_name FROM slot s JOIN interviewer i ON s.interviewer_id = i.id WHERE s.offered_to_application_id = $1 AND s.status = 'offered' ORDER BY s.offered_at DESC LIMIT 3",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Scheduling Reply Row').first()?.json?.application_id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00019-0019-dc19-0019-000000000019",
+      "name": "Got Offered Slots?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-got-slots",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00020-0020-dc20-0020-000000000020",
+      "name": "Send Slots Expired \u2014 WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2120,
+        420
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $('Claim Scheduling Reply Row').first()?.json?.payload?.phoneE164 ?? '' }}",
+            "message": "Your interview slot options have expired. We will send you fresh options shortly.",
+            "workflowName": "workflow_d_scheduling"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00021-0021-dc21-0021-000000000021",
+      "name": "Release Lock \u2014 Expired Slots",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2360,
+        420
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "HRA Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Scheduling Reply Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "dc00022-0022-dc22-0022-000000000022",
+      "name": "Mark Processed \u2014 Expired Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2600,
+        420
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW(), error_message = 'slots_expired' WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Scheduling Reply Row').first()?.json?.id] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00023-0023-dc23-0023-000000000023",
+      "name": "Parse Reply \u2014 Regex",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2120,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const inbox = $('Claim Scheduling Reply Row').first()?.json;\nconst messageBody = (inbox?.payload?.messageBody ?? '').trim();\nconst slots = $('Fetch Offered Slots for Application').all().map(i => i.json);\n\nconst regexMatch = messageBody.match(/^\\s*([123])\\s*$/);\nlet slotIndex = null;\nif (regexMatch) {\n  slotIndex = parseInt(regexMatch[1], 10);\n}\n\nconst ordinalMap = {\n  'first': 1, 'one': 1, '1st': 1,\n  'second': 2, 'two': 2, '2nd': 2,\n  'third': 3, 'three': 3, '3rd': 3\n};\nif (!slotIndex) {\n  const lowerMsg = messageBody.toLowerCase();\n  for (const [word, idx] of Object.entries(ordinalMap)) {\n    if (lowerMsg.includes(word)) {\n      slotIndex = idx;\n      break;\n    }\n  }\n}\n\nreturn [{ json: {\n  messageBody,\n  slotIndex,\n  regexMatched: slotIndex !== null,\n  slots,\n  candidateId: inbox?.candidate_id ?? '',\n  applicationId: inbox?.application_id ?? '',\n  inboxId: inbox?.id,\n  repromptCount: inbox?.payload?.reprompt_count ?? 0\n} }];"
+      }
+    },
+    {
+      "id": "dc00024-0024-dc24-0024-000000000024",
+      "name": "Reply Parsed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2360,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-reply-parsed",
+              "leftValue": "={{ $json.regexMatched }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00025-0025-dc25-0025-000000000025",
+      "name": "Parse Reply \u2014 Haiku Fallback",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2600,
+        420
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "model": "claude-haiku-4-5",
+            "workflowName": "workflow_d_scheduling",
+            "maxTokens": 50,
+            "systemPrompt": "You are a scheduling assistant. The candidate has been offered 3 interview slots and needs to pick one. Extract which slot they chose (1, 2, or 3). Reply ONLY with valid JSON: {\"slot_index\": 1} or {\"slot_index\": 2} or {\"slot_index\": 3} or {\"slot_index\": null} if you cannot determine the choice.",
+            "messages": "={{ JSON.stringify([{ role: 'user', content: 'Candidate message: \"' + ($json.messageBody ?? '') + '\"\\n\\nOffered slots:\\n' + ($json.slots ?? []).map((s, i) => (i+1) + '. ' + new Date(s.starts_at).toLocaleString('en-GH', {timeZone:'Africa/Accra', weekday:'long', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})).join('\\n') }]) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "model",
+              "displayName": "model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "maxTokens",
+              "displayName": "maxTokens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "systemPrompt",
+              "displayName": "systemPrompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messages",
+              "displayName": "messages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00026-0026-dc26-0026-000000000026",
+      "name": "Extract Haiku Slot Index",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2840,
+        420
+      ],
+      "parameters": {
+        "jsCode": "const haikusResponse = $json?.response ?? $json?.content ?? $json?.text ?? '{}';\nlet parsed = {};\ntry {\n  const jsonMatch = haikusResponse.match(/\\{[^}]+\\}/);\n  if (jsonMatch) parsed = JSON.parse(jsonMatch[0]);\n} catch(e) {}\n\nconst parseNode = $('Parse Reply \u2014 Regex').first()?.json ?? {};\n\nreturn [{ json: {\n  ...parseNode,\n  slotIndex: parsed.slot_index ?? null,\n  regexMatched: parsed.slot_index != null\n} }];"
+      }
+    },
+    {
+      "id": "dc00027-0027-dc27-0027-000000000027",
+      "name": "Haiku Parsed Slot?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-haiku-parsed",
+              "leftValue": "={{ $json.regexMatched }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00028-0028-dc28-0028-000000000028",
+      "name": "Send Reprompt \u2014 WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3320,
+        540
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $('Claim Scheduling Reply Row').first()?.json?.payload?.phoneE164 ?? '' }}",
+            "message": "Please reply with just the number of your preferred slot: 1, 2, or 3.",
+            "workflowName": "workflow_d_scheduling"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00029-0029-dc29-0029-000000000029",
+      "name": "Release Lock \u2014 Reprompt",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3560,
+        540
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "HRA Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Scheduling Reply Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "dc00030-0030-dc30-0030-000000000030",
+      "name": "Update Reprompt Count",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3800,
+        540
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW(), payload = jsonb_set(COALESCE(payload,'{}'), '{reprompt_count}', to_jsonb(COALESCE((payload->>'reprompt_count')::int, 0) + 1)) WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Scheduling Reply Row').first()?.json?.id] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00031-0031-dc31-0031-000000000031",
+      "name": "Resolve Chosen Slot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Merge parse results from regex path or haiku path\nconst item = $json;\nconst slots = item.slots ?? [];\nconst slotIndex = item.slotIndex;\n\nif (!slotIndex || slotIndex < 1 || slotIndex > slots.length) {\n  return [{ json: { ...item, chosenSlot: null, chosenSlotId: null, valid: false } }];\n}\n\nconst chosenSlot = slots[slotIndex - 1];\nreturn [{ json: {\n  ...item,\n  chosenSlot,\n  chosenSlotId: chosenSlot?.id ?? null,\n  valid: !!chosenSlot\n} }];"
+      }
+    },
+    {
+      "id": "dc00032-0032-dc32-0032-000000000032",
+      "name": "Slot Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2840,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-slot-valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00033-0033-dc33-0033-000000000033",
+      "name": "Atomic Claim Slot",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        3080,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE slot SET status = 'claimed', claimed_by_application_id = $1, claimed_at = NOW(), updated_at = NOW() WHERE id = $2 AND status = 'offered' AND offered_to_application_id = $1 AND offer_expires_at > NOW() RETURNING id, starts_at, ends_at, interviewer_id",
+        "options": {
+          "queryReplacement": "={{ [$('Resolve Chosen Slot').first()?.json?.applicationId ?? '', $('Resolve Chosen Slot').first()?.json?.chosenSlotId ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00034-0034-dc34-0034-000000000034",
+      "name": "Claim Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3320,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-claim-ok",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00035-0035-dc35-0035-000000000035",
+      "name": "Send Slot Taken \u2014 WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3560,
+        420
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $('Claim Scheduling Reply Row').first()?.json?.payload?.phoneE164 ?? '' }}",
+            "message": "Sorry, that slot was just taken by another candidate. We will send you fresh options shortly.",
+            "workflowName": "workflow_d_scheduling"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00036-0036-dc36-0036-000000000036",
+      "name": "Release Lock \u2014 Slot Taken",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3800,
+        420
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "HRA Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Scheduling Reply Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "dc00037-0037-dc37-0037-000000000037",
+      "name": "Mark Processed \u2014 Slot Taken",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4040,
+        420
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW(), error_message = 'slot_taken' WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Scheduling Reply Row').first()?.json?.id] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00038-0038-dc38-0038-000000000038",
+      "name": "Release Other Offered Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3560,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE slot SET status = 'available', offered_to_application_id = NULL, offered_at = NULL, offer_expires_at = NULL, updated_at = NOW() WHERE offered_to_application_id = $1 AND status = 'offered' AND id != $2",
+        "options": {
+          "queryReplacement": "={{ [$('Resolve Chosen Slot').first()?.json?.applicationId ?? '', $('Atomic Claim Slot').first()?.json?.id ?? ''] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00039-0039-dc39-0039-000000000039",
+      "name": "Fetch Interviewer for Interview",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        3800,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT i.id, i.twenty_user_id, i.display_name, i.google_calendar_id FROM interviewer i JOIN slot s ON s.interviewer_id = i.id WHERE s.id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Atomic Claim Slot').first()?.json?.id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00040-0040-dc40-0040-000000000040",
+      "name": "Fetch Candidate for Confirmation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4040,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'query GetCandidateForInterview($id: ID!) { candidate(id: $id) { id firstName lastName whatsappNumber } }', variables: { id: $('Resolve Chosen Slot').first()?.json?.candidateId ?? '' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00041-0041-dc41-0041-000000000041",
+      "name": "Create Interview in Twenty",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4280,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation CreateInterview($data: InterviewCreateInput!) { createInterview(data: $data) { id } }', variables: { data: { application: { connect: { id: $('Resolve Chosen Slot').first()?.json?.applicationId ?? '' } }, candidate: { connect: { id: $('Resolve Chosen Slot').first()?.json?.candidateId ?? '' } }, interviewer: { connect: { id: $('Fetch Interviewer for Interview').first()?.json?.twenty_user_id ?? '' } }, scheduledAt: $('Atomic Claim Slot').first()?.json?.starts_at, bookingId: $('Atomic Claim Slot').first()?.json?.id, isReschedule: false, status: 'scheduled' } } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00042-0042-dc42-0042-000000000042",
+      "name": "Update Slot with Interview ID",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4520,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE slot SET twenty_interview_id = $1, updated_at = NOW() WHERE id = $2",
+        "options": {
+          "queryReplacement": "={{ [$json.data?.createInterview?.id ?? '', $('Atomic Claim Slot').first()?.json?.id ?? ''] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00043-0043-dc43-0043-000000000043",
+      "name": "Create Google Calendar Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4760,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent($('Fetch Interviewer for Interview').first()?.json?.google_calendar_id ?? 'primary') + '/events?conferenceDataVersion=1' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { summary: 'Interview \u2014 ' + ($('Fetch Candidate for Confirmation').first()?.json?.data?.candidate?.firstName ?? '') + ' ' + ($('Fetch Candidate for Confirmation').first()?.json?.data?.candidate?.lastName ?? '') + ' for application', description: 'Candidate: ' + ($('Fetch Candidate for Confirmation').first()?.json?.data?.candidate?.firstName ?? '') + ' ' + ($('Fetch Candidate for Confirmation').first()?.json?.data?.candidate?.lastName ?? '') + '\\nWhatsApp: ' + ($('Fetch Candidate for Confirmation').first()?.json?.data?.candidate?.whatsappNumber ?? '') + '\\nApplication ID: ' + ($('Resolve Chosen Slot').first()?.json?.applicationId ?? ''), start: { dateTime: $('Atomic Claim Slot').first()?.json?.starts_at, timeZone: 'Africa/Accra' }, end: { dateTime: $('Atomic Claim Slot').first()?.json?.ends_at, timeZone: 'Africa/Accra' }, conferenceData: { createRequest: { requestId: $('Atomic Claim Slot').first()?.json?.id, conferenceSolutionKey: { type: 'hangoutsMeet' } } }, reminders: { useDefault: true } } }}",
+        "options": {
+          "timeout": 20000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 3000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00044-0044-dc44-0044-000000000044",
+      "name": "Calendar Created?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5000,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-cal-ok",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00045-0045-dc45-0045-000000000045",
+      "name": "Update Interview \u2014 Calendar Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5240,
+        180
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation UpdateInterviewCalendar($id: ID!, $calendarEventId: String!, $meetLink: String!) { updateInterview(id: $id, data: { calendarEventId: $calendarEventId, meetLink: $meetLink }) { id } }', variables: { id: $('Create Interview in Twenty').first()?.json?.data?.createInterview?.id ?? '', calendarEventId: $json.id, meetLink: $json.htmlLink ?? '' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00046-0046-dc46-0046-000000000046",
+      "name": "Insert Calendar Sync Retry",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5240,
+        420
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO calendar_sync_retry (slot_id, twenty_interview_id, intended_event, attempts) VALUES ($1, $2, $3::jsonb, 0) RETURNING id",
+        "options": {
+          "queryReplacement": "={{ [$('Atomic Claim Slot').first()?.json?.id ?? '', $('Create Interview in Twenty').first()?.json?.data?.createInterview?.id ?? '', JSON.stringify({ summary: 'Interview', slotId: $('Atomic Claim Slot').first()?.json?.id, starts_at: $('Atomic Claim Slot').first()?.json?.starts_at, ends_at: $('Atomic Claim Slot').first()?.json?.ends_at, calendarId: $('Fetch Interviewer for Interview').first()?.json?.google_calendar_id ?? '' })] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00047-0047-dc47-0047-000000000047",
+      "name": "Create Calendar Failure ReviewTask",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5480,
+        420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { subjectApplication: { connect: { id: $('Resolve Chosen Slot').first()?.json?.applicationId ?? '' } }, kind: 'calendar_sync_failure', dueBy: new Date(Date.now() + 2*3600*1000).toISOString(), status: 'OPEN', payload: JSON.stringify({ slotId: $('Atomic Claim Slot').first()?.json?.id, interviewId: $('Create Interview in Twenty').first()?.json?.data?.createInterview?.id, calendarSyncRetryId: $json.id }) } } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00048-0048-dc48-0048-000000000048",
+      "name": "Update Retry with ReviewTask ID",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5720,
+        420
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE calendar_sync_retry SET review_task_id = $1 WHERE id = $2",
+        "options": {
+          "queryReplacement": "={{ [$json.data?.createReviewTask?.id ?? '', $('Insert Calendar Sync Retry').first()?.json?.id ?? ''] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00049-0049-dc49-0049-000000000049",
+      "name": "Build Confirmation Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5960,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const claimedSlot = $('Atomic Claim Slot').first()?.json;\nconst interviewer = $('Fetch Interviewer for Interview').first()?.json;\nconst candidate = $('Fetch Candidate for Confirmation').first()?.json?.data?.candidate;\n\nconst startsAt = new Date(claimedSlot?.starts_at);\nconst dateStr = startsAt.toLocaleString('en-GH', {\n  timeZone: 'Africa/Accra',\n  weekday: 'long',\n  month: 'long',\n  day: 'numeric',\n  hour: '2-digit',\n  minute: '2-digit'\n});\n\n// Check if calendar event was created (success path has calendarEventId)\nlet calendarNode = null;\ntry { calendarNode = $('Update Interview \u2014 Calendar Success').first()?.json; } catch(e) {}\nconst meetLink = $('Create Google Calendar Event').first()?.json?.htmlLink ?? null;\n\nlet message;\nif (meetLink) {\n  message = `Hi ${candidate?.firstName ?? 'there'},\\n\\nYour interview is confirmed!\\n\\nDate: ${dateStr}\\nInterviewer: ${interviewer?.display_name ?? 'our team'}\\nMeet link: ${meetLink}\\n\\nWe look forward to speaking with you.`;\n} else {\n  message = `Hi ${candidate?.firstName ?? 'there'},\\n\\nYour interview is confirmed!\\n\\nDate: ${dateStr}\\nInterviewer: ${interviewer?.display_name ?? 'our team'}\\n\\nYour calendar invite will follow shortly.\\n\\nWe look forward to speaking with you.`;\n}\n\nreturn [{ json: {\n  message,\n  candidatePhone: candidate?.whatsappNumber ?? '',\n  interviewerName: interviewer?.display_name ?? '',\n  dateStr,\n  meetLink: meetLink ?? null\n} }];"
+      }
+    },
+    {
+      "id": "dc00050-0050-dc50-0050-000000000050",
+      "name": "Send Confirmation \u2014 Candidate WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        6200,
+        300
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $json.candidatePhone }}",
+            "message": "={{ $json.message }}",
+            "workflowName": "workflow_d_scheduling"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00051-0051-dc51-0051-000000000051",
+      "name": "Insert Scheduled Reminders",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6440,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO scheduled_reminders (kind, fire_at, twenty_interview_id, candidate_id, application_id, payload) VALUES ('interview_24h', $1::timestamptz - INTERVAL '24 hours', $2, $3, $4, $5::jsonb), ('interview_2h', $1::timestamptz - INTERVAL '2 hours', $2, $3, $4, $5::jsonb) ON CONFLICT ON CONSTRAINT uq_scheduled_reminders_unique DO NOTHING",
+        "options": {
+          "queryReplacement": "={{ [$('Atomic Claim Slot').first()?.json?.starts_at ?? '', $('Create Interview in Twenty').first()?.json?.data?.createInterview?.id ?? '', $('Resolve Chosen Slot').first()?.json?.candidateId ?? '', $('Resolve Chosen Slot').first()?.json?.applicationId ?? '', JSON.stringify({ candidatePhone: $('Build Confirmation Message').first()?.json?.candidatePhone, interviewerName: $('Build Confirmation Message').first()?.json?.interviewerName, dateStr: $('Build Confirmation Message').first()?.json?.dateStr })] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00052-0052-dc52-0052-000000000052",
+      "name": "Log Claim Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6680,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO booking_event_log (slot_id, event_type, actor, payload) VALUES ($1, 'claimed', 'workflow_d', $2::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [$('Atomic Claim Slot').first()?.json?.id ?? '', JSON.stringify({ applicationId: $('Resolve Chosen Slot').first()?.json?.applicationId, candidateId: $('Resolve Chosen Slot').first()?.json?.candidateId, interviewId: $('Create Interview in Twenty').first()?.json?.data?.createInterview?.id })] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00053-0053-dc53-0053-000000000053",
+      "name": "Update Application \u2014 Interview Scheduled",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6920,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation UpdateApplicationScheduled($id: ID!) { updateApplication(id: $id, data: { status: \"interview_scheduled\" }) { id } }', variables: { id: $('Resolve Chosen Slot').first()?.json?.applicationId ?? '' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00054-0054-dc54-0054-000000000054",
+      "name": "Release Conv Lock \u2014 Claim Success",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        7160,
+        300
+      ],
+      "credentials": {
+        "redis": {
+          "id": "PLACEHOLDER_REDIS_CRED",
+          "name": "HRA Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Scheduling Reply Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "dc00055-0055-dc55-0055-000000000055",
+      "name": "Mark Processed \u2014 Claim Success",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        7400,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW() WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Scheduling Reply Row').first()?.json?.id] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00100-0100-dc00-0100-000000000100",
+      "name": "Cron \u2014 Poll Shortlisted Applications",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        1600
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 120
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00101-0101-dc01-0101-000000000101",
+      "name": "Fetch Shortlisted Applications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        1600
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"query\": \"query FindShortlistedNeedingOffer { applications(filter: { status: { eq: \\\"shortlisted\\\" } }) { edges { node { id candidate { id firstName whatsappNumber } jobPosting { id title } preferredInterviewerId } } } }\" }",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00102-0102-dc02-0102-000000000102",
+      "name": "Filter Already Offered Applications",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        1600
+      ],
+      "parameters": {
+        "jsCode": "// Filter out applications that already have offered/claimed slots\nconst allApps = $json?.data?.applications?.edges?.map(e => e.node) ?? [];\n\n// Return each app as a separate item for splitInBatches\nreturn allApps.map(app => ({ json: app }));"
+      }
+    },
+    {
+      "id": "dc00103-0103-dc03-0103-000000000103",
+      "name": "Has Shortlisted Applications?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        920,
+        1600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-has-apps",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00104-0104-dc04-0104-000000000104",
+      "name": "No Shortlisted \u2014 Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        1720
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00105-0105-dc05-0105-000000000105",
+      "name": "Split Shortlisted Applications",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1160,
+        1600
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00106-0106-dc06-0106-000000000106",
+      "name": "Check Already Offered in Bookings DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        1400,
+        1600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as active_offer_count FROM slot WHERE offered_to_application_id = $1 AND status IN ('offered','claimed')",
+        "options": {
+          "queryReplacement": "={{ [$json.id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00107-0107-dc07-0107-000000000107",
+      "name": "Already Has Active Offer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        1600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-already-offered",
+              "leftValue": "={{ parseInt($json.active_offer_count ?? '0') }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00108-0108-dc08-0108-000000000108",
+      "name": "Skip \u2014 Already Offered",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1880,
+        1720
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00109-0109-dc09-0109-000000000109",
+      "name": "Fetch Next 3 Available Slots",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        1880,
+        1600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.id, s.starts_at, s.ends_at, s.interviewer_id, i.display_name as interviewer_name FROM slot s JOIN interviewer i ON s.interviewer_id = i.id WHERE s.status = 'available' AND s.starts_at > NOW() + INTERVAL '4 hours' ORDER BY s.starts_at ASC LIMIT 3",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00110-0110-dc10-0110-000000000110",
+      "name": "Enough Slots Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2120,
+        1600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-enough-slots",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00111-0111-dc11-0111-000000000111",
+      "name": "Create No Slots ReviewTask",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2360,
+        1720
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation CreateReviewTask($data: ReviewTaskCreateInput!) { createReviewTask(data: $data) { id } }', variables: { data: { subjectApplication: { connect: { id: $('Split Shortlisted Applications').first()?.json?.id ?? '' } }, kind: 'NO_SLOTS_AVAILABLE', dueBy: new Date(Date.now() + 2*3600*1000).toISOString(), status: 'OPEN', payload: JSON.stringify({ applicationId: $('Split Shortlisted Applications').first()?.json?.id, candidateId: $('Split Shortlisted Applications').first()?.json?.candidate?.id }) } } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00112-0112-dc12-0112-000000000112",
+      "name": "Log No Slots Event",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2600,
+        1720
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, level, event, execution_id) VALUES ($1, $2, $3, $4)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_d_scheduling', 'warn', 'no_slots_available for application ' + ($('Split Shortlisted Applications').first()?.json?.id ?? ''), $execution.id] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00113-0113-dc13-0113-000000000113",
+      "name": "Loop Back \u2014 No Slots",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2840,
+        1720
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00114-0114-dc14-0114-000000000114",
+      "name": "Mark Slots as Offered",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        2360,
+        1600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE slot SET status = 'offered', offered_to_application_id = $1, offered_at = NOW(), offer_expires_at = NOW() + INTERVAL '24 hours', updated_at = NOW() WHERE id = ANY($2::uuid[]) AND status = 'available' RETURNING id, starts_at",
+        "options": {
+          "queryReplacement": "={{ [$('Split Shortlisted Applications').first()?.json?.id ?? '', '{' + $('Fetch Next 3 Available Slots').all().map(i => i.json.id).join(',') + '}'] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00115-0115-dc15-0115-000000000115",
+      "name": "Slots Offered OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        1600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-slots-offered",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00116-0116-dc16-0116-000000000116",
+      "name": "Build Offer Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2840,
+        1600
+      ],
+      "parameters": {
+        "jsCode": "const slots = $('Fetch Next 3 Available Slots').all().map(i => i.json);\nconst app = $('Split Shortlisted Applications').first()?.json;\nconst candidateName = app?.candidate?.firstName ?? 'there';\n\nconst slotLines = slots.slice(0, 3).map((s, i) => {\n  const dt = new Date(s.starts_at);\n  const label = dt.toLocaleString('en-GH', {\n    timeZone: 'Africa/Accra',\n    weekday: 'long',\n    month: 'long',\n    day: 'numeric',\n    hour: '2-digit',\n    minute: '2-digit'\n  });\n  return `${i+1}. ${label}`;\n}).join('\\n');\n\nconst message = `Hi ${candidateName},\\n\\nCongratulations! We would like to invite you for an interview. Please choose one of the following slots by replying with just the number (1, 2, or 3):\\n\\n${slotLines}\\n\\nThis offer is valid for 24 hours.`;\n\nreturn [{ json: {\n  message,\n  candidatePhone: app?.candidate?.whatsappNumber ?? '',\n  applicationId: app?.id ?? '',\n  candidateId: app?.candidate?.id ?? ''\n} }];"
+      }
+    },
+    {
+      "id": "dc00117-0117-dc17-0117-000000000117",
+      "name": "Send Offer \u2014 WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3080,
+        1600
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $json.candidatePhone }}",
+            "message": "={{ $json.message }}",
+            "workflowName": "workflow_d_scheduling"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "dc00118-0118-dc18-0118-000000000118",
+      "name": "Enqueue Scheduling Reply",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3320,
+        1600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO screening_inbox (candidate_id, application_id, trigger_kind, payload) VALUES ($1, $2, 'scheduling_reply', $3::jsonb) ON CONFLICT DO NOTHING",
+        "options": {
+          "queryReplacement": "={{ [$('Build Offer Message').first()?.json?.candidateId ?? '', $('Build Offer Message').first()?.json?.applicationId ?? '', JSON.stringify({ offer_sent_at: new Date().toISOString(), slot_count: $('Fetch Next 3 Available Slots').all().length })] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00119-0119-dc19-0119-000000000119",
+      "name": "Loop Back \u2014 Offer Sent",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3560,
+        1600
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00200-0200-dc00-0200-000000000200",
+      "name": "Cron \u2014 Daily Slot Generator",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        2600
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 5 * * *"
+            }
+          ]
+        },
+        "timezone": "Africa/Accra"
+      }
+    },
+    {
+      "id": "dc00201-0201-dc01-0201-000000000201",
+      "name": "Fetch Active Interviewer Availability",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        440,
+        2600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ia.id, ia.interviewer_id, ia.day_of_week, ia.starts_local::text as starts_local, ia.ends_local::text as ends_local, ia.slot_minutes, i.google_calendar_id, i.display_name as interviewer_name FROM interviewer_availability ia JOIN interviewer i ON ia.interviewer_id = i.id WHERE ia.is_active = TRUE AND i.is_active = TRUE",
+        "options": {
+          "queryReplacement": "={{ [] }}"
+        }
+      }
+    },
+    {
+      "id": "dc00202-0202-dc02-0202-000000000202",
+      "name": "Has Availability Windows?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        2600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-has-windows",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00203-0203-dc03-0203-000000000203",
+      "name": "No Windows \u2014 Exit Generator",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        920,
+        2720
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00204-0204-dc04-0204-000000000204",
+      "name": "Split Availability Windows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        920,
+        2600
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00205-0205-dc05-0205-000000000205",
+      "name": "Compute Candidate Slot Times",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        2600
+      ],
+      "parameters": {
+        "jsCode": "const avail = $json;\nconst dayOfWeek = avail.day_of_week; // 0=Sun\nconst [startH, startM] = avail.starts_local.split(':').map(Number);\nconst [endH, endM] = avail.ends_local.split(':').map(Number);\nconst slotMin = avail.slot_minutes ?? 45;\n\n// Generate slots for next 14 days matching day_of_week\nconst slots = [];\nconst now = new Date();\n\nfor (let dayOffset = 0; dayOffset < 14; dayOffset++) {\n  const date = new Date(now);\n  date.setDate(date.getDate() + dayOffset);\n  \n  // Get day of week in Africa/Accra\n  const accraDate = new Date(date.toLocaleString('en-US', { timeZone: 'Africa/Accra' }));\n  if (accraDate.getDay() !== dayOfWeek) continue;\n  \n  // Generate slot start times within window\n  let slotStart = new Date(accraDate);\n  slotStart.setHours(startH, startM, 0, 0);\n  \n  const windowEnd = new Date(accraDate);\n  windowEnd.setHours(endH, endM, 0, 0);\n  \n  while (slotStart.getTime() + slotMin * 60000 <= windowEnd.getTime()) {\n    const slotEnd = new Date(slotStart.getTime() + slotMin * 60000);\n    // Convert back to UTC ISO for storage\n    slots.push({\n      starts_at: slotStart.toISOString(),\n      ends_at: slotEnd.toISOString()\n    });\n    slotStart = slotEnd;\n  }\n}\n\nreturn [{ json: {\n  ...avail,\n  candidateSlots: slots\n} }];"
+      }
+    },
+    {
+      "id": "dc00206-0206-dc06-0206-000000000206",
+      "name": "Fetch Calendar Freebusy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1400,
+        2600
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/calendar/v3/freeBusy",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { timeMin: new Date().toISOString(), timeMax: new Date(Date.now() + 14*24*3600*1000).toISOString(), timeZone: 'Africa/Accra', items: [{ id: $json.google_calendar_id }] } }}",
+        "options": {
+          "timeout": 20000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 3000
+          }
+        }
+      }
+    },
+    {
+      "id": "dc00207-0207-dc07-0207-000000000207",
+      "name": "Freebusy Fetched?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        2600
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-freebusy-ok",
+              "leftValue": "={{ $json.calendars != null ? 'yes' : '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dc00208-0208-dc08-0208-000000000208",
+      "name": "Log Freebusy Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1880,
+        2720
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message) VALUES ($1, $2, $3, $4)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_d_scheduling', $execution.id, 'Fetch Calendar Freebusy', 'freebusy_query_failed for interviewer ' + ($('Split Availability Windows').first()?.json?.interviewer_id ?? '')] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00209-0209-dc09-0209-000000000209",
+      "name": "Loop Back \u2014 Freebusy Failed",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        2720
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dc00210-0210-dc10-0210-000000000210",
+      "name": "Filter Busy Slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        2600
+      ],
+      "parameters": {
+        "jsCode": "const avail = $('Compute Candidate Slot Times').first()?.json;\nconst freebusyData = $json;\n\nconst calId = avail.google_calendar_id;\nconst busyBlocks = freebusyData?.calendars?.[calId]?.busy ?? [];\n\nconst filteredSlots = (avail.candidateSlots ?? []).filter(slot => {\n  const slotStart = new Date(slot.starts_at).getTime();\n  const slotEnd = new Date(slot.ends_at).getTime();\n  \n  for (const busy of busyBlocks) {\n    const busyStart = new Date(busy.start).getTime();\n    const busyEnd = new Date(busy.end).getTime();\n    // Overlap check: slot overlaps busy if not (slotEnd <= busyStart || slotStart >= busyEnd)\n    if (!(slotEnd <= busyStart || slotStart >= busyEnd)) {\n      return false; // Skip this slot\n    }\n  }\n  return true;\n});\n\nreturn [{ json: {\n  ...avail,\n  filteredSlots,\n  busyCount: busyBlocks.length,\n  generatedCount: filteredSlots.length\n} }];"
+      }
+    },
+    {
+      "id": "dc00211-0211-dc11-0211-000000000211",
+      "name": "Insert Generated Slots",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2120,
+        2600
+      ],
+      "parameters": {
+        "jsCode": "// Build individual INSERT calls for each slot\n// We use the Postgres node via a Code node that returns one item per slot\nconst avail = $json;\nconst slots = avail.filteredSlots ?? [];\n\nif (slots.length === 0) {\n  return [{ json: { inserted: 0, interviewerId: avail.interviewer_id } }];\n}\n\n// Return slots array for the next Postgres node to iterate\nreturn slots.map(s => ({ json: {\n  interviewer_id: avail.interviewer_id,\n  starts_at: s.starts_at,\n  ends_at: s.ends_at,\n  slot_minutes: avail.slot_minutes\n} }));"
+      }
+    },
+    {
+      "id": "dc00212-0212-dc12-0212-000000000212",
+      "name": "Insert Slot Row",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2360,
+        2600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO slot (interviewer_id, starts_at, ends_at, status, generation_source, generated_at) SELECT $1::uuid, $2::timestamptz, $3::timestamptz, 'available', 'generator', NOW() WHERE NOT EXISTS (SELECT 1 FROM slot WHERE interviewer_id = $1::uuid AND starts_at = $2::timestamptz AND status IN ('available','offered','claimed'))",
+        "options": {
+          "queryReplacement": "={{ [$json.interviewer_id, $json.starts_at, $json.ends_at] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00213-0213-dc13-0213-000000000213",
+      "name": "Aggregate Slot Counts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        2600
+      ],
+      "parameters": {
+        "jsCode": "// Aggregate: count inserted items back to one per availability window\nconst items = $input.all();\nconst interviewerId = items[0]?.json?.interviewer_id ?? 'unknown';\nreturn [{ json: {\n  insertedCount: items.length,\n  interviewer_id: interviewerId\n} }];"
+      }
+    },
+    {
+      "id": "dc00214-0214-dc14-0214-000000000214",
+      "name": "Log Slots Generated",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2840,
+        2600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, level, event, execution_id) VALUES ($1, $2, $3, $4)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_d_scheduling', 'info', 'slots_generated: ' + ($json.insertedCount ?? 0) + ' for interviewer ' + ($json.interviewer_id ?? ''), $execution.id] }}"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "dc00215-0215-dc15-0215-000000000215",
+      "name": "Loop Back \u2014 Generator",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3080,
+        2600
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Log Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Release Conv Lock \u2014 Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron \u2014 Poll Scheduling Replies": {
+      "main": [
+        [
+          {
+            "node": "Claim Scheduling Reply Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Scheduling Reply Row": {
+      "main": [
+        [
+          {
+            "node": "Reply Row Claimed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Row Claimed?": {
+      "main": [
+        [
+          {
+            "node": "Get Conv Lock \u2014 Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Reply Row \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conv Lock \u2014 Claim": {
+      "main": [
+        [
+          {
+            "node": "Lock Free? \u2014 Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock Free? \u2014 Claim": {
+      "main": [
+        [
+          {
+            "node": "Set Conv Lock \u2014 Claim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lock Busy \u2014 Exit Claim",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Conv Lock \u2014 Claim": {
+      "main": [
+        [
+          {
+            "node": "Fetch Offered Slots for Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Offered Slots for Application": {
+      "main": [
+        [
+          {
+            "node": "Got Offered Slots?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Got Offered Slots?": {
+      "main": [
+        [
+          {
+            "node": "Parse Reply \u2014 Regex",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Slots Expired \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slots Expired \u2014 WA": {
+      "main": [
+        [
+          {
+            "node": "Release Lock \u2014 Expired Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Lock \u2014 Expired Slots": {
+      "main": [
+        [
+          {
+            "node": "Mark Processed \u2014 Expired Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reply \u2014 Regex": {
+      "main": [
+        [
+          {
+            "node": "Reply Parsed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Parsed?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Chosen Slot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Reply \u2014 Haiku Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Reply \u2014 Haiku Fallback": {
+      "main": [
+        [
+          {
+            "node": "Extract Haiku Slot Index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Haiku Slot Index": {
+      "main": [
+        [
+          {
+            "node": "Haiku Parsed Slot?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Haiku Parsed Slot?": {
+      "main": [
+        [
+          {
+            "node": "Resolve Chosen Slot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Reprompt \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reprompt \u2014 WA": {
+      "main": [
+        [
+          {
+            "node": "Release Lock \u2014 Reprompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Lock \u2014 Reprompt": {
+      "main": [
+        [
+          {
+            "node": "Update Reprompt Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Chosen Slot": {
+      "main": [
+        [
+          {
+            "node": "Slot Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot Valid?": {
+      "main": [
+        [
+          {
+            "node": "Atomic Claim Slot",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Reprompt \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atomic Claim Slot": {
+      "main": [
+        [
+          {
+            "node": "Claim Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Release Other Offered Slots",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Slot Taken \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Slot Taken \u2014 WA": {
+      "main": [
+        [
+          {
+            "node": "Release Lock \u2014 Slot Taken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Lock \u2014 Slot Taken": {
+      "main": [
+        [
+          {
+            "node": "Mark Processed \u2014 Slot Taken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Other Offered Slots": {
+      "main": [
+        [
+          {
+            "node": "Fetch Interviewer for Interview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Interviewer for Interview": {
+      "main": [
+        [
+          {
+            "node": "Fetch Candidate for Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Candidate for Confirmation": {
+      "main": [
+        [
+          {
+            "node": "Create Interview in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Interview in Twenty": {
+      "main": [
+        [
+          {
+            "node": "Update Slot with Interview ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Slot with Interview ID": {
+      "main": [
+        [
+          {
+            "node": "Create Google Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Calendar Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Created?": {
+      "main": [
+        [
+          {
+            "node": "Update Interview \u2014 Calendar Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Calendar Sync Retry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Interview \u2014 Calendar Success": {
+      "main": [
+        [
+          {
+            "node": "Build Confirmation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Calendar Sync Retry": {
+      "main": [
+        [
+          {
+            "node": "Create Calendar Failure ReviewTask",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Calendar Failure ReviewTask": {
+      "main": [
+        [
+          {
+            "node": "Update Retry with ReviewTask ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Retry with ReviewTask ID": {
+      "main": [
+        [
+          {
+            "node": "Build Confirmation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Confirmation Message": {
+      "main": [
+        [
+          {
+            "node": "Send Confirmation \u2014 Candidate WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Confirmation \u2014 Candidate WA": {
+      "main": [
+        [
+          {
+            "node": "Insert Scheduled Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Scheduled Reminders": {
+      "main": [
+        [
+          {
+            "node": "Log Claim Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Claim Event": {
+      "main": [
+        [
+          {
+            "node": "Update Application \u2014 Interview Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Application \u2014 Interview Scheduled": {
+      "main": [
+        [
+          {
+            "node": "Release Conv Lock \u2014 Claim Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Conv Lock \u2014 Claim Success": {
+      "main": [
+        [
+          {
+            "node": "Mark Processed \u2014 Claim Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron \u2014 Poll Shortlisted Applications": {
+      "main": [
+        [
+          {
+            "node": "Fetch Shortlisted Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Shortlisted Applications": {
+      "main": [
+        [
+          {
+            "node": "Filter Already Offered Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Already Offered Applications": {
+      "main": [
+        [
+          {
+            "node": "Has Shortlisted Applications?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Shortlisted Applications?": {
+      "main": [
+        [
+          {
+            "node": "Split Shortlisted Applications",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Shortlisted \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Shortlisted Applications": {
+      "main": [
+        [
+          {
+            "node": "No Shortlisted \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Check Already Offered in Bookings DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Already Offered in Bookings DB": {
+      "main": [
+        [
+          {
+            "node": "Already Has Active Offer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already Has Active Offer?": {
+      "main": [
+        [
+          {
+            "node": "Skip \u2014 Already Offered",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Next 3 Available Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip \u2014 Already Offered": {
+      "main": [
+        [
+          {
+            "node": "Split Shortlisted Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Next 3 Available Slots": {
+      "main": [
+        [
+          {
+            "node": "Enough Slots Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enough Slots Available?": {
+      "main": [
+        [
+          {
+            "node": "Mark Slots as Offered",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create No Slots ReviewTask",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create No Slots ReviewTask": {
+      "main": [
+        [
+          {
+            "node": "Log No Slots Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log No Slots Event": {
+      "main": [
+        [
+          {
+            "node": "Loop Back \u2014 No Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Back \u2014 No Slots": {
+      "main": [
+        [
+          {
+            "node": "Split Shortlisted Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Slots as Offered": {
+      "main": [
+        [
+          {
+            "node": "Slots Offered OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slots Offered OK?": {
+      "main": [
+        [
+          {
+            "node": "Build Offer Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Back \u2014 No Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Offer Message": {
+      "main": [
+        [
+          {
+            "node": "Send Offer \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Offer \u2014 WA": {
+      "main": [
+        [
+          {
+            "node": "Enqueue Scheduling Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enqueue Scheduling Reply": {
+      "main": [
+        [
+          {
+            "node": "Loop Back \u2014 Offer Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Back \u2014 Offer Sent": {
+      "main": [
+        [
+          {
+            "node": "Split Shortlisted Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron \u2014 Daily Slot Generator": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Interviewer Availability",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Active Interviewer Availability": {
+      "main": [
+        [
+          {
+            "node": "Has Availability Windows?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Availability Windows?": {
+      "main": [
+        [
+          {
+            "node": "Split Availability Windows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Windows \u2014 Exit Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Availability Windows": {
+      "main": [
+        [
+          {
+            "node": "No Windows \u2014 Exit Generator",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Compute Candidate Slot Times",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Candidate Slot Times": {
+      "main": [
+        [
+          {
+            "node": "Fetch Calendar Freebusy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Calendar Freebusy": {
+      "main": [
+        [
+          {
+            "node": "Freebusy Fetched?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Freebusy Fetched?": {
+      "main": [
+        [
+          {
+            "node": "Filter Busy Slots",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Freebusy Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Freebusy Failure": {
+      "main": [
+        [
+          {
+            "node": "Loop Back \u2014 Freebusy Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Back \u2014 Freebusy Failed": {
+      "main": [
+        [
+          {
+            "node": "Split Availability Windows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Busy Slots": {
+      "main": [
+        [
+          {
+            "node": "Insert Generated Slots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Generated Slots": {
+      "main": [
+        [
+          {
+            "node": "Insert Slot Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Slot Row": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Slot Counts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Slot Counts": {
+      "main": [
+        [
+          {
+            "node": "Log Slots Generated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Slots Generated": {
+      "main": [
+        [
+          {
+            "node": "Loop Back \u2014 Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Back \u2014 Generator": {
+      "main": [
+        [
+          {
+            "node": "Split Availability Windows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Africa/Accra",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "tags": [
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-d"
+    },
+    {
+      "name": "version-1"
+    }
+  ],
+  "pinData": {}
+}

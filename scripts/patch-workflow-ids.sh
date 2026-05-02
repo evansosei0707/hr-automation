@@ -53,6 +53,7 @@ for filepath in [
     'n8n-workflows/communications/dpa-handler.json',
     'n8n-workflows/screening/b-screening.json',
     'n8n-workflows/screening/c-screening.json',
+    'n8n-workflows/scheduling/d-scheduling.json',
 ]:
     with open(filepath) as f:
         data = json.load(f)
@@ -96,6 +97,13 @@ for filepath in [
         'Send Reminder Template': wa_id,
         'Send Withdrawal Template': wa_id,
         'Normalise Answer — Haiku': cc_id,
+        # Workflow D — Scheduling
+        'Send Slots Expired — WA': wa_id,
+        'Send Reprompt — WA': wa_id,
+        'Parse Reply — Haiku Fallback': cc_id,
+        'Send Slot Taken — WA': wa_id,
+        'Send Confirmation — Candidate WA': wa_id,
+        'Send Offer — WA': wa_id,
     }
 
     for node in data.get('nodes', []):

@@ -69,6 +69,24 @@ CREATE INDEX slot_lookup ON slot (status, starts_at);
 
 The partial unique index is the teeth: it guarantees that for a given interviewer at a given start time, only one offered-or-claimed slot can exist. Any attempt to create a second one fails at the database level, not at the application level.
 
+**V014 additions** (`database/migrations/V014__slot_extensions.sql`):
+
+Three columns and one index were added to support the hybrid slot generator (ADR-0012) and reschedule semantics:
+
+| Column | Type | Default | Purpose |
+|---|---|---|---|
+| `generation_source` | `TEXT NOT NULL` | `'manual'` | How the row was created: `manual` (operator-inserted), `generator` (daily 05:00 Cron), `reschedule` (fresh slot for a reschedule cycle) |
+| `generated_at` | `TIMESTAMPTZ` | NULL | Timestamp when the daily generator inserted this row; NULL for manually-inserted rows |
+| `reschedule_of_slot_id` | `UUID` | NULL | Self-referential FK pointing to the original claimed slot when `generation_source='reschedule'`; ON DELETE SET NULL |
+
+```sql
+CREATE INDEX idx_slot_available
+  ON slot (interviewer_id, starts_at)
+  WHERE status = 'available';
+```
+
+`idx_slot_available` accelerates the offer-path query "find next 3 available slots for this interviewer ordered by `starts_at`". The `NOW()` comparison is applied as a run-time predicate against the index range (Postgres rejects non-immutable functions in partial-index predicates). Existing rows received `generation_source = 'manual'` as their default.
+
 ### `booking_event_log`
 
 Every state transition on a slot. Append-only.
@@ -176,8 +194,9 @@ CREATE TABLE screening_inbox (
 | `open_conversation` | Workflow A (open conversation intent) | Workflow B |
 | `blue_collar_new` | Workflow A or Workflow C's 5-min Twenty poll | Workflow C |
 | `blue_collar_reply` | Workflow A (reply from candidate with active blue-collar session) | Workflow C |
+| `scheduling_reply` | Workflow A (`workflow_reply` branch, when candidate has an active offered slot) | Workflow D |
 
-Migrations: V008 (table creation), V011 (expanded `trigger_kind` CHECK).
+Migrations: V008 (table creation), V011 (expanded `trigger_kind` CHECK), V015 (added `scheduling_reply`).
 
 ### `blue_collar_screening`
 
@@ -255,6 +274,93 @@ CREATE UNIQUE INDEX uq_screening_scripts_active_category
 | `tiered_scoring` | array or null | `[{max, points}, ...]` for `type=number`; `max=null` = unbounded upper tier |
 
 **Seed data:** `driver_v1` (delivery driver, `job_category='driver'`) is inserted by V010 as an idempotent `ON CONFLICT DO NOTHING` INSERT. To hot-swap a script: set `is_active=FALSE` on the old row, insert the new row with `is_active=TRUE`.
+
+### `interviewer_availability`
+
+Per-interviewer recurring weekly availability windows. Seeded once by the Operations Lead (one row per interviewer per weekly time band). The Workflow D daily Cron (05:00 Africa/Accra) reads this table to generate concrete `slot` rows for the next 14 days, vetoed by Google Calendar `freebusy.query`.
+
+Introduced by: V012 (2026-05-02).
+
+```sql
+CREATE TABLE interviewer_availability (
+  id              BIGSERIAL    PRIMARY KEY,
+  interviewer_id  UUID         NOT NULL REFERENCES interviewer(id) ON DELETE CASCADE
+                                 CONSTRAINT fk_interviewer_availability_interviewer,
+  day_of_week     INT          NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),  -- 0=Sunday
+  starts_local    TIME         NOT NULL,   -- Africa/Accra local time
+  ends_local      TIME         NOT NULL,   -- Africa/Accra local time
+  slot_minutes    INT          NOT NULL DEFAULT 45,
+  is_active       BOOLEAN      NOT NULL DEFAULT TRUE,
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  CONSTRAINT availability_window_valid CHECK (ends_local > starts_local)
+);
+
+CREATE INDEX idx_interviewer_availability_active
+  ON interviewer_availability (interviewer_id, day_of_week)
+  WHERE is_active = TRUE;
+```
+
+To disable a window without deleting it, set `is_active = FALSE`. The generator skips inactive rows. The generator never deletes rows from this table; it only INSERTs to `slot`.
+
+### `scheduled_reminders`
+
+Interview reminder jobs for Workflow G's reminder sweep. Workflow D inserts two rows per confirmed booking: `kind='interview_24h'` and `kind='interview_2h'`, with `fire_at` computed from `slot.starts_at`. Workflow G polls this table hourly, sends the WhatsApp template, and marks `sent_at` or `failed_at`.
+
+Introduced by: V013 (2026-05-02).
+
+```sql
+CREATE TABLE scheduled_reminders (
+  id                  BIGSERIAL    PRIMARY KEY,
+  kind                TEXT         NOT NULL CHECK (kind IN ('interview_24h', 'interview_2h')),
+  fire_at             TIMESTAMPTZ  NOT NULL,
+  twenty_interview_id TEXT         NOT NULL,
+  candidate_id        TEXT         NOT NULL,
+  application_id      TEXT         NOT NULL,
+  payload             JSONB        NOT NULL,   -- pre-rendered template variables
+  sent_at             TIMESTAMPTZ,
+  failed_at           TIMESTAMPTZ,
+  failure_reason      TEXT,
+  created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_scheduled_reminders_due
+  ON scheduled_reminders (fire_at)
+  WHERE sent_at IS NULL AND failed_at IS NULL;
+
+CREATE UNIQUE INDEX uq_scheduled_reminders_unique
+  ON scheduled_reminders (twenty_interview_id, kind);
+```
+
+`uq_scheduled_reminders_unique` prevents double-scheduling if Workflow D's claim path retries. On retry, use `ON CONFLICT ON CONSTRAINT uq_scheduled_reminders_unique DO NOTHING`.
+
+### `calendar_sync_retry`
+
+Pending Google Calendar event-create retries. When Calendar fails after a slot is claimed and the `Interview` row is already written to Twenty, Workflow D inserts one row here with the full intended event body. Workflow G's hourly sweep increments `attempts`, retries the Calendar call, and on success updates Twenty via GraphQL and closes the linked ReviewTask. After 3 attempts, `abandoned_at` is set and the ReviewTask is left open for the Operations Lead.
+
+Introduced by: V013 (2026-05-02).
+
+```sql
+CREATE TABLE calendar_sync_retry (
+  id                  BIGSERIAL    PRIMARY KEY,
+  slot_id             UUID         NOT NULL REFERENCES slot(id) ON DELETE CASCADE
+                                     CONSTRAINT fk_calendar_sync_retry_slot,
+  twenty_interview_id TEXT         NOT NULL,
+  intended_event      JSONB        NOT NULL,   -- full POST body for the Calendar API retry
+  attempts            INT          NOT NULL DEFAULT 0,
+  last_attempt_at     TIMESTAMPTZ,
+  last_error          TEXT,
+  succeeded_at        TIMESTAMPTZ,
+  abandoned_at        TIMESTAMPTZ,
+  review_task_id      TEXT,                    -- Twenty ReviewTask UUID
+  created_at          TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_calendar_sync_retry_pending
+  ON calendar_sync_retry (last_attempt_at NULLS FIRST)
+  WHERE succeeded_at IS NULL AND abandoned_at IS NULL;
+```
+
+`idx_calendar_sync_retry_pending` orders by `last_attempt_at NULLS FIRST` so newly-inserted rows (never attempted) are processed before older ones. Workflow G limits each sweep run to 10 rows to bound per-tick Calendar API calls.
 
 ## Retention
 

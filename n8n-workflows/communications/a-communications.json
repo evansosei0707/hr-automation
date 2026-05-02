@@ -3770,9 +3770,9 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO screening_inbox (candidate_id, application_id, trigger_kind) VALUES ($1, $2, 'new_application') ON CONFLICT (candidate_id) WHERE processed_at IS NULL DO NOTHING",
+        "query": "INSERT INTO screening_inbox (candidate_id, application_id, trigger_kind, payload)\nVALUES (\n  $1,\n  $2,\n  CASE WHEN EXISTS (\n    SELECT 1 FROM blue_collar_screening\n    WHERE candidate_id = $1 AND status = 'in_progress'\n  ) THEN 'blue_collar_reply' ELSE 'blue_collar_new' END,\n  CASE WHEN EXISTS (\n    SELECT 1 FROM blue_collar_screening\n    WHERE candidate_id = $1 AND status = 'in_progress'\n  ) THEN jsonb_build_object('messageBody', $3) ELSE NULL END\n)\nON CONFLICT (candidate_id) WHERE processed_at IS NULL DO NOTHING",
         "options": {
-          "queryReplacement": "={{ [$('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? '', null] }}"
+          "queryReplacement": "={{ [\n  $('Resolve Candidate by Phone').first()?.json?.data?.candidates?.edges?.[0]?.node?.id ?? '',\n  null,\n  $('Normalise Phone Number').first()?.json?.messageBody ?? ''\n] }}"
         }
       }
     },

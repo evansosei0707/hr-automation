@@ -202,6 +202,31 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** workflow-builder.
 - **Reference:** 2026-05-01 live test; `n8n-workflows/communications/a-communications.json` `Set Candidate Context` expressions.
 
+### T2-21. WhatsApp template approvals for Workflow C (screening_reminder_24h + screening_withdrawn_72h)
+
+- **Description:** Workflow C's reminder sweep sends `screening_reminder_24h` (to candidates with no reply for 24h) and the withdrawal sweep sends `screening_withdrawn_72h` (72h no-reply). Both templates are referenced in `Send Reminder Template` and `Send Withdrawal Template` nodes but have not yet been submitted to Meta Business Manager for approval. Without approved templates the WA Send subflow falls back to `still_interested_10d` (wrong semantic — T2-14) or returns a 400. The templates are utility-category; approval is typically under 1h.
+- **Files affected:** `reference/whatsapp-templates/screening_reminder_24h.md` (create), `reference/whatsapp-templates/screening_withdrawn_72h.md` (create). No workflow code change needed once templates are approved — template names are already correct in the nodes.
+- **Blocking:** Yes — for Workflow C go-live. Workflow C is built and tested but cannot send real outbound messages without approved templates.
+- **Target window:** Pre-launch (Workflow C). Submit immediately; approval usually comes back same day.
+- **Owner:** HRA Project Lead (Meta Business Manager access) + doc update once approved.
+
+### T2-22. Workflow A — route blue_collar_reply trigger_kind to Workflow C
+
+- **Description:** When a blue-collar candidate replies during their Q&A screening session, Workflow A classifies their message as `workflow_reply` (or `open_conversation`) and routes it to `screening_inbox` with `trigger_kind='open_conversation'` or `trigger_kind='new_application'`. Workflow C will NOT pick up these rows because it only claims `trigger_kind IN ('blue_collar_new', 'blue_collar_reply')`. Fix: in Workflow A's `workflow_reply` branch, before inserting into `screening_inbox`, check `blue_collar_screening` for an active row (`status='in_progress'`) for this `candidate_id`. If found, insert with `trigger_kind='blue_collar_reply'`; otherwise fall through to the existing `open_conversation` path.
+- **Files affected:** `n8n-workflows/communications/a-communications.json` — new HTTP/Postgres lookup node after `workflow_reply` classification, new IF node, updated `screening_inbox` INSERT.
+- **Blocking:** Yes — for Workflow C to process replies from real candidates. Without this, blue-collar candidates' screening answers are swallowed by the open_conversation handler.
+- **Target window:** Immediately — next work session after Workflow C close-out. This is the next item on `plans/active-plan.md`.
+- **Owner:** workflow-builder.
+- **Reference:** ADR-0011 §"Dual trigger" (Q2a decision); Workflow C design note §2.
+
+### T2-23. Workflow C — SkillTag loop deferred (createCandidateSkillTag)
+
+- **Description:** Workflow C's completion path was designed to tag the candidate in Twenty with a skill tag based on the job category (e.g. `driver`, `warehouse`). The `createCandidateSkillTag` mutation requires a `skillTagId` (the Twenty UUID for the matching SkillTag object). In v1 there is no lookup node to resolve `script_id → skillTagId`, so the loop was deferred. The candidate is scored and tiered but no SkillTag is written to Twenty.
+- **Files affected:** `n8n-workflows/screening/c-screening.json` — add HTTP node querying `skillTags(filter: {name: {eq: $category}})`, add `createCandidateSkillTag` mutation call, handle missing SkillTag gracefully.
+- **Blocking:** No. Score, strength_tier, and ReviewTask are all written correctly. SkillTag is an operational convenience for HR team search.
+- **Target window:** Post-launch Week 2. Can be added as a standalone patch without retesting the full C acceptance criteria.
+- **Owner:** workflow-builder.
+
 ---
 
 ## How to use this plan

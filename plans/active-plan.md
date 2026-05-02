@@ -1,8 +1,8 @@
 # Active Plan — Week 1
 
-**Current work:** Week 1 close-out → then Workflow B
-**Spec:** `docs/02-workflows/b-screening.md`
-**Status:** Workflow A ✅ complete. Week 1 close-out tasks before Workflow B.
+**Current work:** Workflow A routing patch → then Workflow D architect dispatch
+**Spec:** `docs/02-workflows/a-communications.md` (routing patch), `docs/02-workflows/d-scheduling.md` (D)
+**Status:** Workflows A + B + C ✅ complete. Next: patch Workflow A to route `trigger_kind='blue_collar_reply'`, then Workflow D.
 
 ## Week 1 progress
 
@@ -10,8 +10,9 @@
 - [x] **Workflow B design** — DONE 2026-05-01. Design note ready at `docs/02-workflows/b-white-collar-design-v1.md`. OQ-1 (Twenty resolvers) and OQ-6 (CV parser, ADR-0010) resolved. Closing arc: `ce46654`..`b0d68ea`.
 - [x] **Workflow B build** — DONE 2026-05-01. `b-screening.json` + V008 migration + `a-communications.json` inbox INSERT on both `workflow_reply` and `open_conversation` branches. Rules #19–#24 added.
 - [x] **Workflow B v1 live test** — ✅ complete 2026-05-01. Parse failure path proven earlier. Happy path proven: CV text → Extract Structured Facts (Claude Sonnet) → Score Against Rubric (Claude Sonnet) → score stored in candidate_facts → ReviewTask created → WA Ack sent → inbox row marked processed end-to-end.
-- [ ] **Workflow C architect dispatch** — next. Spec: `docs/02-workflows/c-interview-scheduling.md`.
-- [ ] **Week 1 close-out tasks** — T2-18/T2-19 atomic Redis lock upgrade (can run in parallel)
+- [x] **Workflow C v1** — ✅ complete 2026-05-02. Architect + schema + build + tester 5/5. 3 pre-launch blockers → T2-21/22/23. Closing arc: `9ae00cd` (architect) + `b48d29f` (migrations) + `902db3e` (initial build) + `815f17c` + `5a938f9` + `34ace80` + `753548e` + `30e158b` (8 bug-fix commits).
+- [ ] **Workflow A routing patch** — add `blue_collar_reply` trigger_kind detection to `a-communications.json`. Candidates with active `blue_collar_screening` rows must route to Workflow C reply path (not `open_conversation`). Spec: T2-22.
+- [ ] **Workflow D architect dispatch** — spec at `docs/02-workflows/d-scheduling.md`. After Workflow A patch is merged.
 
 ---
 

@@ -1,7 +1,7 @@
 # Project Handoff — HR Automation
 
 **Last updated:** 2026-05-02
-**Status:** Week 1 complete. Workflow A + B live. Workflow C next.
+**Status:** Week 1 in progress. Workflows A + B + C live. Workflow A routing patch next, then Workflow D.
 **Repo:** `github.com/evansosei0707/hr-automation` (branch: `main`, user: `eofrimpong-collab`)
 
 ---
@@ -47,7 +47,7 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 |----|------|--------|--------|------|
 | **A** | Communications | — | ✅ Live (proven 2026-05-01) | `docs/02-workflows/a-communications.md` |
 | **B** | White-Collar Screening | White | ✅ Live (proven 2026-05-01) | `docs/02-workflows/b-white-collar.md` |
-| **C** | Blue-Collar Screening | Blue | ⬜ Not started | `docs/02-workflows/c-blue-collar.md` |
+| **C** | Blue-Collar Screening | Blue | ✅ Live (proven 2026-05-02) | `docs/02-workflows/c-blue-collar.md` |
 | **D** | Interview Scheduling | — | ⬜ Not started | `docs/02-workflows/d-scheduling.md` |
 | **E** | Social Posting | — | ⬜ Not started | `docs/02-workflows/e-social-posting.md` |
 | **F** | Reporting | — | ⬜ Not started | `docs/02-workflows/f-reporting.md` |
@@ -102,14 +102,21 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 - Parse-failure path proven: empty inbox → no-row → ReviewTask for manual review
 - Rules #24–#25 added
 
+**Workflow C v1** (build + test 2026-05-02):
+- Design note: `docs/02-workflows/c-blue-collar-design-v1.md`; ADR-0011 (dedicated state table + dual-trigger)
+- JSON file: `c-screening.json` (98 nodes, 3 cron contexts: 60s main, 300s Twenty poll, 1800s reminder/withdraw sweep)
+- Migrations V009 (`blue_collar_screening`), V010 (`screening_scripts` + `driver_v1` seed), V011 (trigger_kind constraint)
+- Tester 5/5 PASS. Eight bugs fixed across 4 tester rounds (isEmpty operator, splitInBatches v3 output semantics, IF boolean routing, withdraw chain sequencing, forward-reference lock keys)
+- **3 pre-launch blockers (T2):** WA template approvals (T2-21), Workflow A `blue_collar_reply` routing (T2-22), SkillTag loop deferred (T2-23)
+
 ---
 
 ## What's next
 
-1. **Workflow C architect dispatch** — spec at `docs/02-workflows/c-blue-collar.md`. The blue-collar screening state machine. Dispatch `architect` to design the state machine and inbox approach before workflow-builder builds.
-2. **Week 1 close-out tasks** — T2-18 (atomic Redis lock acquire) and T2-19 (atomic lock release) can run in parallel with Workflow C.
-3. **Workflow D** — interview scheduling (uses the bookings-db atomic slot-claim SQL, Google Calendar write).
-4. **Workflow E** — social posting (FB + Telegram confirmed, IG/X deferred to when ADRs unblock).
+1. **Workflow A routing patch** (T2-22) — add `blue_collar_reply` trigger_kind detection to `a-communications.json`. In the `workflow_reply` branch, check `blue_collar_screening` for an active row for `candidate_id`; if found, insert into `screening_inbox` with `trigger_kind='blue_collar_reply'`. Without this, blue-collar candidates' answers are not routed to Workflow C.
+2. **Workflow D architect dispatch** — spec at `docs/02-workflows/d-scheduling.md`. Interview scheduling with atomic slot-claim (V001 partial-unique-index pattern) and Google Calendar write. Dispatch `architect` before building.
+3. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager. Workflow C is blocked from sending real outbound messages until these are approved.
+4. **Workflow E** — social posting (FB + Telegram confirmed, IG/X deferred per ADR-0007/0008).
 5. **Workflows F, G, H** — reporting, orchestration/watchdog, job alerts.
 
 ---
@@ -199,7 +206,7 @@ Expected: 7 services running — `hr-twenty-db`, `hr-bookings-db`, `hr-redis`, `
 
 **n8n credentials** are stored in n8n's internal DB (not in `.env`). They do not appear in workflow JSON exports. The encryption key is `N8N_ENCRYPTION_KEY` in `infrastructure/.env` — must match what's in the DB or all credentials break on restore.
 
-**Bookings DB migrations applied:** V001 (core tables), V003 (candidate_facts), V004 (twenty_schema_migrations), V005 (ai_call_log), V008 (screening_inbox). Check with:
+**Bookings DB migrations applied:** V001 (core tables), V003 (candidate_facts), V004 (twenty_schema_migrations), V005 (ai_call_log), V008 (screening_inbox), V009 (blue_collar_screening), V010 (screening_scripts), V011 (trigger_kind constraint). Check with:
 ```
 docker exec hr-bookings-db psql -U n8n_bookings -d bookings -c "SELECT version, description FROM schema_migrations ORDER BY version;"
 ```
@@ -260,6 +267,9 @@ All 25 rules are in `.claude/rules/n8n-workflows.md`. The most operationally cri
 | T2-18 | Atomic Redis lock acquire (SETNX — needs `executeCommand` or n8n upgrade) | Post-Week-1 |
 | T2-19 | Atomic Redis lock release (Lua CAS DEL) | Bundle with T2-18 |
 | T2-20 | Soft-deleted candidate re-messages → null candidateId (pre-launch blocker once DPA erasure live) | Pre-launch |
+| T2-21 | WA template approvals for Workflow C (`screening_reminder_24h` + `screening_withdrawn_72h`) | Pre-launch (C) |
+| T2-22 | Workflow A — route `blue_collar_reply` trigger_kind to Workflow C reply path | **Immediate** |
+| T2-23 | Workflow C — SkillTag loop deferred (no `skillTagId` source in v1) | Post-launch Week 2 |
 
 Full details: `plans/tier-2-followups.md`
 
@@ -299,6 +309,7 @@ Running n8n 1.85.0 (via docker image tagged 2.18.5). Several workarounds are in 
 | ADR-0008 | Defer X (free-tier developer access pending; retry 2026-05-27) |
 | ADR-0009 | Redis namespace strategy — `hra:` prefix, `hra:conv:`, `hra:dedupe:` |
 | ADR-0010 | CV parser: n8n Extract from File + Claude Sonnet (DPA-safe, no new container) |
+| ADR-0011 | Blue-collar screening: dedicated `blue_collar_screening` state table + dual-trigger (screening_inbox + Five-min Twenty poll) |
 
 Full records: `docs/05-decisions/`
 

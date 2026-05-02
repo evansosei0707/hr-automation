@@ -4,8 +4,8 @@ Current build state. Updated at the end of every work session.
 
 ---
 
-**Last updated:** 2026-05-01
-**Current phase:** Week 1 — Workflow B design ready; workflow-builder + V008 migration next
+**Last updated:** 2026-05-02
+**Current phase:** Week 1 — Workflow C complete; Workflow A routing patch next
 **Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -39,10 +39,13 @@ Current build state. Updated at the end of every work session.
 
 - ✅ **Workflow B v1 live test (2026-05-01) — complete.** Parse failure path proven (empty inbox → no-row exit → ReviewTask). Happy path proven: CV text → Extract Structured Facts (Claude Sonnet) → Score Against Rubric (Claude Sonnet) → score stored in candidate_facts → ReviewTask created → WA Ack sent → inbox row marked processed. Rules #25 added. **Workflow B v1 DONE.**
 
+- ✅ **Workflow C v1 (2026-05-02) — complete.** Blue-collar screening state machine. Architect design note at `docs/02-workflows/c-blue-collar-design-v1.md`; ADR-0011 (`docs/05-decisions/ADR-0011-blue-collar-state-and-trigger.md`). Migrations V009 (blue_collar_screening), V010 (screening_scripts + driver_v1 seed), V011 (trigger_kind constraint). JSON: `n8n-workflows/screening/c-screening.json` (98 nodes, 3 cron contexts: 60s main, 300s Twenty poll, 1800s reminder/withdraw sweep). Tester 5/5 PASS. Eight bugs found and fixed during tester rounds (isEmpty operator, Workflow B row-stealing, collarType null mapping, splitInBatches v3 output semantics, IF boolean routing, withdraw chain resequencing, forward refs on lock keys). Rules #26+ not added — bugs captured in commit messages.
+  **Pre-launch blockers carried to T2:** (a) WA templates `screening_reminder_24h` + `screening_withdrawn_72h` need Meta approval (T2-21). (b) Workflow A `workflow_reply` branch needs `trigger_kind='blue_collar_reply'` routing for candidates with active `blue_collar_screening` rows (T2-22). (c) `createCandidateSkillTag` loop deferred — no `skillTagId` source in v1 (T2-23). **Workflow C v1 DONE.**
+
 ## What's next
 
-- **Workflow C architect dispatch** — spec at `docs/02-workflows/c-interview-scheduling.md`.
-- **Week 1 close-out tasks** (T2-18/T2-19 atomic Redis lock upgrade) — can run in parallel.
+- **Workflow A routing patch** — add `blue_collar_reply` trigger_kind detection to `a-communications.json`'s `workflow_reply` branch (T2-22). Candidates with active `blue_collar_screening` rows must route to Workflow C's reply path.
+- **Workflow D architect dispatch** — spec at `docs/02-workflows/d-scheduling.md`. Interview scheduling with atomic slot-claim and Google Calendar write.
 
 ## What's blocked
 

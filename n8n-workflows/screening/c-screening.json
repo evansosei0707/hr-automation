@@ -493,7 +493,7 @@
       ],
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const currentQ = $('Get Current Question').first()?.json?.currentQuestion ?? {};\nconst raw = ($('Extract Reply Text').first()?.json?.messageBody ?? '').trim();\nconst lower = raw.toLowerCase();\nif (currentQ.type === 'yes_no') {\n  const yesWords = ['yes','yeah','yep','yah','y','true','1','absolutely','sure','ok','okay'];\n  const noWords = ['no','nope','nah','n','false','0','not','never'];\n  if (yesWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  if (noWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  // Ghanaian context: transport ownership patterns\n  const yesPatterns = [/okada/i, /motorbike/i, /motor.?bike/i, /\\bi drive\\b/i, /\\bi own\\b/i, /\\bi have (a |one |my )?motor/i, /\\bi use motor/i];\n  if (yesPatterns.some(p => p.test(lower))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  const noPatterns = [/i don'?t (have|own|drive|use)/i, /no motor/i, /no okada/i, /i cannot/i, /i can'?t/i];\n  if (noPatterns.some(p => p.test(lower))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_yes_no' } }];\n}\nif (currentQ.type === 'number') {\n  const n = parseFloat(raw.replace(/[^0-9.]/g, ''));\n  if (!isNaN(n)) {\n    return [{ json: { valid: true, canonical: String(n) } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'not_a_number' } }];\n}\nif (currentQ.type === 'enum') {\n  const enumVals = (currentQ.enum_values ?? []).map(v => String(v).toLowerCase());\n  const normalised = lower.replace(/[^a-z0-9_]/g, '_');\n  if (enumVals.includes(lower)) {\n    return [{ json: { valid: true, canonical: lower } }];\n  }\n  if (enumVals.includes(normalised)) {\n    return [{ json: { valid: true, canonical: normalised } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_enum' } }];\n}\nif (currentQ.type === 'presence_only') {\n  const present = raw.length > 0;\n  return [{ json: { valid: present, canonical: present ? raw : null, reason: present ? null : 'empty_response' } }];\n}\nreturn [{ json: { valid: false, canonical: null, reason: 'unknown_type' } }];"
+        "jsCode": "const currentQ = $('Get Current Question').first()?.json?.currentQuestion ?? {};\nconst raw = ($('Extract Reply Text').first()?.json?.messageBody ?? '').trim();\nconst lower = raw.toLowerCase();\nif (currentQ.type === 'yes_no') {\n  const yesWords = ['yes','yeah','yep','yah','y','true','1','absolutely','sure','ok','okay'];\n  const noWords = ['no','nope','nah','n','false','0','not','never'];\n  if (yesWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  if (noWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  // Ghanaian context: transport ownership patterns\n  const yesPatterns = [/okada/i, /motorbike/i, /motor.?bike/i, /\\bi drive\\b/i, /\\bi own\\b/i, /every\\s*day/i, /\\bi have (a |one |my )?motor/i, /\\bi use motor/i];\n  if (yesPatterns.some(p => p.test(lower))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  const noPatterns = [/i don'?t (have|own|drive|use)/i, /no motor/i, /no okada/i, /i cannot/i, /i can'?t/i];\n  if (noPatterns.some(p => p.test(lower))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_yes_no' } }];\n}\nif (currentQ.type === 'number') {\n  const n = parseFloat(raw.replace(/[^0-9.]/g, ''));\n  if (!isNaN(n)) {\n    return [{ json: { valid: true, canonical: String(n) } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'not_a_number' } }];\n}\nif (currentQ.type === 'enum') {\n  const enumVals = (currentQ.enum_values ?? []).map(v => String(v).toLowerCase());\n  const normalised = lower.replace(/[^a-z0-9_]/g, '_');\n  if (enumVals.includes(lower)) {\n    return [{ json: { valid: true, canonical: lower } }];\n  }\n  if (enumVals.includes(normalised)) {\n    return [{ json: { valid: true, canonical: normalised } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_enum' } }];\n}\nif (currentQ.type === 'presence_only') {\n  const present = raw.length > 0;\n  return [{ json: { valid: present, canonical: present ? raw : null, reason: present ? null : 'empty_response' } }];\n}\nreturn [{ json: { valid: false, canonical: null, reason: 'unknown_type' } }];"
       }
     },
     {
@@ -516,11 +516,11 @@
           "conditions": [
             {
               "id": "cond-answer-valid",
-              "leftValue": "={{ $json.valid }}",
-              "rightValue": true,
+              "leftValue": "={{ String($json.valid) }}",
+              "rightValue": "true",
               "operator": {
-                "type": "boolean",
-                "operation": "equal"
+                "type": "string",
+                "operation": "equals"
               }
             }
           ]
@@ -3278,14 +3278,14 @@
       "main": [
         [
           {
-            "node": "Get Lock \u2014 Reminder",
+            "node": "Fetch 72h Withdrawn Rows",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Fetch 72h Withdrawn Rows",
+            "node": "Get Lock \u2014 Reminder",
             "type": "main",
             "index": 0
           }
@@ -3425,9 +3425,10 @@
     },
     "Split Withdraw Rows": {
       "main": [
+        [],
         [
           {
-            "node": "Mark Screening Withdrawn",
+            "node": "Get Lock \u2014 Withdraw",
             "type": "main",
             "index": 0
           }

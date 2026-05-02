@@ -49,7 +49,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "UPDATE screening_inbox SET claimed_by = $1, claimed_at = NOW() WHERE id = (SELECT id FROM screening_inbox WHERE claimed_at IS NULL ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *",
+        "query": "UPDATE screening_inbox SET claimed_by = $1, claimed_at = NOW() WHERE id = (SELECT id FROM screening_inbox WHERE trigger_kind IN ('new_application', 'open_conversation') AND claimed_at IS NULL ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *",
         "options": {
           "queryReplacement": "={{ [$execution.id] }}"
         }
@@ -835,7 +835,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "XmerKy7v44ZIY1Nj",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},

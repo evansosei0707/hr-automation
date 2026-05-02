@@ -184,7 +184,7 @@
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "isEmpty"
+                "operation": "equals"
               }
             }
           ]
@@ -402,7 +402,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_CLAUDE_CALL",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},
@@ -493,7 +493,7 @@
       ],
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const currentQ = $('Get Current Question').first()?.json?.currentQuestion ?? {};\nconst raw = ($('Extract Reply Text').first()?.json?.messageBody ?? '').trim();\nconst lower = raw.toLowerCase();\nif (currentQ.type === 'yes_no') {\n  const yesWords = ['yes','yeah','yep','yah','y','true','1','absolutely','sure','ok','okay'];\n  const noWords = ['no','nope','nah','n','false','0','not','never'];\n  if (yesWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  if (noWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_yes_no' } }];\n}\nif (currentQ.type === 'number') {\n  const n = parseFloat(raw.replace(/[^0-9.]/g, ''));\n  if (!isNaN(n)) {\n    return [{ json: { valid: true, canonical: String(n) } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'not_a_number' } }];\n}\nif (currentQ.type === 'enum') {\n  const enumVals = (currentQ.enum_values ?? []).map(v => String(v).toLowerCase());\n  const normalised = lower.replace(/[^a-z0-9_]/g, '_');\n  if (enumVals.includes(lower)) {\n    return [{ json: { valid: true, canonical: lower } }];\n  }\n  if (enumVals.includes(normalised)) {\n    return [{ json: { valid: true, canonical: normalised } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_enum' } }];\n}\nif (currentQ.type === 'presence_only') {\n  const present = raw.length > 0;\n  return [{ json: { valid: present, canonical: present ? raw : null, reason: present ? null : 'empty_response' } }];\n}\nreturn [{ json: { valid: false, canonical: null, reason: 'unknown_type' } }];"
+        "jsCode": "const currentQ = $('Get Current Question').first()?.json?.currentQuestion ?? {};\nconst raw = ($('Extract Reply Text').first()?.json?.messageBody ?? '').trim();\nconst lower = raw.toLowerCase();\nif (currentQ.type === 'yes_no') {\n  const yesWords = ['yes','yeah','yep','yah','y','true','1','absolutely','sure','ok','okay'];\n  const noWords = ['no','nope','nah','n','false','0','not','never'];\n  if (yesWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  if (noWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  // Ghanaian context: transport ownership patterns\n  const yesPatterns = [/okada/i, /motorbike/i, /motor.?bike/i, /\\bi drive\\b/i, /\\bi own\\b/i, /\\bi have (a |one |my )?motor/i, /\\bi use motor/i];\n  if (yesPatterns.some(p => p.test(lower))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  const noPatterns = [/i don'?t (have|own|drive|use)/i, /no motor/i, /no okada/i, /i cannot/i, /i can'?t/i];\n  if (noPatterns.some(p => p.test(lower))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_yes_no' } }];\n}\nif (currentQ.type === 'number') {\n  const n = parseFloat(raw.replace(/[^0-9.]/g, ''));\n  if (!isNaN(n)) {\n    return [{ json: { valid: true, canonical: String(n) } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'not_a_number' } }];\n}\nif (currentQ.type === 'enum') {\n  const enumVals = (currentQ.enum_values ?? []).map(v => String(v).toLowerCase());\n  const normalised = lower.replace(/[^a-z0-9_]/g, '_');\n  if (enumVals.includes(lower)) {\n    return [{ json: { valid: true, canonical: lower } }];\n  }\n  if (enumVals.includes(normalised)) {\n    return [{ json: { valid: true, canonical: normalised } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_enum' } }];\n}\nif (currentQ.type === 'presence_only') {\n  const present = raw.length > 0;\n  return [{ json: { valid: present, canonical: present ? raw : null, reason: present ? null : 'empty_response' } }];\n}\nreturn [{ json: { valid: false, canonical: null, reason: 'unknown_type' } }];"
       }
     },
     {
@@ -797,7 +797,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -942,7 +942,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -1110,7 +1110,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -1292,7 +1292,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { query: 'query GetApplicationJobPosting($id: ID!) { application(filter: { id: { eq: $id } }) { id candidate { id whatsappNumberE164 } jobPosting { id category } } }', variables: { id: $('Claim Inbox Row').first()?.json?.application_id ?? '' } } }}",
+        "jsonBody": "={{ { query: 'query GetApplicationJobPosting($id: ID!) { application(filter: { id: { eq: $id } }) { id candidate { id whatsappNumberE164 } jobPosting { id category collarType } } }', variables: { id: $('Claim Inbox Row').first()?.json?.application_id ?? '' } } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -1321,9 +1321,9 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM screening_scripts WHERE job_category = $1 AND is_active = TRUE LIMIT 1",
+        "query": "SELECT * FROM screening_scripts WHERE script_id = $1 AND is_active = TRUE LIMIT 1",
         "options": {
-          "queryReplacement": "={{ [$('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application?.jobPosting?.category ?? ''] }}"
+          "queryReplacement": "={{ [$('Derive Script ID From Job').first()?.json?.scriptId ?? 'driver_v1'] }}"
         }
       }
     },
@@ -1364,7 +1364,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -1884,7 +1884,7 @@
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "isEmpty"
+                "operation": "equals"
               }
             }
           ]
@@ -1928,7 +1928,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -2266,7 +2266,7 @@
               "rightValue": "",
               "operator": {
                 "type": "string",
-                "operation": "isEmpty"
+                "operation": "equals"
               }
             }
           ]
@@ -2310,7 +2310,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -2476,6 +2476,20 @@
             "waitBetweenTries": 2000
           }
         }
+      }
+    },
+    {
+      "id": "c000096-0096-c096-0096-000000000096",
+      "name": "Derive Script ID From Job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2120,
+        720
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const app = $('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application ?? {};\nconst collarType = (app.jobPosting?.collarType ?? '').toUpperCase();\n// v1 mapping: BLUE \u2192 driver_v1 (only loaded script)\nconst scriptMap = { 'BLUE': 'driver_v1' };\nconst scriptId = scriptMap[collarType] ?? 'driver_v1';\nreturn [{ json: { scriptId, collarType } }];"
       }
     }
   ],
@@ -2983,7 +2997,7 @@
       "main": [
         [
           {
-            "node": "Fetch Init Script",
+            "node": "Derive Script ID From Job",
             "type": "main",
             "index": 0
           }
@@ -3268,6 +3282,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Fetch 72h Withdrawn Rows",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -3355,7 +3376,7 @@
         ],
         [
           {
-            "node": "Fetch 72h Withdrawn Rows",
+            "node": "Split Reminder Rows",
             "type": "main",
             "index": 0
           }
@@ -3366,7 +3387,7 @@
       "main": [
         [
           {
-            "node": "Fetch 72h Withdrawn Rows",
+            "node": "Split Reminder Rows",
             "type": "main",
             "index": 0
           }
@@ -3531,6 +3552,28 @@
         [
           {
             "node": "Fetch Screening Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Derive Script ID From Job": {
+      "main": [
+        [
+          {
+            "node": "Fetch Init Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Reminder \u2014 Lock Busy": {
+      "main": [
+        [
+          {
+            "node": "Split Reminder Rows",
             "type": "main",
             "index": 0
           }

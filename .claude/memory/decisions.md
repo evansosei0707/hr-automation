@@ -160,6 +160,12 @@ dispatch for Workflow A v1.
 
 ---
 
+## 2026-05-02 — V009–V011 schema_migrations tracker drift backfilled
+
+V009 (`candidate_facts`), V010 (`blue_collar_screening`), and V011 (`screening_inbox` + `screening_inbox_triggers`) were applied to the bookings DB manually during Workflow C build (before `migrate-bookings-db.sh` was in use for those migrations). The `schema_migrations` tracker table did not have rows for them. When V012–V015 were dispatched via `migrate-bookings-db.sh`, the script tried to re-apply V009 and hit a duplicate-table error. Fixed by manually `INSERT INTO schema_migrations` for all three with `ON CONFLICT DO NOTHING`. Backfilled at commit `88dba39`.
+
+**How to apply:** If `migrate-bookings-db.sh` fails with "already exists" on a migration, check whether the migration was applied outside the script. If so, insert its row into `schema_migrations` directly and re-run — do not edit the migration file.
+
 ## Format for new entries
 
 ```

@@ -32,6 +32,20 @@ Load this rule when creating or editing files under `database/migrations/`.
 
 10. **Test in local first.** The workflow is: write migration → apply to local bookings DB → verify with a SELECT → commit. Never commit a migration you haven't seen execute.
 
+26. **Named FK constraints use table-level syntax, not column-level.** Postgres requires `CONSTRAINT fk_name` to be declared as a table-level constraint, not inline after the column definition. The inline form `col UUID CONSTRAINT fk_name REFERENCES target(id)` is rejected. The correct pattern:
+    ```sql
+    col_name UUID,
+    CONSTRAINT fk_table_target FOREIGN KEY (col_name) REFERENCES target(id) ON DELETE RESTRICT
+    ```
+    Or for `ALTER TABLE ADD COLUMN` (single-column FK, no FOREIGN KEY keyword needed):
+    ```sql
+    ALTER TABLE t ADD COLUMN col_name UUID
+      CONSTRAINT fk_t_target REFERENCES target(id) ON DELETE RESTRICT;
+    ```
+    The `CONSTRAINT name` must come **before** `REFERENCES`. Placing it after (e.g. `REFERENCES target(id) CONSTRAINT fk_name`) is also invalid.
+
+    **Surfaced 2026-05-02** during V012–V014 schema-designer build — all three FK columns were written with the constraint name after REFERENCES, causing migration failures on apply.
+
 ## Applying
 
 ```

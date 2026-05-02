@@ -2180,7 +2180,7 @@
         "operation": "executeQuery",
         "query": "UPDATE blue_collar_screening SET status = 'withdrawn', updated_at = NOW() WHERE id = $1 RETURNING candidate_id, application_id",
         "options": {
-          "queryReplacement": "={{ [$json.id] }}"
+          "queryReplacement": "={{ [$('Fetch 72h Withdrawn Rows').item?.json?.id ?? ''] }}"
         }
       }
     },
@@ -2292,7 +2292,7 @@
       },
       "parameters": {
         "operation": "set",
-        "key": "={{ 'hra:conv:' + ($json.candidate_id ?? '') }}",
+        "key": "={{ 'hra:conv:' + ($('Fetch 72h Withdrawn Rows').item?.json?.candidate_id ?? $json.candidate_id ?? '') }}",
         "value": "={{ $execution.id }}",
         "expire": true,
         "ttl": 180
@@ -2318,7 +2318,7 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "to": "={{ $('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '' }}",
+            "to": "={{ $('Fetch 72h Withdrawn Rows').item?.json?.candidate_id ?? $json.candidate_id ?? '' }}",
             "body": "={{ 'Hi! We noticed you have not completed your screening and we have had to close your application. You are welcome to apply again in the future.' }}",
             "templateName": "={{ 'screening_withdrawn_72h' }}"
           },
@@ -2375,7 +2375,7 @@
       },
       "parameters": {
         "operation": "get",
-        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}",
+        "key": "={{ 'hra:conv:' + ($('Fetch 72h Withdrawn Rows').item?.json?.candidate_id ?? '') }}",
         "propertyName": "value"
       }
     },
@@ -2428,7 +2428,7 @@
       },
       "parameters": {
         "operation": "delete",
-        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}"
+        "key": "={{ 'hra:conv:' + ($('Fetch 72h Withdrawn Rows').item?.json?.candidate_id ?? '') }}"
       }
     },
     {
@@ -3507,7 +3507,7 @@
       "main": [
         [
           {
-            "node": "Get Lock Value \u2014 Withdraw Release",
+            "node": "Send Withdrawal Template",
             "type": "main",
             "index": 0
           }
@@ -3547,7 +3547,7 @@
       "main": [
         [
           {
-            "node": "Send Withdrawal Template",
+            "node": "Mark Screening Withdrawn",
             "type": "main",
             "index": 0
           }
@@ -3558,7 +3558,7 @@
       "main": [
         [
           {
-            "node": "Mark Screening Withdrawn",
+            "node": "Get Lock Value \u2014 Withdraw Release",
             "type": "main",
             "index": 0
           }
@@ -3660,7 +3660,7 @@
       "main": [
         [
           {
-            "node": "Mark Screening Withdrawn",
+            "node": "Get Lock Value \u2014 Withdraw Release",
             "type": "main",
             "index": 0
           }

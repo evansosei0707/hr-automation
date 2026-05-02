@@ -52,6 +52,7 @@ for filepath in [
     'n8n-workflows/communications/a-communications.json',
     'n8n-workflows/communications/dpa-handler.json',
     'n8n-workflows/screening/b-screening.json',
+    'n8n-workflows/screening/c-screening.json',
 ]:
     with open(filepath) as f:
         data = json.load(f)
@@ -87,6 +88,14 @@ for filepath in [
         'Extract Structured Facts — Claude Sonnet': cc_id,
         'Score Against Rubric — Claude Sonnet': cc_id,
         'Send WA Ack': wa_id,
+        # Workflow C — Blue-Collar Screening
+        'Send Question 0 — WA': wa_id,
+        'Send Next Question': wa_id,
+        'Send Clarifier — WA': wa_id,
+        'Send Closing Message': wa_id,
+        'Send Reminder Template': wa_id,
+        'Send Withdrawal Template': wa_id,
+        'Normalise Answer — Haiku': cc_id,
     }
 
     for node in data.get('nodes', []):

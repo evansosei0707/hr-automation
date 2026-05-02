@@ -1,0 +1,3556 @@
+{
+  "name": "Workflow C \u2014 Blue-Collar Screening",
+  "nodes": [
+    {
+      "id": "c000001-0001-c001-0001-000000000001",
+      "name": "Cron \u2014 Poll Screening Inbox",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 60
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c000002-0002-c002-0002-000000000002",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        900
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000003-0003-c003-0003-000000000003",
+      "name": "Cron \u2014 Twenty App Poll",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        1400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 300
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c000004-0004-c004-0004-000000000004",
+      "name": "Cron \u2014 Reminder Sweep",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        200,
+        2200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 1800
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "c000005-0005-c005-0005-000000000005",
+      "name": "Claim Inbox Row",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        440,
+        300
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET claimed_by = $1, claimed_at = NOW() WHERE id = (SELECT id FROM screening_inbox WHERE trigger_kind IN ('blue_collar_new', 'blue_collar_reply') AND processed_at IS NULL AND (claimed_at IS NULL OR claimed_at < NOW() - INTERVAL '5 minutes') ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING *",
+        "options": {
+          "queryReplacement": "={{ [$execution.id] }}"
+        }
+      }
+    },
+    {
+      "id": "c000006-0006-c006-0006-000000000006",
+      "name": "Row Claimed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-row-claimed",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000007-0007-c007-0007-000000000007",
+      "name": "No Work \u2014 Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        920,
+        480
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000008-0008-c008-0008-000000000008",
+      "name": "Get Conv Lock Value",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        920,
+        300
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000009-0009-c009-0009-000000000009",
+      "name": "Is Lock Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-free",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000010-0010-c010-0010-000000000010",
+      "name": "Set Conv Lock",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        220
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}",
+        "value": "={{ $execution.id }}",
+        "expire": true,
+        "ttl": 180
+      }
+    },
+    {
+      "id": "c000011-0011-c011-0011-000000000011",
+      "name": "Mark Inbox Failed \u2014 Lock Busy",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1400,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET error_message = $2 WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.id, 'conv_lock_busy'] }}"
+        }
+      }
+    },
+    {
+      "id": "c000012-0012-c012-0012-000000000012",
+      "name": "Exit Lock Busy",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        400
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000013-0013-c013-0013-000000000013",
+      "name": "Fetch Screening State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        1640,
+        220
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM blue_collar_screening WHERE application_id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.application_id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000014-0014-c014-0014-000000000014",
+      "name": "State Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-state-exists",
+              "leftValue": "={{ $('Fetch Screening State').first()?.json?.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000015-0015-c015-0015-000000000015",
+      "name": "Fetch Screening Script",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        2120,
+        140
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM screening_scripts WHERE script_id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Fetch Screening State').first()?.json?.script_id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000016-0016-c016-0016-000000000016",
+      "name": "Extract Reply Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2360,
+        140
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const inboxRow = $('Claim Inbox Row').first()?.json ?? {};\nconst payload = inboxRow.payload ?? {};\nconst messageBody = typeof payload === 'string' ? (JSON.parse(payload).messageBody ?? '') : (payload.messageBody ?? '');\nreturn [{ json: { messageBody } }];"
+      }
+    },
+    {
+      "id": "c000017-0017-c017-0017-000000000017",
+      "name": "Get Current Question",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        140
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const scriptRow = $('Fetch Screening Script').first()?.json ?? {};\nconst questions = scriptRow.questions ?? [];\nconst state = $('Fetch Screening State').first()?.json ?? {};\nconst questionIndex = state.question_index ?? 0;\nconst currentQuestion = questions[questionIndex] ?? null;\nconst totalQuestions = questions.length;\nreturn [{ json: { currentQuestion, questionIndex, totalQuestions } }];"
+      }
+    },
+    {
+      "id": "c000018-0018-c018-0018-000000000018",
+      "name": "Is Free Text?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2840,
+        140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-free-text",
+              "leftValue": "={{ $('Get Current Question').first()?.json?.currentQuestion?.type ?? '' }}",
+              "rightValue": "free_text",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000019-0019-c019-0019-000000000019",
+      "name": "Normalise Answer \u2014 Haiku",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3080,
+        60
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_CLAUDE_CALL",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "model": "={{ 'claude-haiku-4-5' }}",
+            "workflowName": "={{ 'workflow_c_screening_normalise' }}",
+            "maxTokens": "={{ 100 }}",
+            "systemPrompt": "={{ 'You are a normaliser for a structured HR screening system. You receive a candidate raw WhatsApp reply to a specific question and must return a single canonical value. Return ONLY the canonical value \u2014 no explanation, no punctuation, no extra text. If you cannot determine the answer, return the exact string: UNCLEAR' }}",
+            "messages": "={{ JSON.stringify([{ role: 'user', content: 'Question: ' + ($('Get Current Question').first()?.json?.currentQuestion?.prompt ?? '') + '\\nExpected answer type: ' + ($('Get Current Question').first()?.json?.currentQuestion?.type ?? '') + '\\nValid values (if applicable): ' + JSON.stringify($('Get Current Question').first()?.json?.currentQuestion?.enum_values ?? 'yes/no') + '\\nCandidate reply: ' + ($('Extract Reply Text').first()?.json?.messageBody ?? '') + '\\n\\nReturn the canonical value.' }]) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "model",
+              "displayName": "model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "maxTokens",
+              "displayName": "maxTokens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "systemPrompt",
+              "displayName": "systemPrompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messages",
+              "displayName": "messages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "c000020-0020-c020-0020-000000000020",
+      "name": "Parse Haiku Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3320,
+        60
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const content = ($('Normalise Answer \u2014 Haiku').first()?.json?.content ?? '').trim().toLowerCase();\nconst currentQ = $('Get Current Question').first()?.json?.currentQuestion ?? {};\nif (content === 'unclear' || content === '') {\n  return [{ json: { valid: false, canonical: null, reason: 'unclear' } }];\n}\nif (currentQ.type === 'yes_no') {\n  if (content === 'yes' || content === 'no') {\n    return [{ json: { valid: true, canonical: content } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_yes_no' } }];\n}\nif (currentQ.type === 'enum') {\n  const enumVals = (currentQ.enum_values ?? []).map(v => String(v).toLowerCase());\n  if (enumVals.includes(content)) {\n    return [{ json: { valid: true, canonical: content } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_enum' } }];\n}\n// free_text presence_only: any non-empty non-UNCLEAR is valid\nif (currentQ.scoring === 'presence_only') {\n  return [{ json: { valid: true, canonical: content } }];\n}\n// free_text with explicit scoring\nconst pts = (currentQ.scoring ?? {})[content];\nif (pts !== undefined) {\n  return [{ json: { valid: true, canonical: content } }];\n}\n// unknown free_text value with explicit scoring \u2014 treat as unclear\nreturn [{ json: { valid: false, canonical: null, reason: 'unrecognised_free_text' } }];"
+      }
+    },
+    {
+      "id": "c000021-0021-c021-0021-000000000021",
+      "name": "Validate Answer Deterministic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        220
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const currentQ = $('Get Current Question').first()?.json?.currentQuestion ?? {};\nconst raw = ($('Extract Reply Text').first()?.json?.messageBody ?? '').trim();\nconst lower = raw.toLowerCase();\nif (currentQ.type === 'yes_no') {\n  const yesWords = ['yes','yeah','yep','yah','y','true','1','absolutely','sure','ok','okay'];\n  const noWords = ['no','nope','nah','n','false','0','not','never'];\n  if (yesWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'yes' } }];\n  }\n  if (noWords.some(w => lower === w || lower.startsWith(w + ' '))) {\n    return [{ json: { valid: true, canonical: 'no' } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_yes_no' } }];\n}\nif (currentQ.type === 'number') {\n  const n = parseFloat(raw.replace(/[^0-9.]/g, ''));\n  if (!isNaN(n)) {\n    return [{ json: { valid: true, canonical: String(n) } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'not_a_number' } }];\n}\nif (currentQ.type === 'enum') {\n  const enumVals = (currentQ.enum_values ?? []).map(v => String(v).toLowerCase());\n  const normalised = lower.replace(/[^a-z0-9_]/g, '_');\n  if (enumVals.includes(lower)) {\n    return [{ json: { valid: true, canonical: lower } }];\n  }\n  if (enumVals.includes(normalised)) {\n    return [{ json: { valid: true, canonical: normalised } }];\n  }\n  return [{ json: { valid: false, canonical: null, reason: 'unrecognised_enum' } }];\n}\nif (currentQ.type === 'presence_only') {\n  const present = raw.length > 0;\n  return [{ json: { valid: present, canonical: present ? raw : null, reason: present ? null : 'empty_response' } }];\n}\nreturn [{ json: { valid: false, canonical: null, reason: 'unknown_type' } }];"
+      }
+    },
+    {
+      "id": "c000022-0022-c022-0022-000000000022",
+      "name": "Is Answer Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3560,
+        140
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-answer-valid",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000023-0023-c023-0023-000000000023",
+      "name": "Store Answer + Advance",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3800,
+        60
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE blue_collar_screening SET answers = answers || jsonb_build_object($2, $3::text), question_index = (question_index + 1), last_activity_at = NOW(), updated_at = NOW() WHERE application_id = $1 RETURNING question_index, (SELECT jsonb_array_length(ss.questions) FROM screening_scripts ss WHERE ss.script_id = blue_collar_screening.script_id) as total_questions, candidate_id, application_id, script_id, answers",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.application_id ?? '', $('Get Current Question').first()?.json?.currentQuestion?.id ?? '', $json.canonical ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000024-0024-c024-0024-000000000024",
+      "name": "Is Last Question?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4040,
+        60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-last-q",
+              "leftValue": "={{ $json.question_index }}",
+              "rightValue": "={{ $json.total_questions }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000025-0025-c025-0025-000000000025",
+      "name": "Compute Final Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4280,
+        -60
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "function normaliseYesNo(raw) {\n  if (!raw) return null;\n  const s = String(raw).toLowerCase().trim();\n  if (['yes','yeah','yep','y','1','true'].includes(s)) return 'yes';\n  if (['no','nope','nah','n','0','false'].includes(s)) return 'no';\n  return null;\n}\nfunction scoreNumberTiered(n, ranges) {\n  if (!ranges || !ranges.length) return 0;\n  for (const range of ranges) {\n    if (range.max === null || range.max === undefined || n <= range.max) return range.points;\n  }\n  return ranges[ranges.length - 1]?.points ?? 0;\n}\nfunction scoreToTier(score) {\n  if (score >= 80) return 'top20';\n  if (score >= 60) return 'solid';\n  if (score >= 40) return 'developing';\n  return 'not_a_fit';\n}\nfunction computeScore(questions, answers) {\n  const breakdown = {};\n  let totalScore = 0;\n  for (const q of questions) {\n    const raw = answers[q.id] ?? null;\n    if (q.type === 'yes_no') {\n      const canonical = normaliseYesNo(raw);\n      const pts = canonical !== null ? (q.scoring[canonical] ?? 0) : 0;\n      breakdown[q.id] = { raw, canonical, pts, weight: q.weight };\n      totalScore += pts;\n    } else if (q.type === 'number') {\n      const n = parseFloat(raw);\n      const pts = isNaN(n) ? 0 : scoreNumberTiered(n, q.tiered_scoring);\n      breakdown[q.id] = { raw, n, pts, weight: q.weight };\n      totalScore += pts;\n    } else if (q.type === 'enum') {\n      const canonical = (raw ?? '').toLowerCase();\n      const pts = q.scoring[canonical] ?? 0;\n      breakdown[q.id] = { raw, canonical, pts, weight: q.weight };\n      totalScore += pts;\n    } else if (q.type === 'presence_only') {\n      const present = raw !== null && String(raw).trim().length > 0;\n      const maxPts = Object.values(q.scoring)[0] ?? 5;\n      const pts = present ? maxPts : 0;\n      breakdown[q.id] = { raw, present, pts, weight: q.weight };\n      totalScore += pts;\n    } else if (q.type === 'free_text') {\n      if (q.scoring === 'presence_only') {\n        const present = raw !== null && String(raw).trim().length > 0;\n        const pts = present ? 5 : 0;\n        breakdown[q.id] = { raw, present, pts, weight: q.weight };\n        totalScore += pts;\n      } else {\n        const canonical = (raw ?? '').toLowerCase();\n        const pts = q.scoring[canonical] ?? 0;\n        breakdown[q.id] = { raw, canonical, pts, weight: q.weight };\n        totalScore += pts;\n      }\n    }\n  }\n  return { score: totalScore, breakdown, strengthTier: scoreToTier(totalScore) };\n}\nconst storeRow = $('Store Answer + Advance').first()?.json ?? {};\nconst scriptRow = $('Fetch Screening Script').first()?.json ?? {};\nconst questions = scriptRow.questions ?? [];\nconst answers = storeRow.answers ?? {};\nconst result = computeScore(questions, answers);\nconst shortlistThreshold = Number(scriptRow.shortlist_threshold ?? 60);\nconst reEngagementEligible = result.score >= shortlistThreshold;\nreturn [{ json: { finalScore: result.score, breakdown: result.breakdown, strengthTier: result.strengthTier, reEngagementEligible, candidateId: storeRow.candidate_id ?? $('Claim Inbox Row').first()?.json?.candidate_id ?? '', applicationId: storeRow.application_id ?? $('Claim Inbox Row').first()?.json?.application_id ?? '' } }];"
+      }
+    },
+    {
+      "id": "c000026-0026-c026-0026-000000000026",
+      "name": "Mark Screening Complete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4520,
+        -60
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE blue_collar_screening SET final_score = $2, strength_tier = $3, status = 'completed', updated_at = NOW() WHERE application_id = $1 RETURNING *",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.application_id ?? '', $('Compute Final Score').first()?.json?.finalScore ?? 0, $('Compute Final Score').first()?.json?.strengthTier ?? 'not_a_fit'] }}"
+        }
+      }
+    },
+    {
+      "id": "c000027-0027-c027-0027-000000000027",
+      "name": "Update Application in Twenty",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4760,
+        -60
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation UpdateApplication($id: ID!, $score: Float!, $scoreBreakdown: String!, $status: String!) { updateApplication(id: $id, data: { score: $score, scoreBreakdown: $scoreBreakdown, status: $status }) { id } }', variables: { id: $('Claim Inbox Row').first()?.json?.application_id ?? '', score: $('Compute Final Score').first()?.json?.finalScore ?? 0, scoreBreakdown: JSON.stringify($('Compute Final Score').first()?.json?.breakdown ?? {}), status: 'screened' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "c000028-0028-c028-0028-000000000028",
+      "name": "Update Candidate in Twenty",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5000,
+        -60
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation UpdateCandidate($id: ID!, $strengthTier: String!, $reEngagementEligible: Boolean!) { updateCandidate(id: $id, data: { strengthTier: $strengthTier, reEngagementEligible: $reEngagementEligible }) { id } }', variables: { id: $('Claim Inbox Row').first()?.json?.candidate_id ?? '', strengthTier: $('Compute Final Score').first()?.json?.strengthTier ?? 'not_a_fit', reEngagementEligible: $('Compute Final Score').first()?.json?.reEngagementEligible ?? false } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "c000029-0029-c029-0029-000000000029",
+      "name": "Should Create Review Task?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5240,
+        -60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "cond-top20",
+              "leftValue": "={{ $('Compute Final Score').first()?.json?.strengthTier ?? '' }}",
+              "rightValue": "top20",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-solid",
+              "leftValue": "={{ $('Compute Final Score').first()?.json?.strengthTier ?? '' }}",
+              "rightValue": "solid",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-calibration",
+              "leftValue": "={{ $env.WORKFLOW_C_LAUNCH_DATE ? (new Date() < new Date(new Date($env.WORKFLOW_C_LAUNCH_DATE).getTime() + 14*24*60*60*1000)) : true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000030-0030-c030-0030-000000000030",
+      "name": "Create Review Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5480,
+        -140
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation CreateReviewTask($applicationId: ID!, $kind: String!, $dueBy: DateTime!) { createReviewTask(data: { subjectApplication: { connect: { id: $applicationId } }, kind: $kind, dueBy: $dueBy, status: \"OPEN\" }) { id } }', variables: { applicationId: $('Claim Inbox Row').first()?.json?.application_id ?? '', kind: 'SCORE_REVIEW', dueBy: new Date(Date.now() + 4*60*60*1000).toISOString() } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "c000031-0031-c031-0031-000000000031",
+      "name": "Send Closing Message",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        5720,
+        -60
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ (() => { try { return $('Fetch Candidate Phone \u2014 Reply').first()?.json?.data?.candidate?.whatsappNumberE164; } catch(e) {} try { return $('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application?.candidate?.whatsappNumberE164; } catch(e) {} return ''; })() }}",
+            "body": "={{ 'Thank you for completing our screening! We have received all your answers and our team will be in touch with you soon. Good luck!' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "c000032-0032-c032-0032-000000000032",
+      "name": "Get Lock Value \u2014 Complete",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        5960,
+        -60
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000033-0033-c033-0033-000000000033",
+      "name": "Is Lock Ours? \u2014 Complete",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        6200,
+        -60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-ours-complete",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000034-0034-c034-0034-000000000034",
+      "name": "Release Conv Lock \u2014 Complete",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        6440,
+        -140
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "c000035-0035-c035-0035-000000000035",
+      "name": "Mark Inbox Processed \u2014 Complete",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        6680,
+        -60
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW() WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.id] }}"
+        }
+      }
+    },
+    {
+      "id": "c000036-0036-c036-0036-000000000036",
+      "name": "Send Next Question",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        4280,
+        160
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ (() => { try { return $('Fetch Candidate Phone \u2014 Reply').first()?.json?.data?.candidate?.whatsappNumberE164; } catch(e) {} try { return $('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application?.candidate?.whatsappNumberE164; } catch(e) {} return ''; })() }}",
+            "body": "={{ (() => { const scriptRow = $('Fetch Screening Script').first()?.json ?? {}; const questions = scriptRow.questions ?? []; const nextIdx = $('Store Answer + Advance').first()?.json?.question_index ?? 0; const nextQ = questions[nextIdx]; return nextQ ? nextQ.prompt : ''; })() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "c000037-0037-c037-0037-000000000037",
+      "name": "Update Last Activity \u2014 Next Q",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4520,
+        160
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE blue_collar_screening SET last_activity_at = NOW(), updated_at = NOW() WHERE application_id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.application_id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000038-0038-c038-0038-000000000038",
+      "name": "Get Lock Value \u2014 Next Q",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        4760,
+        160
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000039-0039-c039-0039-000000000039",
+      "name": "Is Lock Ours? \u2014 Next Q",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        5000,
+        160
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-ours-nextq",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000040-0040-c040-0040-000000000040",
+      "name": "Release Conv Lock \u2014 Next Q",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        5240,
+        80
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "c000041-0041-c041-0041-000000000041",
+      "name": "Mark Inbox Processed \u2014 Next Q",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5480,
+        160
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW() WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.id] }}"
+        }
+      }
+    },
+    {
+      "id": "c000042-0042-c042-0042-000000000042",
+      "name": "Send Clarifier \u2014 WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        3800,
+        280
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ (() => { try { return $('Fetch Candidate Phone \u2014 Reply').first()?.json?.data?.candidate?.whatsappNumberE164; } catch(e) {} try { return $('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application?.candidate?.whatsappNumberE164; } catch(e) {} return ''; })() }}",
+            "body": "={{ 'Sorry, I did not quite get that. ' + ($('Get Current Question').first()?.json?.currentQuestion?.prompt ?? '') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "c000043-0043-c043-0043-000000000043",
+      "name": "Update Last Activity \u2014 Clarifier",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4040,
+        280
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE blue_collar_screening SET last_activity_at = NOW(), updated_at = NOW() WHERE application_id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.application_id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000044-0044-c044-0044-000000000044",
+      "name": "Get Lock Value \u2014 Clarifier",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        4280,
+        280
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000045-0045-c045-0045-000000000045",
+      "name": "Is Lock Ours? \u2014 Clarifier",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4520,
+        280
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-ours-clarifier",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000046-0046-c046-0046-000000000046",
+      "name": "Release Conv Lock \u2014 Clarifier",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        4760,
+        200
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "c000047-0047-c047-0047-000000000047",
+      "name": "Mark Inbox Processed \u2014 Clarifier",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        5000,
+        280
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW() WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.id] }}"
+        }
+      }
+    },
+    {
+      "id": "c000048-0048-c048-0048-000000000048",
+      "name": "Fetch Application from Twenty \u2014 Init",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2120,
+        340
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'query GetApplicationJobPosting($id: ID!) { application(filter: { id: { eq: $id } }) { id candidate { id whatsappNumberE164 } jobPosting { id category } } }', variables: { id: $('Claim Inbox Row').first()?.json?.application_id ?? '' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "c000049-0049-c049-0049-000000000049",
+      "name": "Fetch Init Script",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        2360,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM screening_scripts WHERE job_category = $1 AND is_active = TRUE LIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [$('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application?.jobPosting?.category ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000050-0050-c050-0050-000000000050",
+      "name": "Init Screening Row",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        2600,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO blue_collar_screening (candidate_id, application_id, twenty_job_posting_id, script_id, question_index, answers, started_at, last_activity_at) VALUES ($1, $2, $3, $4, 0, '{}', NOW(), NOW()) ON CONFLICT (application_id) DO NOTHING RETURNING *",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.candidate_id ?? '', $('Claim Inbox Row').first()?.json?.application_id ?? '', $('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application?.jobPosting?.id ?? '', $('Fetch Init Script').first()?.json?.script_id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000051-0051-c051-0051-000000000051",
+      "name": "Send Question 0 \u2014 WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2840,
+        340
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $('Fetch Application from Twenty \u2014 Init').first()?.json?.data?.application?.candidate?.whatsappNumberE164 ?? '' }}",
+            "body": "={{ (() => { const scriptRow = $('Fetch Init Script').first()?.json ?? {}; const questions = scriptRow.questions ?? []; const q0 = questions[0]; return q0 ? ('Hi! We would like to ask you a few quick questions. ' + q0.prompt) : ''; })() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "c000052-0052-c052-0052-000000000052",
+      "name": "Get Lock Value \u2014 Init",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3080,
+        340
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000053-0053-c053-0053-000000000053",
+      "name": "Is Lock Ours? \u2014 Init",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        3320,
+        340
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-ours-init",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000054-0054-c054-0054-000000000054",
+      "name": "Release Conv Lock \u2014 Init",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3560,
+        260
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Claim Inbox Row').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "c000055-0055-c055-0055-000000000055",
+      "name": "Mark Inbox Processed \u2014 Init",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3800,
+        340
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE screening_inbox SET processed_at = NOW() WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Claim Inbox Row').first()?.json?.id] }}"
+        }
+      }
+    },
+    {
+      "id": "c000056-0056-c056-0056-000000000056",
+      "name": "Get Lock Value \u2014 Error",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        440,
+        900
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ((() => { try { return $('Claim Inbox Row').first()?.json?.candidate_id; } catch(e) { return ''; } })() ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000057-0057-c057-0057-000000000057",
+      "name": "Is Lock Ours? \u2014 Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        900
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-ours-error",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $json.execution?.id ?? '' }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000058-0058-c058-0058-000000000058",
+      "name": "Release Conv Lock \u2014 Error",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        920,
+        820
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ((() => { try { return $('Claim Inbox Row').first()?.json?.candidate_id; } catch(e) { return ''; } })() ?? '') }}"
+      }
+    },
+    {
+      "id": "c000059-0059-c059-0059-000000000059",
+      "name": "Log Workflow Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1160,
+        900
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack) VALUES ($1, $2, $3, $4, $5)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_c_screening', $json.execution?.id ?? '', $json.node?.name ?? 'unknown', $json.error?.message ?? 'unknown error', $json.error?.stack?.split('\\n')[0] ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000060-0060-c060-0060-000000000060",
+      "name": "Exit Error",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        900
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000061-0061-c061-0061-000000000061",
+      "name": "Fetch Blue Collar Applications from Twenty",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        1400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'query FindBlueCollarApplications { applications(filter: { AND: [{ status: { eq: \"received\" } }, { jobPosting: { collarType: { eq: \"BLUE\" } } }] }) { edges { node { id candidate { id } jobPosting { id category } } } } }' } }}",
+        "options": {
+          "timeout": 20000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "c000062-0062-c062-0062-000000000062",
+      "name": "Fetch Known Application IDs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        680,
+        1400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT application_id FROM blue_collar_screening",
+        "options": {}
+      }
+    },
+    {
+      "id": "c000063-0063-c063-0063-000000000063",
+      "name": "Filter New Applications",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        1400
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const allApps = $('Fetch Blue Collar Applications from Twenty').first()?.json?.data?.applications?.edges ?? [];\nconst knownIds = new Set(\n  $('Fetch Known Application IDs').all().map(item => item.json.application_id)\n);\nconst newApps = allApps\n  .map(e => e.node)\n  .filter(app => !knownIds.has(app.id));\nreturn [{ json: { newApplications: newApps } }];"
+      }
+    },
+    {
+      "id": "c000064-0064-c064-0064-000000000064",
+      "name": "Has New Applications?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        1400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-has-new-apps",
+              "leftValue": "={{ ($json.newApplications ?? []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000065-0065-c065-0065-000000000065",
+      "name": "Exit Poll \u2014 No New",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        1500
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000066-0066-c066-0066-000000000066",
+      "name": "Split New Applications",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1400,
+        1320
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "c000067-0067-c067-0067-000000000067",
+      "name": "Prepare Application Item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        1320
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const apps = $('Filter New Applications').first()?.json?.newApplications ?? [];\nconst batchIndex = $nodeContext('Split New Applications')?.currentRunIndex ?? 0;\nconst app = apps[batchIndex] ?? apps[0] ?? {};\nreturn [{ json: app }];"
+      }
+    },
+    {
+      "id": "c000068-0068-c068-0068-000000000068",
+      "name": "Enqueue New Application",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1880,
+        1320
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO screening_inbox (candidate_id, application_id, trigger_kind, payload) VALUES ($1, $2, 'blue_collar_new', '{\"source\":\"twenty_poll\"}') ON CONFLICT ON CONSTRAINT uq_screening_inbox_candidate_active DO NOTHING",
+        "options": {
+          "queryReplacement": "={{ [$json.candidate?.id ?? '', $json.id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000069-0069-c069-0069-000000000069",
+      "name": "Fetch 24h No-Reply Rows",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        440,
+        2200
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, candidate_id, application_id FROM blue_collar_screening WHERE status = 'in_progress' AND last_activity_at < NOW() - INTERVAL '24 hours' AND reminder_sent_at IS NULL",
+        "options": {}
+      }
+    },
+    {
+      "id": "c000070-0070-c070-0070-000000000070",
+      "name": "Has Rows to Remind?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        2200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-has-remind-rows",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000071-0071-c071-0071-000000000071",
+      "name": "Split Reminder Rows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        920,
+        2120
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "c000072-0072-c072-0072-000000000072",
+      "name": "Get Lock \u2014 Reminder",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        2120
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($json.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000073-0073-c073-0073-000000000073",
+      "name": "Is Lock Free? \u2014 Reminder",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        2120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-free-reminder",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000074-0074-c074-0074-000000000074",
+      "name": "Set Lock \u2014 Reminder",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        2040
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'hra:conv:' + ($('Fetch 24h No-Reply Rows').item?.json?.candidate_id ?? $json.candidate_id ?? '') }}",
+        "value": "={{ $execution.id }}",
+        "expire": true,
+        "ttl": 180
+      }
+    },
+    {
+      "id": "c000075-0075-c075-0075-000000000075",
+      "name": "Send Reminder Template",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1880,
+        2040
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $('Fetch 24h No-Reply Rows').item?.json?.candidate_id ?? $json.candidate_id ?? '' }}",
+            "body": "={{ 'Hi! We noticed you have not completed your screening questions yet. We would love to hear from you. Please reply when you are ready.' }}",
+            "templateName": "={{ 'screening_reminder_24h' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "templateName",
+              "displayName": "templateName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "c000076-0076-c076-0076-000000000076",
+      "name": "Update Reminder Sent At",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2120,
+        2040
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE blue_collar_screening SET reminder_sent_at = NOW(), updated_at = NOW() WHERE id = $1",
+        "options": {
+          "queryReplacement": "={{ [$('Fetch 24h No-Reply Rows').item?.json?.id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "c000077-0077-c077-0077-000000000077",
+      "name": "Get Lock Value \u2014 Reminder Release",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2360,
+        2040
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Fetch 24h No-Reply Rows').item?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000078-0078-c078-0078-000000000078",
+      "name": "Is Lock Ours? \u2014 Reminder Release",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        2040
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-ours-reminder-release",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000079-0079-c079-0079-000000000079",
+      "name": "Release Lock \u2014 Reminder",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2840,
+        1960
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Fetch 24h No-Reply Rows').item?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "c000080-0080-c080-0080-000000000080",
+      "name": "Skip Reminder \u2014 Lock Busy",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        2200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000081-0081-c081-0081-000000000081",
+      "name": "Fetch 72h Withdrawn Rows",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [
+        440,
+        2500
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, candidate_id, application_id FROM blue_collar_screening WHERE status = 'in_progress' AND last_activity_at < NOW() - INTERVAL '72 hours'",
+        "options": {}
+      }
+    },
+    {
+      "id": "c000082-0082-c082-0082-000000000082",
+      "name": "Has Rows to Withdraw?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        2500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-has-withdraw-rows",
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000083-0083-c083-0083-000000000083",
+      "name": "Exit Sweep \u2014 No Withdrawals",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        920,
+        2600
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000084-0084-c084-0084-000000000084",
+      "name": "Split Withdraw Rows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        920,
+        2420
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "c000085-0085-c085-0085-000000000085",
+      "name": "Mark Screening Withdrawn",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1160,
+        2420
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE blue_collar_screening SET status = 'withdrawn', updated_at = NOW() WHERE id = $1 RETURNING candidate_id, application_id",
+        "options": {
+          "queryReplacement": "={{ [$json.id] }}"
+        }
+      }
+    },
+    {
+      "id": "c000086-0086-c086-0086-000000000086",
+      "name": "Withdraw Application in Twenty",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1400,
+        2420
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation WithdrawApplication($id: ID!) { updateApplication(id: $id, data: { status: \"withdrawn\" }) { id } }', variables: { id: $json.application_id ?? $('Fetch 72h Withdrawn Rows').item?.json?.application_id ?? '' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "c000087-0087-c087-0087-000000000087",
+      "name": "Get Lock \u2014 Withdraw",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        2420
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000088-0088-c088-0088-000000000088",
+      "name": "Is Lock Free? \u2014 Withdraw",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1880,
+        2420
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-free-withdraw",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000089-0089-c089-0089-000000000089",
+      "name": "Set Lock \u2014 Withdraw",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        2340
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}",
+        "value": "={{ $execution.id }}",
+        "expire": true,
+        "ttl": 180
+      }
+    },
+    {
+      "id": "c000090-0090-c090-0090-000000000090",
+      "name": "Send Withdrawal Template",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2360,
+        2340
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '' }}",
+            "body": "={{ 'Hi! We noticed you have not completed your screening and we have had to close your application. You are welcome to apply again in the future.' }}",
+            "templateName": "={{ 'screening_withdrawn_72h' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "templateName",
+              "displayName": "templateName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "c000091-0091-c091-0091-000000000091",
+      "name": "Get Lock Value \u2014 Withdraw Release",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2600,
+        2340
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}",
+        "propertyName": "value"
+      }
+    },
+    {
+      "id": "c000092-0092-c092-0092-000000000092",
+      "name": "Is Lock Ours? \u2014 Withdraw Release",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2840,
+        2340
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-ours-withdraw-release",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c000093-0093-c093-0093-000000000093",
+      "name": "Release Lock \u2014 Withdraw",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3080,
+        2260
+      ],
+      "credentials": {
+        "redis": {
+          "id": "z1cSQv7BNcP3j2XY",
+          "name": "Redis"
+        }
+      },
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:conv:' + ($('Mark Screening Withdrawn').first()?.json?.candidate_id ?? '') }}"
+      }
+    },
+    {
+      "id": "c000094-0094-c094-0094-000000000094",
+      "name": "Skip Withdraw \u2014 Lock Busy",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        2500
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c000095-0095-c095-0095-000000000095",
+      "name": "Fetch Candidate Phone \u2014 Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1260,
+        220
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://twenty:3000/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'query GetCandidatePhone($id: ID!) { candidate(filter: { id: { eq: $id } }) { id whatsappNumberE164 } }', variables: { id: $('Claim Inbox Row').first()?.json?.candidate_id ?? '' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron \u2014 Poll Screening Inbox": {
+      "main": [
+        [
+          {
+            "node": "Claim Inbox Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claim Inbox Row": {
+      "main": [
+        [
+          {
+            "node": "Row Claimed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Row Claimed?": {
+      "main": [
+        [
+          {
+            "node": "Get Conv Lock Value",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Work \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conv Lock Value": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Free?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Free?": {
+      "main": [
+        [
+          {
+            "node": "Set Conv Lock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Inbox Failed \u2014 Lock Busy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Conv Lock": {
+      "main": [
+        [
+          {
+            "node": "Fetch Screening State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Inbox Failed \u2014 Lock Busy": {
+      "main": [
+        [
+          {
+            "node": "Exit Lock Busy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Screening State": {
+      "main": [
+        [
+          {
+            "node": "State Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "State Exists?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Candidate Phone \u2014 Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Application from Twenty \u2014 Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Screening Script": {
+      "main": [
+        [
+          {
+            "node": "Extract Reply Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Reply Text": {
+      "main": [
+        [
+          {
+            "node": "Get Current Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Question": {
+      "main": [
+        [
+          {
+            "node": "Is Free Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Free Text?": {
+      "main": [
+        [
+          {
+            "node": "Normalise Answer \u2014 Haiku",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validate Answer Deterministic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise Answer \u2014 Haiku": {
+      "main": [
+        [
+          {
+            "node": "Parse Haiku Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Haiku Response": {
+      "main": [
+        [
+          {
+            "node": "Is Answer Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Answer Deterministic": {
+      "main": [
+        [
+          {
+            "node": "Is Answer Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Answer Valid?": {
+      "main": [
+        [
+          {
+            "node": "Store Answer + Advance",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Clarifier \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Answer + Advance": {
+      "main": [
+        [
+          {
+            "node": "Is Last Question?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Last Question?": {
+      "main": [
+        [
+          {
+            "node": "Compute Final Score",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Next Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Final Score": {
+      "main": [
+        [
+          {
+            "node": "Mark Screening Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Screening Complete": {
+      "main": [
+        [
+          {
+            "node": "Update Application in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Application in Twenty": {
+      "main": [
+        [
+          {
+            "node": "Update Candidate in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Candidate in Twenty": {
+      "main": [
+        [
+          {
+            "node": "Should Create Review Task?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Create Review Task?": {
+      "main": [
+        [
+          {
+            "node": "Create Review Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Closing Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Review Task": {
+      "main": [
+        [
+          {
+            "node": "Send Closing Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Closing Message": {
+      "main": [
+        [
+          {
+            "node": "Get Lock Value \u2014 Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock Value \u2014 Complete": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Ours? \u2014 Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Ours? \u2014 Complete": {
+      "main": [
+        [
+          {
+            "node": "Release Conv Lock \u2014 Complete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Conv Lock \u2014 Complete": {
+      "main": [
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Next Question": {
+      "main": [
+        [
+          {
+            "node": "Update Last Activity \u2014 Next Q",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Last Activity \u2014 Next Q": {
+      "main": [
+        [
+          {
+            "node": "Get Lock Value \u2014 Next Q",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock Value \u2014 Next Q": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Ours? \u2014 Next Q",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Ours? \u2014 Next Q": {
+      "main": [
+        [
+          {
+            "node": "Release Conv Lock \u2014 Next Q",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Next Q",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Conv Lock \u2014 Next Q": {
+      "main": [
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Next Q",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Clarifier \u2014 WA": {
+      "main": [
+        [
+          {
+            "node": "Update Last Activity \u2014 Clarifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Last Activity \u2014 Clarifier": {
+      "main": [
+        [
+          {
+            "node": "Get Lock Value \u2014 Clarifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock Value \u2014 Clarifier": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Ours? \u2014 Clarifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Ours? \u2014 Clarifier": {
+      "main": [
+        [
+          {
+            "node": "Release Conv Lock \u2014 Clarifier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Clarifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Conv Lock \u2014 Clarifier": {
+      "main": [
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Clarifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Application from Twenty \u2014 Init": {
+      "main": [
+        [
+          {
+            "node": "Fetch Init Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Init Script": {
+      "main": [
+        [
+          {
+            "node": "Init Screening Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Init Screening Row": {
+      "main": [
+        [
+          {
+            "node": "Send Question 0 \u2014 WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Question 0 \u2014 WA": {
+      "main": [
+        [
+          {
+            "node": "Get Lock Value \u2014 Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock Value \u2014 Init": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Ours? \u2014 Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Ours? \u2014 Init": {
+      "main": [
+        [
+          {
+            "node": "Release Conv Lock \u2014 Init",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Conv Lock \u2014 Init": {
+      "main": [
+        [
+          {
+            "node": "Mark Inbox Processed \u2014 Init",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Lock Value \u2014 Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock Value \u2014 Error": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Ours? \u2014 Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Ours? \u2014 Error": {
+      "main": [
+        [
+          {
+            "node": "Release Conv Lock \u2014 Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Conv Lock \u2014 Error": {
+      "main": [
+        [
+          {
+            "node": "Log Workflow Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Exit Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron \u2014 Twenty App Poll": {
+      "main": [
+        [
+          {
+            "node": "Fetch Blue Collar Applications from Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Blue Collar Applications from Twenty": {
+      "main": [
+        [
+          {
+            "node": "Fetch Known Application IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Known Application IDs": {
+      "main": [
+        [
+          {
+            "node": "Filter New Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Applications": {
+      "main": [
+        [
+          {
+            "node": "Has New Applications?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has New Applications?": {
+      "main": [
+        [
+          {
+            "node": "Split New Applications",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Exit Poll \u2014 No New",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split New Applications": {
+      "main": [
+        [
+          {
+            "node": "Prepare Application Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Application Item": {
+      "main": [
+        [
+          {
+            "node": "Enqueue New Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enqueue New Application": {
+      "main": [
+        [
+          {
+            "node": "Split New Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cron \u2014 Reminder Sweep": {
+      "main": [
+        [
+          {
+            "node": "Fetch 24h No-Reply Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch 24h No-Reply Rows": {
+      "main": [
+        [
+          {
+            "node": "Has Rows to Remind?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Rows to Remind?": {
+      "main": [
+        [
+          {
+            "node": "Split Reminder Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch 72h Withdrawn Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Reminder Rows": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock \u2014 Reminder": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Free? \u2014 Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Free? \u2014 Reminder": {
+      "main": [
+        [
+          {
+            "node": "Set Lock \u2014 Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Reminder \u2014 Lock Busy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Lock \u2014 Reminder": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reminder Template": {
+      "main": [
+        [
+          {
+            "node": "Update Reminder Sent At",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Reminder Sent At": {
+      "main": [
+        [
+          {
+            "node": "Get Lock Value \u2014 Reminder Release",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock Value \u2014 Reminder Release": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Ours? \u2014 Reminder Release",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Ours? \u2014 Reminder Release": {
+      "main": [
+        [
+          {
+            "node": "Release Lock \u2014 Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch 72h Withdrawn Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Lock \u2014 Reminder": {
+      "main": [
+        [
+          {
+            "node": "Fetch 72h Withdrawn Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch 72h Withdrawn Rows": {
+      "main": [
+        [
+          {
+            "node": "Has Rows to Withdraw?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Rows to Withdraw?": {
+      "main": [
+        [
+          {
+            "node": "Split Withdraw Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Exit Sweep \u2014 No Withdrawals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Withdraw Rows": {
+      "main": [
+        [
+          {
+            "node": "Mark Screening Withdrawn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Screening Withdrawn": {
+      "main": [
+        [
+          {
+            "node": "Withdraw Application in Twenty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Withdraw Application in Twenty": {
+      "main": [
+        [
+          {
+            "node": "Get Lock \u2014 Withdraw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock \u2014 Withdraw": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Free? \u2014 Withdraw",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Free? \u2014 Withdraw": {
+      "main": [
+        [
+          {
+            "node": "Set Lock \u2014 Withdraw",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Withdraw \u2014 Lock Busy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Lock \u2014 Withdraw": {
+      "main": [
+        [
+          {
+            "node": "Send Withdrawal Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Withdrawal Template": {
+      "main": [
+        [
+          {
+            "node": "Get Lock Value \u2014 Withdraw Release",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Lock Value \u2014 Withdraw Release": {
+      "main": [
+        [
+          {
+            "node": "Is Lock Ours? \u2014 Withdraw Release",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lock Ours? \u2014 Withdraw Release": {
+      "main": [
+        [
+          {
+            "node": "Release Lock \u2014 Withdraw",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Withdraw Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release Lock \u2014 Withdraw": {
+      "main": [
+        [
+          {
+            "node": "Split Withdraw Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Candidate Phone \u2014 Reply": {
+      "main": [
+        [
+          {
+            "node": "Fetch Screening Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "tags": [
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-c"
+    },
+    {
+      "name": "version-1.0"
+    }
+  ],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

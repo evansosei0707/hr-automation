@@ -210,7 +210,7 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Target window:** Pre-launch (Workflow C). Submit immediately; approval usually comes back same day.
 - **Owner:** HRA Project Lead (Meta Business Manager access) + doc update once approved.
 
-### T2-22. Workflow A — route blue_collar_reply trigger_kind to Workflow C
+### ~~T2-22. Workflow A — route blue_collar_reply trigger_kind to Workflow C~~ CLOSED 2026-05-02 (`2ea45ed`)
 
 - **Description:** When a blue-collar candidate replies during their Q&A screening session, Workflow A classifies their message as `workflow_reply` (or `open_conversation`) and routes it to `screening_inbox` with `trigger_kind='open_conversation'` or `trigger_kind='new_application'`. Workflow C will NOT pick up these rows because it only claims `trigger_kind IN ('blue_collar_new', 'blue_collar_reply')`. Fix: in Workflow A's `workflow_reply` branch, before inserting into `screening_inbox`, check `blue_collar_screening` for an active row (`status='in_progress'`) for this `candidate_id`. If found, insert with `trigger_kind='blue_collar_reply'`; otherwise fall through to the existing `open_conversation` path.
 - **Files affected:** `n8n-workflows/communications/a-communications.json` — new HTTP/Postgres lookup node after `workflow_reply` classification, new IF node, updated `screening_inbox` INSERT.

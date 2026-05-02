@@ -113,8 +113,7 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 
 ## What's next
 
-1. **Workflow A routing patch** (T2-22) — add `blue_collar_reply` trigger_kind detection to `a-communications.json`. In the `workflow_reply` branch, check `blue_collar_screening` for an active row for `candidate_id`; if found, insert into `screening_inbox` with `trigger_kind='blue_collar_reply'`. Without this, blue-collar candidates' answers are not routed to Workflow C.
-2. **Workflow D architect dispatch** — spec at `docs/02-workflows/d-scheduling.md`. Interview scheduling with atomic slot-claim (V001 partial-unique-index pattern) and Google Calendar write. Dispatch `architect` before building.
+1. **Workflow D architect dispatch** — spec at `docs/02-workflows/d-scheduling.md`. Interview scheduling with atomic slot-claim (V001 partial-unique-index pattern) and Google Calendar write. Dispatch `architect` before building.
 3. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager. Workflow C is blocked from sending real outbound messages until these are approved.
 4. **Workflow E** — social posting (FB + Telegram confirmed, IG/X deferred per ADR-0007/0008).
 5. **Workflows F, G, H** — reporting, orchestration/watchdog, job alerts.
@@ -268,7 +267,7 @@ All 25 rules are in `.claude/rules/n8n-workflows.md`. The most operationally cri
 | T2-19 | Atomic Redis lock release (Lua CAS DEL) | Bundle with T2-18 |
 | T2-20 | Soft-deleted candidate re-messages → null candidateId (pre-launch blocker once DPA erasure live) | Pre-launch |
 | T2-21 | WA template approvals for Workflow C (`screening_reminder_24h` + `screening_withdrawn_72h`) | Pre-launch (C) |
-| T2-22 | Workflow A — route `blue_collar_reply` trigger_kind to Workflow C reply path | **Immediate** |
+| ~~T2-22~~ | ~~Workflow A — route `blue_collar_reply` trigger_kind to Workflow C reply path~~ | CLOSED `2ea45ed` |
 | T2-23 | Workflow C — SkillTag loop deferred (no `skillTagId` source in v1) | Post-launch Week 2 |
 
 Full details: `plans/tier-2-followups.md`

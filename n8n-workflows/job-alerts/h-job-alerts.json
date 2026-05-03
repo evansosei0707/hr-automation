@@ -239,7 +239,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "jsonBody": "={{ { query: '{ applications(filter: { reEngagementEligible: { eq: true }, createdAt: { gte: \"' + $(\\'Compute Scan Window\\').first()?.json?.sixMonthsAgo + '\" } }) { edges { node { id reEngagedAt jobPosting { id title category } candidate { id name whatsappNumberE164 consentStatus lastActivityAt dataRetentionPolicy strengthTier applications { edges { node { status } } } } } } } }' } }}",
+        "jsonBody": "={{ { query: '{ applications(filter: { reEngagementEligible: { eq: true }, createdAt: { gte: \"' + $json.sixMonthsAgo + '\" } }) { edges { node { id reEngagedAt jobPosting { id title category } candidate { id name whatsappNumberE164 consentStatus lastActivityAt dataRetentionPolicy strengthTier applications { edges { node { status } } } } } } } }' } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -469,7 +469,7 @@
         4080,
         200
       ],
-      "onError": "continueErrorOutput",
+      "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
@@ -770,7 +770,7 @@
         1480,
         700
       ],
-      "onError": "continueErrorOutput",
+      "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
@@ -924,6 +924,102 @@
       "parameters": {
         "language": "javaScript",
         "jsCode": "const edges = $json.data?.applications?.edges ?? [];\nreturn edges.map(e => ({ json: { id: e.node.id } }));\n"
+      }
+    },
+    {
+      "id": "h0000008b-008b-008b-008b-00000000008b",
+      "name": "Enrich Posting With Window",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1935,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "enrich-sixmonthsago",
+              "name": "sixMonthsAgo",
+              "value": "={{ $('Compute Scan Window').first()?.json?.sixMonthsAgo }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-windowstart",
+              "name": "windowStart",
+              "value": "={{ $('Compute Scan Window').first()?.json?.windowStart }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000017c-017c-017c-017c-00000000017c",
+      "name": "GQL Error? — Create",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        4210,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-gql-error",
+              "leftValue": "={{ ($json.errors?.length ?? 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000035c-035c-035c-035c-00000000035c",
+      "name": "GQL Error? — Withdraw",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1610,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-gql-error",
+              "leftValue": "={{ ($json.errors?.length ?? 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
       }
     }
   ],
@@ -1143,14 +1239,7 @@
       "main": [
         [
           {
-            "node": "Send Re-engagement WA",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Log H Error",
+            "node": "GQL Error? — Create",
             "type": "main",
             "index": 0
           }
@@ -1262,14 +1351,7 @@
       "main": [
         [
           {
-            "node": "Log Timeout",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Log H Error",
+            "node": "GQL Error? — Withdraw",
             "type": "main",
             "index": 0
           }
@@ -1302,7 +1384,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Postings",
+            "node": "Enrich Posting With Window",
             "type": "main",
             "index": 0
           }
@@ -1325,6 +1407,53 @@
         [
           {
             "node": "SplitInBatches — Expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Posting With Window": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches — Postings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GQL Error? — Create": {
+      "main": [
+        [
+          {
+            "node": "Log H Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Re-engagement WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GQL Error? — Withdraw": {
+      "main": [
+        [
+          {
+            "node": "Log H Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Timeout",
             "type": "main",
             "index": 0
           }

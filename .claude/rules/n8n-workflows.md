@@ -223,6 +223,29 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-05-03** during Workflow E live test — `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID` were in `.env` but absent from the n8n service env block. FB URL evaluated to `…/undefined/feed`; Telegram URL to `…/botundefined/sendMessage`. Both publish nodes failed silently until the vars were added and the container recreated.
 
+32. **Cross-node `$('NodeName')` references fail silently inside SplitInBatches loop bodies.** When a node executes as part of a SplitInBatches iteration (receiving items from output[1]), n8n's expression evaluator cannot resolve `$('NodeName').first()` references to nodes outside the current loop context. The expression fails with the internal sentinel `{error: "invalid syntax"}`, which is swallowed silently if `onError: continueRegularOutput` is set. The node outputs the error object as a normal item and execution continues with corrupted data.
+
+    **Fix:** Before the SplitInBatches node, insert a Set node (typeVersion 3.4) that reads the cross-loop values from their source nodes and bakes them into each item using `$('NodeName')` references. Inside the loop body, reference those baked values via `$json.fieldName` instead.
+
+    ```
+    // Wrong — fails inside SplitInBatches loop:
+    $('Compute Scan Window').first()?.json?.sixMonthsAgo
+
+    // Correct — Set node before SplitInBatches bakes the value in:
+    // Set node: sixMonthsAgo = ={{ $('Compute Scan Window').first()?.json?.sixMonthsAgo }}
+    // Inside loop: $json.sixMonthsAgo
+    ```
+
+    **Surfaced 2026-05-03** during Workflow H tester round 4 — `Query Eligible Applications` used `$('Compute Scan Window').first()?.json?.sixMonthsAgo` inside the SplitInBatches — Postings loop body. Returned `{error: "invalid syntax"}` on every execution; `Filter Candidates` received empty data; no candidate was ever processed.
+
+33. **Twenty GraphQL mutations always return HTTP 200 even on failure — never use `onError: continueErrorOutput` for GQL error detection.** Twenty wraps all GraphQL errors in HTTP 200 responses with the shape `{ "data": { "fieldName": null }, "errors": [{ "message": "...", "extensions": {...} }] }`. Source: `packages/twenty-server/src/engine/api/graphql/direct-execution/direct-execution.service.ts` lines 265–274 (field set to null on error) and 330–337 (errors array appended to response). `onError: continueErrorOutput` only fires on non-2xx HTTP responses; it will never fire for a Twenty GQL failure.
+
+    **Correct pattern:** Keep `onError: continueRegularOutput` on all Twenty HTTP Request nodes. After each mutation node, add an IF node checking `($json.errors?.length ?? 0) > 0` to detect GQL-level failures:
+    - True branch (errors present) → error handler (Log H Error, etc.)
+    - False branch (no errors) → normal continuation
+
+    **Surfaced 2026-05-03** during Workflow H tester round 4 — `Create Application` and `Withdraw Application` had `onError: continueErrorOutput` which could never fire. The Log H Error branch was structurally dead for all Twenty mutation failures.
+
 31. **Every HTTP Request node with `sendBody: true` must have `specifyBody: "json"` set explicitly in its parameters.** n8n's HTTP Request typeVersion 4.x gates the `jsonBody` expression on `specifyBody === "json"`. Without it, the node defaults to `"keypair"` format: it builds an empty array of key-value pairs, calls `prepareRequestBody([])`, and sends `{}` as the POST body — the `jsonBody` expression is never evaluated. The receiving API (Twenty, etc.) returns HTTP 400, but if the node uses `onError: continueRegularOutput` the execution continues as "success" with an error item, making the failure invisible.
 
     **Correct shape:**

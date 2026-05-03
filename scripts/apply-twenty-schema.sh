@@ -155,6 +155,14 @@ done < <(echo "${METADATA_RESPONSE}" | jq -r '.data.objects[] | [.nameSingular, 
 
 log "Loaded ${#OBJECT_UUID_MAP[@]} objects from Twenty schema."
 
+# Build "objectName.fieldName"→fieldUuid map for updateField operations
+declare -A FIELD_UUID_MAP
+while IFS=$'\t' read -r obj_name field_name field_uuid; do
+  FIELD_UUID_MAP["${obj_name}.${field_name}"]="${field_uuid}"
+done < <(echo "${METADATA_RESPONSE}" | jq -r '.data.objects[] | .nameSingular as $obj | .fields[] | [$obj, .name, .id] | @tsv' 2>/dev/null)
+
+log "Loaded ${#FIELD_UUID_MAP[@]} fields from Twenty schema."
+
 # ─────────────────────────────────────────────
 # Precondition gate — refuse to apply onto unaccounted-for state
 #
@@ -307,6 +315,53 @@ GQLEOF
 }
 
 # ─────────────────────────────────────────────
+# Helper: issue an updateOneField mutation
+# Resolves objectName + fieldName → field UUID, then applies update payload.
+# ─────────────────────────────────────────────
+update_field() {
+  local field_input="$1"
+
+  local obj_name field_name
+  obj_name=$(echo "${field_input}"  | jq -r '.objectName')
+  field_name=$(echo "${field_input}" | jq -r '.fieldName')
+  local map_key="${obj_name}.${field_name}"
+  local field_uuid="${FIELD_UUID_MAP[${map_key}]:-}"
+
+  if [ -z "${field_uuid}" ]; then
+    echo '{"error":"RESOLUTION_FAILED","detail":"Field not found in state cache: '"${map_key}"'"}'
+    return
+  fi
+
+  local update_payload
+  update_payload=$(echo "${field_input}" | jq --arg id "${field_uuid}" '{"id":$id,"update":.update}')
+
+  local MUTATION
+  MUTATION=$(cat <<'GQLEOF'
+mutation UpdateOneField($input: UpdateOneFieldMetadataInput!) {
+  updateOneField(input: $input) {
+    id
+    name
+    type
+  }
+}
+GQLEOF
+)
+  local variables
+  variables=$(jq -n --argjson p "${update_payload}" '{"input":$p}')
+  local body
+  body=$(jq -n --arg q "${MUTATION}" --argjson v "${variables}" '{"query":$q,"variables":$v}')
+
+  local response
+  response=$(curl -s --max-time 30 \
+    -X POST \
+    -H "Authorization: Bearer ${TWENTY_API_KEY}" \
+    -H "Content-Type: application/json" \
+    "${TWENTY_BASE}/metadata" \
+    -d "${body}")
+  echo "${response}"
+}
+
+# ─────────────────────────────────────────────
 # Helper: write error to bookings DB workflow_errors table
 # ─────────────────────────────────────────────
 record_error() {
@@ -377,6 +432,9 @@ for mig_file in "${PENDING_FILES[@]}"; do
       createField)
         response=$(create_field "${input}")
         ;;
+      updateField)
+        response=$(update_field "${input}")
+        ;;
       updateObject)
         # Resolve nameSingular → id and call updateOneObject
         obj_name=$(echo "${input}" | jq -r '.nameSingular')
@@ -406,7 +464,7 @@ GQLEOF
         fi
         ;;
       *)
-        err "  Unknown operation kind '${kind}' at index ${op_index}. Supported: createObject, createField, updateObject."
+        err "  Unknown operation kind '${kind}' at index ${op_index}. Supported: createObject, createField, updateField, updateObject."
         record_error "${RUN_ID}" "${op_label}" \
           "Unknown operation kind '${kind}'" \
           "{\"version\":\"${mig_version}\",\"operationIndex\":${op_index},\"kind\":\"${kind}\"}"
@@ -458,6 +516,10 @@ GQLEOF
         ;;
       updateObject)
         log "    Updated object."
+        ;;
+      updateField)
+        updated_name=$(echo "${response}" | jq -r '.data.updateOneField.name // empty')
+        log "    Updated field '${updated_name}'."
         ;;
     esac
 

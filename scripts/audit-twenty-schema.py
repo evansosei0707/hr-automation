@@ -177,6 +177,33 @@ def audit_create_field(inp, op_idx):
     return findings
 
 
+def audit_update_field(inp, op_idx):
+    findings = []
+    obj_name = inp.get("objectName", "?")
+    field_name = inp.get("fieldName", "?")
+    update = inp.get("update", {})
+
+    if not obj_name or obj_name == "?":
+        findings.append(f"op {op_idx} updateField: missing objectName")
+    if not field_name or field_name == "?":
+        findings.append(f"op {op_idx} updateField: missing fieldName")
+    if not update:
+        findings.append(f"op {op_idx} updateField {obj_name}.{field_name}: missing update block")
+        return findings
+
+    # Validate options array if present (same rules as createField SELECT options)
+    if "options" in update:
+        for opt in update["options"]:
+            v = opt.get("value", "")
+            if not OPTION_VALUE_RE.match(v):
+                findings.append(
+                    f"op {op_idx} updateField {obj_name}.{field_name}: option value "
+                    f"{v!r} does not match ^[A-Z][A-Z0-9_]*$ "
+                    f"(SELECT values must be UPPER_SNAKE_CASE)"
+                )
+    return findings
+
+
 def audit_file(fpath):
     findings = []
     try:
@@ -195,6 +222,9 @@ def audit_file(fpath):
                 findings.append(f"{fpath.name}: {f}")
         elif kind == "createField":
             for f in audit_create_field(inp, i):
+                findings.append(f"{fpath.name}: {f}")
+        elif kind == "updateField":
+            for f in audit_update_field(inp, i):
                 findings.append(f"{fpath.name}: {f}")
     return findings
 

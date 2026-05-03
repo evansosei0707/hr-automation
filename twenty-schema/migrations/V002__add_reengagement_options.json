@@ -1,0 +1,48 @@
+{
+  "version": "V002",
+  "description": "Add RE_ENGAGEMENT_OFFERED + RE_ENGAGEMENT_ACCEPTED to Application.status; FAST_TRACK_CANDIDATE to ReviewTask.kind",
+  "author": "schema-designer",
+  "date": "2026-05-03",
+  "spec": "docs/02-workflows/h-job-alerts.md",
+  "operations": [
+    {
+      "kind": "updateField",
+      "input": {
+        "objectName": "application",
+        "fieldName": "status",
+        "update": {
+          "options": [
+            { "value": "RECEIVED",               "label": "Received",               "color": "gray",      "position": 0 },
+            { "value": "SCREENING",              "label": "Screening",              "color": "yellow",    "position": 1 },
+            { "value": "SCREENED",               "label": "Screened",               "color": "blue",      "position": 2 },
+            { "value": "SHORTLISTED",            "label": "Shortlisted",            "color": "turquoise", "position": 3 },
+            { "value": "INTERVIEWING",           "label": "Interviewing",           "color": "sky",       "position": 4 },
+            { "value": "OFFERED",                "label": "Offered",                "color": "purple",    "position": 5 },
+            { "value": "PLACED",                 "label": "Placed",                 "color": "green",     "position": 6 },
+            { "value": "NOT_SELECTED",           "label": "Not Selected",           "color": "red",       "position": 7 },
+            { "value": "WITHDRAWN",              "label": "Withdrawn",              "color": "orange",    "position": 8 },
+            { "value": "RE_ENGAGEMENT_OFFERED",  "label": "Re-engagement Offered",  "color": "pink",      "position": 9 },
+            { "value": "RE_ENGAGEMENT_ACCEPTED", "label": "Re-engagement Accepted", "color": "turquoise", "position": 10 }
+          ]
+        }
+      }
+    },
+    {
+      "kind": "updateField",
+      "input": {
+        "objectName": "reviewTask",
+        "fieldName": "kind",
+        "update": {
+          "options": [
+            { "value": "LOW_CONFIDENCE_SCORE",    "label": "Low Confidence Score",    "color": "yellow", "position": 0 },
+            { "value": "VOICE_NOTE_MANUAL_REVIEW", "label": "Voice Note Manual Review", "color": "orange", "position": 1 },
+            { "value": "COMPLIANCE_FLAG",         "label": "Compliance Flag",         "color": "red",    "position": 2 },
+            { "value": "WORKFLOW_ERROR",          "label": "Workflow Error",          "color": "pink",   "position": 3 },
+            { "value": "OTHER",                   "label": "Other",                   "color": "gray",   "position": 4 },
+            { "value": "FAST_TRACK_CANDIDATE",    "label": "Fast Track Candidate",    "color": "green",  "position": 5 }
+          ]
+        }
+      }
+    }
+  ]
+}

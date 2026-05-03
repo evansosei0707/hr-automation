@@ -255,6 +255,15 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** workflow-builder.
 - **Reference:** Tester round 2026-05-03; CLAUDE.md §"Non-negotiable invariants" rule 6 (calibration window); analogous item T2-D-4 (Workflow D).
 
+### T2-H-1. Workflow H — Workflow A needs a re_engagement_reply routing branch
+
+- **Description:** Workflow H — Workflow A needs a re_engagement_reply routing branch: EXISTS check on active RE_ENGAGEMENT_OFFERED Application for this candidate, enqueue to screening_inbox with trigger_kind='re_engagement_reply'. Same pattern as T2-22 (blue_collar_reply fix). Pre-launch blocker.
+- **Files affected:** `n8n-workflows/communications/a-communications.json` — in the `workflow_reply` branch, add a Postgres EXISTS check for `applications WHERE candidate_id = $1 AND status = 'RE_ENGAGEMENT_OFFERED'`; if true, INSERT into `screening_inbox` with `trigger_kind='re_engagement_reply'`; otherwise fall through to the existing `open_conversation` path.
+- **Blocking:** Yes — without this patch, YES/NO replies from re-engaged candidates are swallowed by the open_conversation handler and Workflow H never sees them. Applications stay perpetually in `RE_ENGAGEMENT_OFFERED` status and time out to `WITHDRAWN` even when the candidate said YES.
+- **Target window:** Immediately after Workflow H build — apply before first live re-engagement run.
+- **Owner:** workflow-builder.
+- **Reference:** ADR-0011 §"Dual trigger" pattern (blue_collar_reply); `docs/02-workflows/h-job-alerts-design-v1.md` §5 (pre-launch checklist).
+
 ### T2-23. Workflow C — SkillTag loop deferred (createCandidateSkillTag)
 
 - **Description:** Workflow C's completion path was designed to tag the candidate in Twenty with a skill tag based on the job category (e.g. `driver`, `warehouse`). The `createCandidateSkillTag` mutation requires a `skillTagId` (the Twenty UUID for the matching SkillTag object). In v1 there is no lookup node to resolve `script_id → skillTagId`, so the loop was deferred. The candidate is scored and tiered but no SkillTag is written to Twenty.

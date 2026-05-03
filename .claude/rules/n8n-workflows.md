@@ -223,6 +223,21 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-05-03** during Workflow E live test — `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID` were in `.env` but absent from the n8n service env block. FB URL evaluated to `…/undefined/feed`; Telegram URL to `…/botundefined/sendMessage`. Both publish nodes failed silently until the vars were added and the container recreated.
 
+30. **Never use GraphQL named variable references (`$varName`) inside n8n expression strings.** In an n8n expression like `={{ { query: 'query Foo($status: Enum!) { ... }', variables: { status: $json.val } } }}`, the `$status` inside the single-quoted GQL string is treated by n8n's expression engine as a variable reference (`$status` → undefined), not a literal GQL variable declaration. The resulting HTTP body is either `{"": ...}` (key becomes empty string) or malformed JSON, causing Twenty 400 errors.
+
+    **Fix:** Inline all values directly via string concatenation. Remove named GQL variable declarations entirely:
+    ```
+    // Wrong — $windowStart is treated as n8n var reference:
+    { query: 'query Foo($windowStart: DateTime!) { ... filter: { gte: $windowStart } }', variables: { windowStart: $json.windowStart } }
+    
+    // Correct — inline value via string concat:
+    { query: '{ jobPostings(filter: { postedAt: { gte: \"' + $json.windowStart + '\" } }) { edges { node { id } } } }' }
+    ```
+
+    This applies to any `$` followed by an identifier inside a single- or double-quoted string within an n8n `={{ }}` expression. The `variables` object field is safe only if none of the GQL query string's own `$varName` tokens are present.
+
+    **Surfaced 2026-05-03** during Workflow H tester round 1 — `Query New Open JobPostings` and `Query Expired Offers` both sent `{"": null}` to Twenty because `$windowStart`, `$status`, `$cutoff` were parsed as n8n variables (all undefined).
+
 ## Before committing an n8n workflow
 
 Run the validator:

@@ -264,6 +264,14 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** workflow-builder.
 - **Reference:** ADR-0011 §"Dual trigger" pattern (blue_collar_reply); `docs/02-workflows/h-job-alerts-design-v1.md` §5 (pre-launch checklist).
 
+### T2-H-2. Workflow H — pre-send ReviewTask gate (calibration window)
+
+- **Description:** The calibration-window requirement (CLAUDE.md §"Non-negotiable invariants", rule 6) mandates human review of every user-facing output for the first two weeks after launch. Workflow H's re-engagement WhatsApp message is sent directly from `Send Re-engagement WA` with no pre-send gate. A `ReviewTask` of kind `FAST_TRACK_CANDIDATE` should be created before the send and the send should be gated on human approval (or auto-approved after calibration window closes).
+- **Files affected:** `n8n-workflows/job-alerts/h-job-alerts.json` — insert a `createReviewTask` mutation call and an approval-gate IF node before `Send Re-engagement WA`. During calibration window: create task, pause, wait for approval signal. Post-calibration: pass through automatically.
+- **Blocking:** Yes — calibration-window pre-launch requirement.
+- **Target window:** Immediately before first live re-engagement run (Week 0 close).
+- **Owner:** workflow-builder.
+
 ### T2-23. Workflow C — SkillTag loop deferred (createCandidateSkillTag)
 
 - **Description:** Workflow C's completion path was designed to tag the candidate in Twenty with a skill tag based on the job category (e.g. `driver`, `warehouse`). The `createCandidateSkillTag` mutation requires a `skillTagId` (the Twenty UUID for the matching SkillTag object). In v1 there is no lookup node to resolve `script_id → skillTagId`, so the loop was deferred. The candidate is scored and tiered but no SkillTag is written to Twenty.

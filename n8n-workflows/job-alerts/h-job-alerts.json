@@ -1,9 +1,15 @@
 {
   "name": "Workflow H — Job Alerts / Re-Engagement",
   "tags": [
-    { "name": "hr-automation" },
-    { "name": "workflow-h" },
-    { "name": "version-1" }
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-h"
+    },
+    {
+      "name": "version-1"
+    }
   ],
   "nodes": [
     {
@@ -11,7 +17,10 @@
       "name": "Schedule Trigger — 5 min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [200, 200],
+      "position": [
+        200,
+        200
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -28,7 +37,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 380],
+      "position": [
+        200,
+        380
+      ],
       "parameters": {}
     },
     {
@@ -36,7 +48,10 @@
       "name": "Compute Scan Window",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 200],
+      "position": [
+        440,
+        200
+      ],
       "parameters": {
         "language": "javaScript",
         "jsCode": "const now = new Date();\nconst windowStart = new Date(now.getTime() - 5 * 60 * 1000).toISOString();\nconst sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString();\nconst ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();\nconst fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();\nconst currentYear = now.getFullYear();\nreturn [{ json: { windowStart, sixMonthsAgo, ninetyDaysAgo, fourteenDaysAgo, currentYear } }];\n"
@@ -47,7 +62,10 @@
       "name": "Query New Open JobPostings",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [700, 200],
+      "position": [
+        700,
+        200
+      ],
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
@@ -67,7 +85,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "jsonBody": "={{ { query: 'query NewPostings($windowStart: DateTime!, $status: JobPostingStatusEnum!) { jobPostings(filter: { status: { eq: $status }, postedAt: { gte: $windowStart } }) { edges { node { id title category collarType } } } }', variables: { windowStart: $json.windowStart, status: 'OPEN' } } }}",
+        "jsonBody": "={{ { query: '{ jobPostings(filter: { status: { eq: OPEN }, postedAt: { gte: \"' + $json.windowStart + '\" } }) { edges { node { id title category collarType } } } }' } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -83,7 +101,10 @@
       "name": "Any New Postings?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, 200],
+      "position": [
+        960,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -112,7 +133,10 @@
       "name": "Read Dedup State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [1220, 200],
+      "position": [
+        1220,
+        200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -122,7 +146,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT facts->>'h_processed_postings' AS processed FROM candidate_facts WHERE candidate_id = 'system-h-dedup'",
+        "query": "SELECT facts->>'h_processed_postings' AS processed FROM candidate_facts WHERE twenty_candidate_id = 'system-h-dedup'",
         "options": {}
       }
     },
@@ -131,7 +155,10 @@
       "name": "Filter Unprocessed Postings",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1480, 200],
+      "position": [
+        1480,
+        200
+      ],
       "parameters": {
         "language": "javaScript",
         "jsCode": "const dedupRow = $('Read Dedup State').first()?.json;\nlet processed = [];\ntry { processed = JSON.parse(dedupRow?.processed || '[]'); } catch(e) { processed = []; }\nif (!Array.isArray(processed)) processed = [];\nconst allPostings = $('Query New Open JobPostings').first()?.json?.data?.jobPostings?.edges?.map(e => e.node) ?? [];\nconst unprocessed = allPostings.filter(p => !processed.includes(p.id));\nreturn [{ json: { postings: unprocessed } }];\n"
@@ -142,7 +169,10 @@
       "name": "Any Unprocessed?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1740, 200],
+      "position": [
+        1740,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -171,7 +201,10 @@
       "name": "SplitInBatches — Postings",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [2000, 200],
+      "position": [
+        2000,
+        200
+      ],
       "parameters": {
         "batchSize": 1,
         "options": {}
@@ -182,7 +215,10 @@
       "name": "Query Eligible Applications",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2260, 200],
+      "position": [
+        2260,
+        200
+      ],
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
@@ -202,7 +238,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "jsonBody": "={{ { query: 'query EligibleApps($eligible: Boolean!, $since: DateTime!, $category: String!) { applications(filter: { reEngagementEligible: { eq: $eligible }, createdAt: { gte: $since }, jobPosting: { category: { eq: $category } } }) { edges { node { id reEngagedAt candidate { id name whatsappNumberE164 consentStatus lastActivityAt dataRetentionPolicy strengthTier } jobPosting { id title } applications { edges { node { status } } } } } } }', variables: { eligible: true, since: $('Compute Scan Window').first()?.json?.sixMonthsAgo, category: $json.category } } }}",
+        "jsonBody": "={{ { query: '{ applications(filter: { reEngagementEligible: { eq: true }, createdAt: { gte: \"' + $(\\'Compute Scan Window\\').first()?.json?.sixMonthsAgo + '\" } }) { edges { node { id reEngagedAt jobPosting { id title category } candidate { id name whatsappNumberE164 consentStatus lastActivityAt dataRetentionPolicy strengthTier applications { edges { node { status } } } } } } } }' } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -218,10 +254,13 @@
       "name": "Filter Candidates",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2520, 200],
+      "position": [
+        2520,
+        200
+      ],
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const scanWindow = $('Compute Scan Window').first()?.json ?? {};\nconst ninetyDaysAgo = new Date(scanWindow.ninetyDaysAgo);\nconst fourteenDaysAgo = new Date(scanWindow.fourteenDaysAgo);\nconst currentYear = scanWindow.currentYear;\nconst busyStatuses = ['INTERVIEWING', 'OFFERED', 'PLACED'];\n\nconst edges = $('Query Eligible Applications').first()?.json?.data?.applications?.edges ?? [];\nlet candidates = edges.map(e => e.node).filter(app => {\n  const c = app.candidate;\n  if (!c) return false;\n  if (c.consentStatus !== 'GRANTED') return false;\n  if (c.dataRetentionPolicy === 'PENDING_DELETION') return false;\n  if (c.lastActivityAt && new Date(c.lastActivityAt) < ninetyDaysAgo) return false;\n  // busy check\n  const appStatuses = (app.applications?.edges ?? []).map(ae => ae.node?.status);\n  if (appStatuses.some(s => busyStatuses.includes(s))) return false;\n  // anti-spam proxy: reEngagedAt within 14 days\n  if (app.reEngagedAt && new Date(app.reEngagedAt) > fourteenDaysAgo) return false;\n  return true;\n});\n\n// Sort by strengthTier then recency\nconst tierOrder = { TOP_20: 0, SOLID: 1, DEVELOPING: 2 };\ncandidates.sort((a, b) => {\n  const ta = tierOrder[a.candidate?.strengthTier] ?? 3;\n  const tb = tierOrder[b.candidate?.strengthTier] ?? 3;\n  if (ta !== tb) return ta - tb;\n  const da = new Date(a.candidate?.lastActivityAt || 0);\n  const db = new Date(b.candidate?.lastActivityAt || 0);\n  return db - da;\n});\n\ncandidates = candidates.slice(0, 20);\nreturn [{ json: { candidates } }];\n"
+        "jsCode": "const scanWindow = $('Compute Scan Window').first()?.json ?? {};\nconst ninetyDaysAgo = new Date(scanWindow.ninetyDaysAgo);\nconst fourteenDaysAgo = new Date(scanWindow.fourteenDaysAgo);\nconst currentYear = scanWindow.currentYear;\nconst busyStatuses = ['INTERVIEWING', 'OFFERED', 'PLACED'];\nconst currentPosting = $('SplitInBatches — Postings').first()?.json;\nconst currentCategory = currentPosting?.category;\n\nconst edges = $('Query Eligible Applications').first()?.json?.data?.applications?.edges ?? [];\nlet candidates = edges.map(e => e.node).filter(app => {\n  const c = app.candidate;\n  if (!c) return false;\n  if (c.consentStatus !== 'GRANTED') return false;\n  if (c.dataRetentionPolicy === 'PENDING_DELETION') return false;\n  if (c.lastActivityAt && new Date(c.lastActivityAt) < ninetyDaysAgo) return false;\n  if (currentCategory && app.jobPosting?.category !== currentCategory) return false;\n  const appStatuses = (c.applications?.edges ?? []).map(ae => ae.node?.status);\n  if (appStatuses.some(s => busyStatuses.includes(s))) return false;\n  if (app.reEngagedAt && new Date(app.reEngagedAt) > fourteenDaysAgo) return false;\n  return true;\n});\n\nconst tierOrder = { TOP_20: 0, SOLID: 1, DEVELOPING: 2 };\ncandidates.sort((a, b) => {\n  const ta = tierOrder[a.candidate?.strengthTier] ?? 3;\n  const tb = tierOrder[b.candidate?.strengthTier] ?? 3;\n  if (ta !== tb) return ta - tb;\n  const da = new Date(a.candidate?.lastActivityAt || 0);\n  const db = new Date(b.candidate?.lastActivityAt || 0);\n  return db - da;\n});\n\ncandidates = candidates.slice(0, 20);\nreturn [{ json: { candidates } }];\n"
       }
     },
     {
@@ -229,7 +268,10 @@
       "name": "Any Candidates?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2780, 200],
+      "position": [
+        2780,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -258,7 +300,10 @@
       "name": "SplitInBatches — Candidates",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [3040, 200],
+      "position": [
+        3040,
+        200
+      ],
       "parameters": {
         "batchSize": 1,
         "options": {}
@@ -269,7 +314,10 @@
       "name": "Read Anti-Spam State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [3300, 200],
+      "position": [
+        3300,
+        200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -279,7 +327,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT facts->>'last_reengaged_at' AS last_reengaged_at, (facts->>'reengagement_count_ytd')::int AS reengagement_count_ytd FROM candidate_facts WHERE candidate_id = $1",
+        "query": "SELECT facts->>'last_reengaged_at' AS last_reengaged_at, (facts->>'reengagement_count_ytd')::int AS reengagement_count_ytd FROM candidate_facts WHERE twenty_candidate_id = $1",
         "options": {
           "queryReplacement": "={{ [$json.candidate?.id ?? '00000000-0000-0000-0000-000000000000'] }}"
         }
@@ -290,7 +338,10 @@
       "name": "Evaluate Anti-Spam Eligibility",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3560, 200],
+      "position": [
+        3560,
+        200
+      ],
       "parameters": {
         "language": "javaScript",
         "jsCode": "const last = $json.last_reengaged_at;\nconst count = parseInt($json.reengagement_count_ytd ?? '0', 10);\nconst fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;\nconst notRecentlyEngaged = !last || new Date(last).getTime() < fourteenDaysAgo;\nconst underYearLimit = count < 4;\nreturn [{ json: { ...$input.item.json, spamCheckOk: (notRecentlyEngaged && underYearLimit) ? 'yes' : '' } }];\n"
@@ -301,7 +352,10 @@
       "name": "Anti-Spam Check",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3780, 200],
+      "position": [
+        3780,
+        200
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -330,12 +384,15 @@
       "name": "Compose WA Message",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [4040, 200],
+      "position": [
+        4040,
+        200
+      ],
       "parameters": {
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},
@@ -406,7 +463,10 @@
       "name": "Create Application",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4080, 200],
+      "position": [
+        4080,
+        200
+      ],
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
@@ -426,7 +486,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "jsonBody": "={{ { query: 'mutation CreateApp($candidateId: UUID!, $postingId: UUID!, $now: DateTime!) { createApplication(data: { candidate: { connect: { id: $candidateId } }, jobPosting: { connect: { id: $postingId } }, status: RE_ENGAGEMENT_OFFERED, reEngagedAt: $now }) { id } }', variables: { candidateId: $('SplitInBatches — Candidates').first()?.json?.candidate?.id ?? '', postingId: $('SplitInBatches — Postings').first()?.json?.id ?? '', now: new Date().toISOString() } } }}",
+        "jsonBody": "={{ { query: 'mutation { createApplication(data: { candidate: { connect: { id: \"' + ($(\\'SplitInBatches — Candidates\\').first()?.json?.candidate?.id ?? '') + '\" } }, jobPosting: { connect: { id: \"' + ($(\\'SplitInBatches — Postings\\').first()?.json?.id ?? '') + '\" } }, status: RE_ENGAGEMENT_OFFERED, reEngagedAt: \"' + new Date().toISOString() + '\" }) { id } }' } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -442,12 +502,15 @@
       "name": "Send Re-engagement WA",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [4340, 200],
+      "position": [
+        4340,
+        200
+      ],
       "parameters": {
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -508,7 +571,10 @@
       "name": "Update Anti-Spam State",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [4600, 200],
+      "position": [
+        4600,
+        200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -518,7 +584,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO candidate_facts (candidate_id, facts)\nVALUES ($1, jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int))\nON CONFLICT (candidate_id) DO UPDATE\n  SET facts = candidate_facts.facts\n    || jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int),\n    updated_at = NOW()",
+        "query": "INSERT INTO candidate_facts (twenty_candidate_id, facts)\nVALUES ($1, jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int))\nON CONFLICT (twenty_candidate_id) DO UPDATE\n  SET facts = candidate_facts.facts\n    || jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int),\n    updated_at = NOW()",
         "options": {
           "queryReplacement": "={{ [\n  $('SplitInBatches — Candidates').first()?.json?.candidate?.id ?? '00000000-0000-0000-0000-000000000000',\n  new Date().toISOString(),\n  (() => {\n    const prevCount = parseInt($('Read Anti-Spam State').first()?.json?.reengagement_count_ytd ?? '0', 10);\n    const prevDate = $('Read Anti-Spam State').first()?.json?.last_reengaged_at;\n    const currentYear = $('Compute Scan Window').first()?.json?.currentYear;\n    const prevYear = prevDate ? new Date(prevDate).getFullYear() : 0;\n    return prevYear < currentYear ? 1 : prevCount + 1;\n  })()\n] }}"
         }
@@ -529,7 +595,10 @@
       "name": "Mark Posting Processed",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [4860, 200],
+      "position": [
+        4860,
+        200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -539,7 +608,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO candidate_facts (candidate_id, facts)\nVALUES ('system-h-dedup', jsonb_build_object('h_processed_postings', jsonb_build_array($1::text)))\nON CONFLICT (candidate_id) DO UPDATE\n  SET facts = jsonb_set(\n    candidate_facts.facts,\n    '{h_processed_postings}',\n    COALESCE(candidate_facts.facts->'h_processed_postings', '[]'::jsonb) || jsonb_build_array($1::text)\n  ),\n  updated_at = NOW()",
+        "query": "INSERT INTO candidate_facts (twenty_candidate_id, facts)\nVALUES ('system-h-dedup', jsonb_build_object('h_processed_postings', jsonb_build_array($1::text)))\nON CONFLICT (twenty_candidate_id) DO UPDATE\n  SET facts = jsonb_set(\n    candidate_facts.facts,\n    '{h_processed_postings}',\n    COALESCE(candidate_facts.facts->'h_processed_postings', '[]'::jsonb) || jsonb_build_array($1::text)\n  ),\n  updated_at = NOW()",
         "options": {
           "queryReplacement": "={{ [$('SplitInBatches — Postings').first()?.json?.id ?? ''] }}"
         }
@@ -550,7 +619,10 @@
       "name": "Log Run",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [5120, 200],
+      "position": [
+        5120,
+        200
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -571,7 +643,10 @@
       "name": "Schedule Trigger — Hourly",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [200, 700],
+      "position": [
+        200,
+        700
+      ],
       "parameters": {
         "rule": {
           "interval": [
@@ -588,7 +663,10 @@
       "name": "Compute Timeout Cutoff",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 700],
+      "position": [
+        440,
+        700
+      ],
       "parameters": {
         "language": "javaScript",
         "jsCode": "const now = new Date();\nconst seventyTwoHoursAgo = new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString();\nreturn [{ json: { seventyTwoHoursAgo } }];\n"
@@ -599,7 +677,10 @@
       "name": "Query Expired Offers",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [700, 700],
+      "position": [
+        700,
+        700
+      ],
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
@@ -619,7 +700,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "jsonBody": "={{ { query: 'query ExpiredOffers($status: ApplicationStatusEnum!, $cutoff: DateTime!) { applications(filter: { status: { eq: $status }, reEngagedAt: { lt: $cutoff } }) { edges { node { id } } } }', variables: { status: 'RE_ENGAGEMENT_OFFERED', cutoff: $json.seventyTwoHoursAgo } } }}",
+        "jsonBody": "={{ { query: '{ applications(filter: { status: { eq: RE_ENGAGEMENT_OFFERED }, reEngagedAt: { lt: \"' + $json.seventyTwoHoursAgo + '\" } }) { edges { node { id } } } }' } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -635,7 +716,10 @@
       "name": "Any Expired?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [960, 700],
+      "position": [
+        960,
+        700
+      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -664,7 +748,10 @@
       "name": "SplitInBatches — Expired",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [1220, 700],
+      "position": [
+        1220,
+        700
+      ],
       "parameters": {
         "batchSize": 1,
         "options": {}
@@ -675,7 +762,10 @@
       "name": "Withdraw Application",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1480, 700],
+      "position": [
+        1480,
+        700
+      ],
       "onError": "continueRegularOutput",
       "parameters": {
         "method": "POST",
@@ -695,7 +785,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "jsonBody": "={{ { query: 'mutation Withdraw($id: UUID!) { updateApplication(id: $id, data: { status: WITHDRAWN }) { id } }', variables: { id: $json.id } } }}",
+        "jsonBody": "={{ { query: 'mutation { updateApplication(id: \"' + $json.id + '\", data: { status: WITHDRAWN }) { id } }' } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -711,7 +801,10 @@
       "name": "Log Timeout",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [1740, 700],
+      "position": [
+        1740,
+        700
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -732,7 +825,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [200, 1100],
+      "position": [
+        200,
+        1100
+      ],
       "parameters": {}
     },
     {
@@ -740,7 +836,10 @@
       "name": "Log Workflow Error",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
-      "position": [440, 1100],
+      "position": [
+        440,
+        1100
+      ],
       "alwaysOutputData": true,
       "credentials": {
         "postgres": {
@@ -761,35 +860,55 @@
     "Schedule Trigger — 5 min": {
       "main": [
         [
-          { "node": "Compute Scan Window", "type": "main", "index": 0 }
+          {
+            "node": "Compute Scan Window",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Manual Trigger": {
       "main": [
         [
-          { "node": "Compute Scan Window", "type": "main", "index": 0 }
+          {
+            "node": "Compute Scan Window",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Compute Scan Window": {
       "main": [
         [
-          { "node": "Query New Open JobPostings", "type": "main", "index": 0 }
+          {
+            "node": "Query New Open JobPostings",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Query New Open JobPostings": {
       "main": [
         [
-          { "node": "Any New Postings?", "type": "main", "index": 0 }
+          {
+            "node": "Any New Postings?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Any New Postings?": {
       "main": [
         [
-          { "node": "Read Dedup State", "type": "main", "index": 0 }
+          {
+            "node": "Read Dedup State",
+            "type": "main",
+            "index": 0
+          }
         ],
         []
       ]
@@ -797,21 +916,33 @@
     "Read Dedup State": {
       "main": [
         [
-          { "node": "Filter Unprocessed Postings", "type": "main", "index": 0 }
+          {
+            "node": "Filter Unprocessed Postings",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Filter Unprocessed Postings": {
       "main": [
         [
-          { "node": "Any Unprocessed?", "type": "main", "index": 0 }
+          {
+            "node": "Any Unprocessed?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Any Unprocessed?": {
       "main": [
         [
-          { "node": "SplitInBatches — Postings", "type": "main", "index": 0 }
+          {
+            "node": "SplitInBatches — Postings",
+            "type": "main",
+            "index": 0
+          }
         ],
         []
       ]
@@ -819,7 +950,11 @@
     "SplitInBatches — Postings": {
       "main": [
         [
-          { "node": "Query Eligible Applications", "type": "main", "index": 0 }
+          {
+            "node": "Query Eligible Applications",
+            "type": "main",
+            "index": 0
+          }
         ],
         []
       ]
@@ -827,31 +962,51 @@
     "Query Eligible Applications": {
       "main": [
         [
-          { "node": "Filter Candidates", "type": "main", "index": 0 }
+          {
+            "node": "Filter Candidates",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Filter Candidates": {
       "main": [
         [
-          { "node": "Any Candidates?", "type": "main", "index": 0 }
+          {
+            "node": "Any Candidates?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Any Candidates?": {
       "main": [
         [
-          { "node": "SplitInBatches — Candidates", "type": "main", "index": 0 }
+          {
+            "node": "SplitInBatches — Candidates",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Mark Posting Processed", "type": "main", "index": 0 }
+          {
+            "node": "Mark Posting Processed",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "SplitInBatches — Candidates": {
       "main": [
         [
-          { "node": "Read Anti-Spam State", "type": "main", "index": 0 }
+          {
+            "node": "Read Anti-Spam State",
+            "type": "main",
+            "index": 0
+          }
         ],
         []
       ]
@@ -859,94 +1014,150 @@
     "Read Anti-Spam State": {
       "main": [
         [
-          { "node": "Evaluate Anti-Spam Eligibility", "type": "main", "index": 0 }
+          {
+            "node": "Evaluate Anti-Spam Eligibility",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Evaluate Anti-Spam Eligibility": {
       "main": [
         [
-          { "node": "Anti-Spam Check", "type": "main", "index": 0 }
+          {
+            "node": "Anti-Spam Check",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Anti-Spam Check": {
       "main": [
         [
-          { "node": "Compose WA Message", "type": "main", "index": 0 }
+          {
+            "node": "Compose WA Message",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "SplitInBatches — Candidates", "type": "main", "index": 0 }
+          {
+            "node": "SplitInBatches — Candidates",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Compose WA Message": {
       "main": [
         [
-          { "node": "Create Application", "type": "main", "index": 0 }
+          {
+            "node": "Create Application",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Create Application": {
       "main": [
         [
-          { "node": "Send Re-engagement WA", "type": "main", "index": 0 }
+          {
+            "node": "Send Re-engagement WA",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Send Re-engagement WA": {
       "main": [
         [
-          { "node": "Update Anti-Spam State", "type": "main", "index": 0 }
+          {
+            "node": "Update Anti-Spam State",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Update Anti-Spam State": {
       "main": [
         [
-          { "node": "SplitInBatches — Candidates", "type": "main", "index": 0 }
+          {
+            "node": "SplitInBatches — Candidates",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Mark Posting Processed": {
       "main": [
         [
-          { "node": "Log Run", "type": "main", "index": 0 }
+          {
+            "node": "Log Run",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Log Run": {
       "main": [
         [
-          { "node": "SplitInBatches — Postings", "type": "main", "index": 0 }
+          {
+            "node": "SplitInBatches — Postings",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Schedule Trigger — Hourly": {
       "main": [
         [
-          { "node": "Compute Timeout Cutoff", "type": "main", "index": 0 }
+          {
+            "node": "Compute Timeout Cutoff",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Compute Timeout Cutoff": {
       "main": [
         [
-          { "node": "Query Expired Offers", "type": "main", "index": 0 }
+          {
+            "node": "Query Expired Offers",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Query Expired Offers": {
       "main": [
         [
-          { "node": "Any Expired?", "type": "main", "index": 0 }
+          {
+            "node": "Any Expired?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Any Expired?": {
       "main": [
         [
-          { "node": "SplitInBatches — Expired", "type": "main", "index": 0 }
+          {
+            "node": "SplitInBatches — Expired",
+            "type": "main",
+            "index": 0
+          }
         ],
         []
       ]
@@ -954,7 +1165,11 @@
     "SplitInBatches — Expired": {
       "main": [
         [
-          { "node": "Withdraw Application", "type": "main", "index": 0 }
+          {
+            "node": "Withdraw Application",
+            "type": "main",
+            "index": 0
+          }
         ],
         []
       ]
@@ -962,21 +1177,33 @@
     "Withdraw Application": {
       "main": [
         [
-          { "node": "Log Timeout", "type": "main", "index": 0 }
+          {
+            "node": "Log Timeout",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Log Timeout": {
       "main": [
         [
-          { "node": "SplitInBatches — Expired", "type": "main", "index": 0 }
+          {
+            "node": "SplitInBatches — Expired",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Error Trigger": {
       "main": [
         [
-          { "node": "Log Workflow Error", "type": "main", "index": 0 }
+          {
+            "node": "Log Workflow Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }

@@ -5,7 +5,7 @@ Current build state. Updated at the end of every work session.
 ---
 
 **Last updated:** 2026-05-03
-**Current phase:** Week 1 — Workflow D v1 complete; Workflow E next
+**Current phase:** Week 1 — Workflow E v1 complete; Workflow F next
 **Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -47,9 +47,14 @@ Current build state. Updated at the end of every work session.
 - ✅ **Workflow D v1 (2026-05-02 build, 2026-05-03 live test PASSED).** Interview scheduling with atomic slot claim and Google Calendar integration. Spec at `docs/02-workflows/d-scheduling.md`; design note at `docs/02-workflows/d-scheduling-design-v1.md`; ADR-0012 (`docs/05-decisions/ADR-0012-slot-sourcing-hybrid.md`). Migrations V012–V015 applied. JSON: `n8n-workflows/scheduling/d-scheduling.json` (85 nodes, 3 cron entry chains: 2-min scheduling-reply poller, 2-min shortlisted offer poller, 05:00 Accra daily slot generator). Tester 5/5 PASS. Six bugs found and fixed across 4 tester rounds: isEmpty-on-null, Got Offered Slots? boolean-equal operator, Fetch Offered Slots missing offer_expires_at filter, Calendar branch[1] disconnected, Create Interview mutation invalid fields, ON CONFLICT ON CONSTRAINT vs UNIQUE INDEX. Audit script `scripts/audit-n8n-workflow.py` created (9 static checks). **Workflow D v1 DONE.**
   **Pre-launch blockers carried to T2:** (a) Calibration gate for WA sends — T2-D-4.
 
+- ✅ **Workflow E v1 (2026-05-03 build + live test PASSED).** Social posting to Facebook Page and Telegram channel. Design note at `docs/02-workflows/e-social-posting-design-v1.md`. JSON: `n8n-workflows/social/e-social-posting.json` (36 nodes, 2-min cron, per-platform isolation via single-record-per-tick FIFO + Redis lock `hra:social:{postId}`). Tester 5/5 PASS (after adding Meta + Telegram env vars to n8n container). Key build fix: credential injection for Postgres + Redis nodes post-import. Env var fix: `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID` added to docker-compose.yml n8n env block. **Workflow E v1 DONE.**
+  **Pre-launch blockers carried to T2:** (a) Explicit approval gate — `isApproved` field + V016 migration + poll filter update (T2-E-1). (b) `TELEGRAM_CHANNEL_ID` in `.env` points to a private chat, not a broadcast channel — correct to numeric channel ID (starts `-100`) before production.
+
 ## What's next
 
-- **Workflow E** — social media posting. Spec at `docs/02-workflows/e-social-media.md`. FB + Telegram (ADR-0007: no IG; ADR-0008: no X yet).
+- **Workflow F** — weekly reporting. Spec at `docs/02-workflows/f-reporting.md`.
+- **Workflow G** — orchestration/watchdog (includes engagement sampling deferred from E).
+- **Workflow H** — job alerts / re-engagement.
 
 ## What's blocked
 

@@ -215,6 +215,14 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-05-02** during Workflow D build — `Got Offered Slots?` used the length-check form; zero-row slot queries (candidates with no offered slots) routed into the "has slots" branch instead of the "no slots" exit.
 
+29. **When a workflow uses external API credentials via `$env.*`, verify those vars are present in the n8n container env block in `docker-compose.yml` — not just in `.env`.** Variables in `.env` are consumed by Docker Compose for its own substitution (e.g. `${META_PAGE_ID}` in the compose file becomes the service env var). A var in `.env` that is NOT referenced in the n8n service `environment:` block is invisible inside the container. `$env.META_PAGE_ID` in an n8n expression will resolve to `undefined` at runtime, causing silent API call failures with no import-time error or n8n validation warning.
+
+    **Pre-import checklist:** for every `$env.SOME_VAR` expression in the workflow JSON, confirm the n8n service `environment:` block in `infrastructure/docker-compose.yml` has a line `SOME_VAR: ${SOME_VAR}`. If missing, add it and recreate the container (`docker compose up -d --force-recreate n8n`) before the first live test.
+
+    **Already mapped (as of 2026-05-03):** `TWENTY_API_URL`, `TWENTY_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY`, `WHATSAPP_*` (5 vars), `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`, `N8N_BLOCK_ENV_ACCESS_IN_NODE`, `NODE_FUNCTION_ALLOW_BUILTIN`.
+
+    **Surfaced 2026-05-03** during Workflow E live test — `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID` were in `.env` but absent from the n8n service env block. FB URL evaluated to `…/undefined/feed`; Telegram URL to `…/botundefined/sendMessage`. Both publish nodes failed silently until the vars were added and the container recreated.
+
 ## Before committing an n8n workflow
 
 Run the validator:

@@ -49,7 +49,7 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 | **B** | White-Collar Screening | White | ✅ Live (proven 2026-05-01) | `docs/02-workflows/b-white-collar.md` |
 | **C** | Blue-Collar Screening | Blue | ✅ Live (proven 2026-05-02) | `docs/02-workflows/c-blue-collar.md` |
 | **D** | Interview Scheduling | — | ✅ Live (proven 2026-05-03) | `docs/02-workflows/d-scheduling.md` |
-| **E** | Social Posting | — | ⬜ Not started | `docs/02-workflows/e-social-posting.md` |
+| **E** | Social Posting | — | ✅ Live (proven 2026-05-03) | `docs/02-workflows/e-social-posting.md` |
 | **F** | Reporting | — | ⬜ Not started | `docs/02-workflows/f-reporting.md` |
 | **G** | Orchestration / Watchdog | — | ⬜ Not started | `docs/02-workflows/g-orchestration.md` |
 | **H** | Job Alerts / Re-engagement | — | ⬜ Not started | `docs/02-workflows/h-job-alerts.md` |
@@ -122,13 +122,22 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 - **1 pre-launch blocker (T2):** calibration-gate ReviewTask for outbound WA sends (T2-D-4)
 - Rules #26–#28 added
 
+**Workflow E v1** (build + live test PASSED 2026-05-03):
+- Design note: `docs/02-workflows/e-social-posting-design-v1.md`
+- JSON file: `e-social-posting.json` (36 nodes, 2-min cron, FB + Telegram branches, per-platform isolation via single-record-per-tick + Redis lock)
+- No migrations — SocialPost already in Twenty schema
+- Tester 5/5 PASS. Post-build fixes: credential reference injection (Postgres + Redis), `TWENTY_API_TOKEN` → `TWENTY_API_KEY`, Meta + Telegram vars added to n8n docker-compose env block
+- **2 pre-launch blockers (T2):** explicit approval gate T2-E-1 (V016 `isApproved` field), Telegram channel ID config fix (private chat → channel numeric ID)
+- Rule #29 added
+
 ---
 
 ## What's next
 
-1. **Workflow E architect dispatch** — spec at `docs/02-workflows/e-social-media.md`. Social posting to FB + Telegram (IG deferred ADR-0007, X deferred ADR-0008).
-2. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager. Workflow C is blocked from sending real outbound messages until these are approved.
-3. **Workflows F, G, H** — reporting, orchestration/watchdog, job alerts.
+1. **Workflow F architect dispatch** — spec at `docs/02-workflows/f-reporting.md`. Weekly Monday 07:00 Accra report to staff WhatsApp channel.
+2. **Workflow G** — orchestration/watchdog (includes engagement sampling deferred from E).
+3. **Workflow H** — job alerts / re-engagement.
+4. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager.
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  "name": "Workflow E — Social Posting",
+  "name": "Workflow E \u2014 Social Posting",
   "nodes": [
     {
       "parameters": {
@@ -13,10 +13,13 @@
         }
       },
       "id": "e000-0001-e001-0001-000000000001",
-      "name": "Cron — Poll Due Social Posts",
+      "name": "Cron \u2014 Poll Due Social Posts",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [200, 300]
+      "position": [
+        200,
+        300
+      ]
     },
     {
       "parameters": {
@@ -51,7 +54,10 @@
       "name": "Query Due SocialPost",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [440, 300]
+      "position": [
+        440,
+        300
+      ]
     },
     {
       "parameters": {
@@ -80,15 +86,21 @@
       "name": "Any Due?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {},
       "id": "e000-0004-e004-0004-000000000004",
-      "name": "No Posts Due — Exit",
+      "name": "No Posts Due \u2014 Exit",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [920, 420]
+      "position": [
+        920,
+        420
+      ]
     },
     {
       "parameters": {
@@ -126,7 +138,10 @@
       "name": "Set Post Context",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [920, 300]
+      "position": [
+        920,
+        300
+      ]
     },
     {
       "parameters": {
@@ -138,10 +153,13 @@
       "name": "Check Social Lock",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [1160, 300],
+      "position": [
+        1160,
+        300
+      ],
       "credentials": {
         "redis": {
-          "id": "",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }
@@ -173,15 +191,21 @@
       "name": "Lock Free?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1400, 300]
+      "position": [
+        1400,
+        300
+      ]
     },
     {
       "parameters": {},
       "id": "e000-0008-e008-0008-000000000008",
-      "name": "Lock Busy — Exit",
+      "name": "Lock Busy \u2014 Exit",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1640, 420]
+      "position": [
+        1640,
+        420
+      ]
     },
     {
       "parameters": {
@@ -195,10 +219,13 @@
       "name": "Acquire Social Lock",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [1640, 300],
+      "position": [
+        1640,
+        300
+      ],
       "credentials": {
         "redis": {
-          "id": "",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }
@@ -264,7 +291,10 @@
       "name": "Switch on Platform",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [1880, 300]
+      "position": [
+        1880,
+        300
+      ]
     },
     {
       "parameters": {
@@ -279,21 +309,27 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
-      "position": [2120, 540],
+      "position": [
+        2120,
+        540
+      ],
       "credentials": {
         "postgres": {
-          "id": "",
-          "name": "Bookings DB"
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
         }
       }
     },
     {
       "parameters": {},
       "id": "e000-0012-e012-0012-000000000012",
-      "name": "Platform Stub — Exit",
+      "name": "Platform Stub \u2014 Exit",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [2360, 540]
+      "position": [
+        2360,
+        540
+      ]
     },
     {
       "parameters": {
@@ -313,7 +349,10 @@
       "name": "Compose FB Body",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [2120, 300]
+      "position": [
+        2120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -336,7 +375,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueErrorOutput",
-      "position": [2360, 300]
+      "position": [
+        2360,
+        300
+      ]
     },
     {
       "parameters": {
@@ -368,10 +410,13 @@
         }
       },
       "id": "efb03-fb03-efb3-fb03-000000000003",
-      "name": "Update Twenty — FB Published",
+      "name": "Update Twenty \u2014 FB Published",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2600, 300]
+      "position": [
+        2600,
+        300
+      ]
     },
     {
       "parameters": {
@@ -386,11 +431,14 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
-      "position": [2360, 480],
+      "position": [
+        2360,
+        480
+      ],
       "credentials": {
         "postgres": {
-          "id": "",
-          "name": "Bookings DB"
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
         }
       }
     },
@@ -430,7 +478,10 @@
       "name": "Permanent FB Error?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2600, 480]
+      "position": [
+        2600,
+        480
+      ]
     },
     {
       "parameters": {
@@ -445,11 +496,14 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
-      "position": [2840, 600],
+      "position": [
+        2840,
+        600
+      ],
       "credentials": {
         "postgres": {
-          "id": "",
-          "name": "Bookings DB"
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
         }
       }
     },
@@ -460,13 +514,16 @@
         "propertyName": "value"
       },
       "id": "efb07-fb07-efb7-fb07-000000000007",
-      "name": "Check Lock Before Release — FB",
+      "name": "Check Lock Before Release \u2014 FB",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [2840, 300],
+      "position": [
+        2840,
+        300
+      ],
       "credentials": {
         "redis": {
-          "id": "",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }
@@ -495,18 +552,24 @@
         "options": {}
       },
       "id": "efb08-fb08-efb8-fb08-000000000008",
-      "name": "Token Match? — FB",
+      "name": "Token Match? \u2014 FB",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3080, 300]
+      "position": [
+        3080,
+        300
+      ]
     },
     {
       "parameters": {},
       "id": "efb09-fb09-efb9-fb09-000000000009",
-      "name": "Lock Expired — Exit FB",
+      "name": "Lock Expired \u2014 Exit FB",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [3320, 420]
+      "position": [
+        3320,
+        420
+      ]
     },
     {
       "parameters": {
@@ -514,13 +577,16 @@
         "key": "={{ 'hra:social:' + $('Set Post Context').first().json.postId }}"
       },
       "id": "efb10-fb10-efb0-fb10-000000000010",
-      "name": "Release Social Lock — FB",
+      "name": "Release Social Lock \u2014 FB",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [3320, 300],
+      "position": [
+        3320,
+        300
+      ],
       "credentials": {
         "redis": {
-          "id": "",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }
@@ -528,10 +594,13 @@
     {
       "parameters": {},
       "id": "efb11-fb11-efb1-fb11-000000000011",
-      "name": "FB Complete — Exit",
+      "name": "FB Complete \u2014 Exit",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [3560, 300]
+      "position": [
+        3560,
+        300
+      ]
     },
     {
       "parameters": {
@@ -542,7 +611,10 @@
       "name": "Escape MarkdownV2",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2120, 720]
+      "position": [
+        2120,
+        720
+      ]
     },
     {
       "parameters": {
@@ -565,7 +637,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueErrorOutput",
-      "position": [2360, 720]
+      "position": [
+        2360,
+        720
+      ]
     },
     {
       "parameters": {
@@ -597,10 +672,13 @@
         }
       },
       "id": "etg03-tg03-etg3-tg03-000000000003",
-      "name": "Update Twenty — Telegram Published",
+      "name": "Update Twenty \u2014 Telegram Published",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2600, 720]
+      "position": [
+        2600,
+        720
+      ]
     },
     {
       "parameters": {
@@ -615,11 +693,14 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
-      "position": [2360, 900],
+      "position": [
+        2360,
+        900
+      ],
       "credentials": {
         "postgres": {
-          "id": "",
-          "name": "Bookings DB"
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
         }
       }
     },
@@ -650,7 +731,10 @@
       "name": "Permanent Telegram Error?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2600, 900]
+      "position": [
+        2600,
+        900
+      ]
     },
     {
       "parameters": {
@@ -665,11 +749,14 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
-      "position": [2840, 1020],
+      "position": [
+        2840,
+        1020
+      ],
       "credentials": {
         "postgres": {
-          "id": "",
-          "name": "Bookings DB"
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
         }
       }
     },
@@ -680,13 +767,16 @@
         "propertyName": "value"
       },
       "id": "etg07-tg07-etg7-tg07-000000000007",
-      "name": "Check Lock Before Release — TG",
+      "name": "Check Lock Before Release \u2014 TG",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [2840, 720],
+      "position": [
+        2840,
+        720
+      ],
       "credentials": {
         "redis": {
-          "id": "",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }
@@ -715,18 +805,24 @@
         "options": {}
       },
       "id": "etg08-tg08-etg8-tg08-000000000008",
-      "name": "Token Match? — TG",
+      "name": "Token Match? \u2014 TG",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [3080, 720]
+      "position": [
+        3080,
+        720
+      ]
     },
     {
       "parameters": {},
       "id": "etg09-tg09-etg9-tg09-000000000009",
-      "name": "Lock Expired — Exit TG",
+      "name": "Lock Expired \u2014 Exit TG",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [3320, 840]
+      "position": [
+        3320,
+        840
+      ]
     },
     {
       "parameters": {
@@ -734,13 +830,16 @@
         "key": "={{ 'hra:social:' + $('Set Post Context').first().json.postId }}"
       },
       "id": "etg10-tg10-etg0-tg10-000000000010",
-      "name": "Release Social Lock — TG",
+      "name": "Release Social Lock \u2014 TG",
       "type": "n8n-nodes-base.redis",
       "typeVersion": 1,
-      "position": [3320, 720],
+      "position": [
+        3320,
+        720
+      ],
       "credentials": {
         "redis": {
-          "id": "",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "Redis"
         }
       }
@@ -748,10 +847,13 @@
     {
       "parameters": {},
       "id": "etg11-tg11-etg1-tg11-000000000011",
-      "name": "Telegram Complete — Exit",
+      "name": "Telegram Complete \u2014 Exit",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [3560, 720]
+      "position": [
+        3560,
+        720
+      ]
     },
     {
       "parameters": {},
@@ -759,7 +861,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [200, 1200]
+      "position": [
+        200,
+        1200
+      ]
     },
     {
       "parameters": {
@@ -774,239 +879,394 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
-      "position": [440, 1200],
+      "position": [
+        440,
+        1200
+      ],
       "credentials": {
         "postgres": {
-          "id": "",
-          "name": "Bookings DB"
+          "id": "9qvzHACQwY5XcPoG",
+          "name": "Bookings DB (n8n_bookings)"
         }
       }
     }
   ],
   "connections": {
-    "Cron — Poll Due Social Posts": {
+    "Cron \u2014 Poll Due Social Posts": {
       "main": [
         [
-          { "node": "Query Due SocialPost", "type": "main", "index": 0 }
+          {
+            "node": "Query Due SocialPost",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Query Due SocialPost": {
       "main": [
         [
-          { "node": "Any Due?", "type": "main", "index": 0 }
+          {
+            "node": "Any Due?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Any Due?": {
       "main": [
         [
-          { "node": "Set Post Context", "type": "main", "index": 0 }
+          {
+            "node": "Set Post Context",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "No Posts Due — Exit", "type": "main", "index": 0 }
+          {
+            "node": "No Posts Due \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Set Post Context": {
       "main": [
         [
-          { "node": "Check Social Lock", "type": "main", "index": 0 }
+          {
+            "node": "Check Social Lock",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Check Social Lock": {
       "main": [
         [
-          { "node": "Lock Free?", "type": "main", "index": 0 }
+          {
+            "node": "Lock Free?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Lock Free?": {
       "main": [
         [
-          { "node": "Acquire Social Lock", "type": "main", "index": 0 }
+          {
+            "node": "Acquire Social Lock",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Lock Busy — Exit", "type": "main", "index": 0 }
+          {
+            "node": "Lock Busy \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Acquire Social Lock": {
       "main": [
         [
-          { "node": "Switch on Platform", "type": "main", "index": 0 }
+          {
+            "node": "Switch on Platform",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Switch on Platform": {
       "main": [
         [
-          { "node": "Compose FB Body", "type": "main", "index": 0 }
+          {
+            "node": "Compose FB Body",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Escape MarkdownV2", "type": "main", "index": 0 }
+          {
+            "node": "Escape MarkdownV2",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Log Platform Deferred", "type": "main", "index": 0 }
+          {
+            "node": "Log Platform Deferred",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Log Platform Deferred": {
       "main": [
         [
-          { "node": "Platform Stub — Exit", "type": "main", "index": 0 }
+          {
+            "node": "Platform Stub \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Compose FB Body": {
       "main": [
         [
-          { "node": "Publish to Facebook", "type": "main", "index": 0 }
+          {
+            "node": "Publish to Facebook",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Publish to Facebook": {
       "main": [
         [
-          { "node": "Update Twenty — FB Published", "type": "main", "index": 0 }
+          {
+            "node": "Update Twenty \u2014 FB Published",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Permanent FB Error?", "type": "main", "index": 0 }
+          {
+            "node": "Permanent FB Error?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Update Twenty — FB Published": {
+    "Update Twenty \u2014 FB Published": {
       "main": [
         [
-          { "node": "Check Lock Before Release — FB", "type": "main", "index": 0 }
+          {
+            "node": "Check Lock Before Release \u2014 FB",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Permanent FB Error?": {
       "main": [
         [
-          { "node": "Log FB System Incident", "type": "main", "index": 0 }
+          {
+            "node": "Log FB System Incident",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Log FB Error", "type": "main", "index": 0 }
+          {
+            "node": "Log FB Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Log FB System Incident": {
       "main": [
         [
-          { "node": "Log FB Error", "type": "main", "index": 0 }
+          {
+            "node": "Log FB Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Log FB Error": {
       "main": [
         [
-          { "node": "Check Lock Before Release — FB", "type": "main", "index": 0 }
+          {
+            "node": "Check Lock Before Release \u2014 FB",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Check Lock Before Release — FB": {
+    "Check Lock Before Release \u2014 FB": {
       "main": [
         [
-          { "node": "Token Match? — FB", "type": "main", "index": 0 }
+          {
+            "node": "Token Match? \u2014 FB",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Token Match? — FB": {
+    "Token Match? \u2014 FB": {
       "main": [
         [
-          { "node": "Release Social Lock — FB", "type": "main", "index": 0 }
+          {
+            "node": "Release Social Lock \u2014 FB",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Lock Expired — Exit FB", "type": "main", "index": 0 }
+          {
+            "node": "Lock Expired \u2014 Exit FB",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Release Social Lock — FB": {
+    "Release Social Lock \u2014 FB": {
       "main": [
         [
-          { "node": "FB Complete — Exit", "type": "main", "index": 0 }
+          {
+            "node": "FB Complete \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Escape MarkdownV2": {
       "main": [
         [
-          { "node": "Publish to Telegram", "type": "main", "index": 0 }
+          {
+            "node": "Publish to Telegram",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Publish to Telegram": {
       "main": [
         [
-          { "node": "Update Twenty — Telegram Published", "type": "main", "index": 0 }
+          {
+            "node": "Update Twenty \u2014 Telegram Published",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Permanent Telegram Error?", "type": "main", "index": 0 }
+          {
+            "node": "Permanent Telegram Error?",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Update Twenty — Telegram Published": {
+    "Update Twenty \u2014 Telegram Published": {
       "main": [
         [
-          { "node": "Check Lock Before Release — TG", "type": "main", "index": 0 }
+          {
+            "node": "Check Lock Before Release \u2014 TG",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Permanent Telegram Error?": {
       "main": [
         [
-          { "node": "Log Telegram System Incident", "type": "main", "index": 0 }
+          {
+            "node": "Log Telegram System Incident",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Log Telegram Error", "type": "main", "index": 0 }
+          {
+            "node": "Log Telegram Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Log Telegram System Incident": {
       "main": [
         [
-          { "node": "Log Telegram Error", "type": "main", "index": 0 }
+          {
+            "node": "Log Telegram Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Log Telegram Error": {
       "main": [
         [
-          { "node": "Check Lock Before Release — TG", "type": "main", "index": 0 }
+          {
+            "node": "Check Lock Before Release \u2014 TG",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Check Lock Before Release — TG": {
+    "Check Lock Before Release \u2014 TG": {
       "main": [
         [
-          { "node": "Token Match? — TG", "type": "main", "index": 0 }
+          {
+            "node": "Token Match? \u2014 TG",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Token Match? — TG": {
+    "Token Match? \u2014 TG": {
       "main": [
         [
-          { "node": "Release Social Lock — TG", "type": "main", "index": 0 }
+          {
+            "node": "Release Social Lock \u2014 TG",
+            "type": "main",
+            "index": 0
+          }
         ],
         [
-          { "node": "Lock Expired — Exit TG", "type": "main", "index": 0 }
+          {
+            "node": "Lock Expired \u2014 Exit TG",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
-    "Release Social Lock — TG": {
+    "Release Social Lock \u2014 TG": {
       "main": [
         [
-          { "node": "Telegram Complete — Exit", "type": "main", "index": 0 }
+          {
+            "node": "Telegram Complete \u2014 Exit",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Error Trigger": {
       "main": [
         [
-          { "node": "Write Error Trigger Log", "type": "main", "index": 0 }
+          {
+            "node": "Write Error Trigger Log",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
@@ -1016,9 +1276,15 @@
     "executionOrder": "v1"
   },
   "tags": [
-    { "name": "hr-automation" },
-    { "name": "workflow-e" },
-    { "name": "version-1mm" }
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-e"
+    },
+    {
+      "name": "version-1mm"
+    }
   ],
   "meta": {
     "templateId": "workflow-e-social-posting"

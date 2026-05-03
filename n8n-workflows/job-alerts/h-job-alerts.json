@@ -405,7 +405,7 @@
             "workflowName": "workflow_h_alerts",
             "maxTokens": 120,
             "systemPrompt": "You are composing a short WhatsApp re-engagement message for a Ghanaian HR firm. Rules: 1) Address candidate by first name only. 2) Reference the previous role type and approximate timeframe (e.g. 'a few weeks ago', 'last month', 'recently') — never the client name. 3) Mention the new role title only — never the client name. 4) End with a clear YES or NO prompt. 5) 2-4 sentences maximum. 6) Plain Ghanaian English. 7) No emojis in body. 8) Never mention candidate score, tier, or salary.",
-            "messages": "={{ [{ role: 'user', content: 'Candidate first name: ' + ($('SplitInBatches — Candidates').first()?.json?.candidate?.name?.split(' ')?.[0] ?? 'there') + '\\nPrevious role: ' + ($('SplitInBatches — Candidates').first()?.json?.jobPosting?.title ?? 'a role we had earlier') + '\\nNew role: ' + ($('SplitInBatches — Postings').first()?.json?.title ?? 'a new opening') + '\\nWrite the WhatsApp re-engagement message now.' }] }}"
+            "messages": "={{ [{ role: 'user', content: 'Candidate first name: ' + ($json.candidateFirstName ?? 'there') + '\\nPrevious role: ' + ($json.prevJobTitle ?? 'a role we had earlier') + '\\nNew role: ' + ($json.newPostingTitle ?? 'a new opening') + '\\nWrite the WhatsApp re-engagement message now.' }] }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -488,7 +488,7 @@
         },
         "sendBody": true,
         "contentType": "json",
-        "jsonBody": "={{ { query: 'mutation { createApplication(data: { candidate: { connect: { id: \"' + ($(\\'SplitInBatches — Candidates\\').first()?.json?.candidate?.id ?? '') + '\" } }, jobPosting: { connect: { id: \"' + ($(\\'SplitInBatches — Postings\\').first()?.json?.id ?? '') + '\" } }, status: RE_ENGAGEMENT_OFFERED, reEngagedAt: \"' + new Date().toISOString() + '\" }) { id } }' } }}",
+        "jsonBody": "={{ { query: 'mutation { createApplication(data: { candidate: { connect: { id: \"' + ($(\\'Enrich Candidate Item\\').first()?.json?.candidateId ?? '') + '\" } }, jobPosting: { connect: { id: \"' + ($(\\'Enrich Candidate Item\\').first()?.json?.newPostingId ?? '') + '\" } }, status: RE_ENGAGEMENT_OFFERED, reEngagedAt: \"' + new Date().toISOString() + '\" }) { id } }' } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -520,7 +520,7 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "to": "={{ $('SplitInBatches — Candidates').first()?.json?.candidate?.whatsappNumberE164 ?? '' }}",
+            "to": "={{ $('Enrich Candidate Item').first()?.json?.whatsappNumber ?? '' }}",
             "body": "={{ $('Compose WA Message').first()?.json?.content?.[0]?.text ?? $('Compose WA Message').first()?.json?.content ?? '' }}",
             "templateName": "re_engagement_v1",
             "conversationId": ""
@@ -589,7 +589,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO candidate_facts (twenty_candidate_id, facts)\nVALUES ($1, jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int))\nON CONFLICT (twenty_candidate_id) DO UPDATE\n  SET facts = candidate_facts.facts\n    || jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int),\n    updated_at = NOW()",
         "options": {
-          "queryReplacement": "={{ [\n  $('SplitInBatches — Candidates').first()?.json?.candidate?.id ?? '00000000-0000-0000-0000-000000000000',\n  new Date().toISOString(),\n  (() => {\n    const prevCount = parseInt($('Read Anti-Spam State').first()?.json?.reengagement_count_ytd ?? '0', 10);\n    const prevDate = $('Read Anti-Spam State').first()?.json?.last_reengaged_at;\n    const currentYear = $('Compute Scan Window').first()?.json?.currentYear;\n    const prevYear = prevDate ? new Date(prevDate).getFullYear() : 0;\n    return prevYear < currentYear ? 1 : prevCount + 1;\n  })()\n] }}"
+          "queryReplacement": "={{ [\n  $('Enrich Candidate Item').first()?.json?.candidateId ?? '00000000-0000-0000-0000-000000000000',\n  new Date().toISOString(),\n  (() => {\n    const prevCount = $('Enrich Candidate Item').first()?.json?.antispamCount ?? 0;\n    const prevDate = $('Enrich Candidate Item').first()?.json?.antispamLastDate;\n    const currentYear = $('Enrich Candidate Item').first()?.json?.currentYear ?? new Date().getFullYear();\n    const prevYear = prevDate ? new Date(prevDate).getFullYear() : 0;\n    return prevYear < currentYear ? 1 : prevCount + 1;\n  })()\n] }}"
         }
       }
     },
@@ -1021,6 +1021,80 @@
         },
         "options": {}
       }
+    },
+    {
+      "id": "h0000015b-015b-015b-015b-00000000015b",
+      "name": "Enrich Candidate Item",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3910,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "enrich-cand-id",
+              "name": "candidateId",
+              "value": "={{ $json.candidate?.id ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-wa-num",
+              "name": "whatsappNumber",
+              "value": "={{ ($json.candidate?.whatsappNumberE164 ?? '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-first-name",
+              "name": "candidateFirstName",
+              "value": "={{ ($json.candidate?.name ?? 'there').split(' ')[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-prev-role",
+              "name": "prevJobTitle",
+              "value": "={{ $json.jobPosting?.title ?? 'a role we had earlier' }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-posting-id",
+              "name": "newPostingId",
+              "value": "={{ $('SplitInBatches — Postings').first()?.json?.id ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-posting-title",
+              "name": "newPostingTitle",
+              "value": "={{ $('SplitInBatches — Postings').first()?.json?.title ?? 'a new opening' }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-spam-count",
+              "name": "antispamCount",
+              "value": "={{ parseInt($('Read Anti-Spam State').first()?.json?.reengagement_count_ytd ?? '0', 10) }}",
+              "type": "number"
+            },
+            {
+              "id": "enrich-spam-date",
+              "name": "antispamLastDate",
+              "value": "={{ $('Read Anti-Spam State').first()?.json?.last_reengaged_at ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "enrich-year",
+              "name": "currentYear",
+              "value": "={{ $('Compute Scan Window').first()?.json?.currentYear ?? new Date().getFullYear() }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -1210,7 +1284,7 @@
       "main": [
         [
           {
-            "node": "Compose WA Message",
+            "node": "Enrich Candidate Item",
             "type": "main",
             "index": 0
           }
@@ -1454,6 +1528,17 @@
         [
           {
             "node": "Log Timeout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Candidate Item": {
+      "main": [
+        [
+          {
+            "node": "Compose WA Message",
             "type": "main",
             "index": 0
           }

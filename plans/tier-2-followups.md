@@ -219,6 +219,15 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** workflow-builder.
 - **Reference:** ADR-0011 §"Dual trigger" (Q2a decision); Workflow C design note §2.
 
+### T2-D-4. Workflow D — Calibration-gate ReviewTask for outbound WA sends
+
+- **Description:** CLAUDE.md Rule 6 requires human review of every user-facing output for the first two weeks after launch. Workflow D sends four categories of outbound WA messages (slot offer, confirmation, slot-taken, slots-expired) without an intervening `pre_send_review` ReviewTask gate. `docs/04-operations/calibration.md` classifies D confirmations as "spot-reviewed", but CLAUDE.md is the override. A ReviewTask gate (kind=`pre_send_review`, resolved by the Operations Lead before the WA send fires) is required on all four send paths for the calibration window. After the calibration window closes, the gate can be removed without an ADR.
+- **Files affected:** `n8n-workflows/scheduling/d-scheduling.json` — add a ReviewTask INSERT + poll loop (or approval webhook) before each wa-send subflow call on the offer and confirmation paths. A simpler v1 mitigation: write to `event_log` with `level='review_required'` and have the ops lead review the log daily rather than blocking the send.
+- **Blocking:** No for build — tester AC pass does not require this gate. Blocking for production launch if calibration window has not started.
+- **Target window:** Before first production use. Must land before Workflow D is enabled on the live stack.
+- **Owner:** workflow-builder.
+- **Reference:** Tester round flagged 2026-05-02; CLAUDE.md §"Non-negotiable invariants" rule 6.
+
 ### T2-23. Workflow C — SkillTag loop deferred (createCandidateSkillTag)
 
 - **Description:** Workflow C's completion path was designed to tag the candidate in Twenty with a skill tag based on the job category (e.g. `driver`, `warehouse`). The `createCandidateSkillTag` mutation requires a `skillTagId` (the Twenty UUID for the matching SkillTag object). In v1 there is no lookup node to resolve `script_id → skillTagId`, so the loop was deferred. The candidate is scored and tiered but no SkillTag is written to Twenty.

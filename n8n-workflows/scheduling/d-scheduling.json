@@ -23,7 +23,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -47,7 +47,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "HRA Redis"
         }
       },
@@ -88,7 +88,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -154,7 +154,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "HRA Redis"
         }
       },
@@ -187,8 +187,8 @@
               "leftValue": "={{ $json.value ?? '' }}",
               "rightValue": "",
               "operator": {
-                "type": "string",
-                "operation": "isEmpty"
+                "operation": "equals",
+                "type": "string"
               }
             }
           ]
@@ -218,7 +218,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "HRA Redis"
         }
       },
@@ -242,13 +242,13 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT s.id, s.starts_at, s.ends_at, s.interviewer_id, s.offer_expires_at, i.display_name as interviewer_name FROM slot s JOIN interviewer i ON s.interviewer_id = i.id WHERE s.offered_to_application_id = $1 AND s.status = 'offered' ORDER BY s.offered_at DESC LIMIT 3",
+        "query": "SELECT s.id, s.starts_at, s.ends_at, s.interviewer_id, s.offer_expires_at, i.display_name as interviewer_name FROM slot s JOIN interviewer i ON s.interviewer_id = i.id WHERE s.offered_to_application_id = $1 AND s.status = 'offered' AND s.offer_expires_at > NOW() ORDER BY s.offered_at DESC LIMIT 3",
         "options": {
           "queryReplacement": "={{ [$('Claim Scheduling Reply Row').first()?.json?.application_id ?? ''] }}"
         }
@@ -299,7 +299,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -354,7 +354,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "HRA Redis"
         }
       },
@@ -374,7 +374,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -397,7 +397,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "const inbox = $('Claim Scheduling Reply Row').first()?.json;\nconst messageBody = (inbox?.payload?.messageBody ?? '').trim();\nconst slots = $('Fetch Offered Slots for Application').all().map(i => i.json);\n\nconst regexMatch = messageBody.match(/^\\s*([123])\\s*$/);\nlet slotIndex = null;\nif (regexMatch) {\n  slotIndex = parseInt(regexMatch[1], 10);\n}\n\nconst ordinalMap = {\n  'first': 1, 'one': 1, '1st': 1,\n  'second': 2, 'two': 2, '2nd': 2,\n  'third': 3, 'three': 3, '3rd': 3\n};\nif (!slotIndex) {\n  const lowerMsg = messageBody.toLowerCase();\n  for (const [word, idx] of Object.entries(ordinalMap)) {\n    if (lowerMsg.includes(word)) {\n      slotIndex = idx;\n      break;\n    }\n  }\n}\n\nreturn [{ json: {\n  messageBody,\n  slotIndex,\n  regexMatched: slotIndex !== null,\n  slots,\n  candidateId: inbox?.candidate_id ?? '',\n  applicationId: inbox?.application_id ?? '',\n  inboxId: inbox?.id,\n  repromptCount: inbox?.payload?.reprompt_count ?? 0\n} }];"
+        "jsCode": "const inbox = $('Claim Scheduling Reply Row').first()?.json;\nconst messageBody = (inbox?.payload?.messageBody ?? '').trim();\nconst slots = $('Fetch Offered Slots for Application').all().map(i => i.json);\n\nconst regexMatch = messageBody.match(/^\\s*([123])\\s*$/);\nlet slotIndex = null;\nif (regexMatch) {\n  slotIndex = parseInt(regexMatch[1], 10);\n}\n\nconst ordinalMap = [\n  ['second', 2], ['2nd', 2], ['two', 2],\n  ['third', 3],  ['3rd', 3], ['three', 3],\n  ['first', 1],  ['1st', 1], ['one', 1]\n];\nif (!slotIndex) {\n  const lowerMsg = messageBody.toLowerCase();\n  for (const [word, idx] of ordinalMap) {\n    if (new RegExp('\\b' + word + '\\b').test(lowerMsg)) {\n      slotIndex = idx;\n      break;\n    }\n  }\n}\n\nreturn [{ json: {\n  messageBody,\n  slotIndex,\n  regexMatched: slotIndex !== null,\n  slots,\n  candidateId: inbox?.candidate_id ?? '',\n  applicationId: inbox?.application_id ?? '',\n  inboxId: inbox?.id,\n  repromptCount: inbox?.payload?.reprompt_count ?? 0\n} }];"
       }
     },
     {
@@ -445,7 +445,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},
@@ -567,7 +567,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -622,7 +622,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "HRA Redis"
         }
       },
@@ -642,7 +642,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -712,7 +712,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -769,7 +769,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -824,7 +824,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "HRA Redis"
         }
       },
@@ -844,7 +844,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -868,7 +868,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -893,7 +893,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -992,7 +992,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1113,7 +1113,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1175,7 +1175,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1214,7 +1214,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -1269,7 +1269,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1293,7 +1293,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1355,7 +1355,7 @@
       ],
       "credentials": {
         "redis": {
-          "id": "PLACEHOLDER_REDIS_CRED",
+          "id": "z1cSQv7BNcP3j2XY",
           "name": "HRA Redis"
         }
       },
@@ -1375,7 +1375,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1528,7 +1528,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1595,7 +1595,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1688,7 +1688,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1724,7 +1724,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1794,7 +1794,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -1849,7 +1849,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -1906,7 +1906,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -2058,7 +2058,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -2119,7 +2119,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },
@@ -2156,7 +2156,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "PLACEHOLDER_BOOKINGS_DB_CRED",
+          "id": "9qvzHACQwY5XcPoG",
           "name": "Bookings DB (n8n_bookings)"
         }
       },

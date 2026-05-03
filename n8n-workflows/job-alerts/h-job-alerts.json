@@ -262,7 +262,7 @@
       ],
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const scanWindow = $('Compute Scan Window').first()?.json ?? {};\nconst ninetyDaysAgo = new Date(scanWindow.ninetyDaysAgo);\nconst fourteenDaysAgo = new Date(scanWindow.fourteenDaysAgo);\nconst currentYear = scanWindow.currentYear;\nconst busyStatuses = ['INTERVIEWING', 'OFFERED', 'PLACED'];\nconst currentPosting = $('SplitInBatches — Postings').first()?.json;\nconst currentCategory = currentPosting?.category;\n\nconst edges = $('Query Eligible Applications').first()?.json?.data?.applications?.edges ?? [];\nlet candidates = edges.map(e => e.node).filter(app => {\n  const c = app.candidate;\n  if (!c) return false;\n  if (c.consentStatus !== 'GRANTED') return false;\n  if (c.dataRetentionPolicy === 'PENDING_DELETION') return false;\n  if (c.lastActivityAt && new Date(c.lastActivityAt) < ninetyDaysAgo) return false;\n  if (currentCategory && app.jobPosting?.category !== currentCategory) return false;\n  const appStatuses = (c.applications?.edges ?? []).map(ae => ae.node?.status);\n  if (appStatuses.some(s => busyStatuses.includes(s))) return false;\n  if (app.reEngagedAt && new Date(app.reEngagedAt) > fourteenDaysAgo) return false;\n  return true;\n});\n\nconst tierOrder = { TOP_20: 0, SOLID: 1, DEVELOPING: 2 };\ncandidates.sort((a, b) => {\n  const ta = tierOrder[a.candidate?.strengthTier] ?? 3;\n  const tb = tierOrder[b.candidate?.strengthTier] ?? 3;\n  if (ta !== tb) return ta - tb;\n  const da = new Date(a.candidate?.lastActivityAt || 0);\n  const db = new Date(b.candidate?.lastActivityAt || 0);\n  return db - da;\n});\n\ncandidates = candidates.slice(0, 20);\nreturn [{ json: { candidates } }];\n"
+        "jsCode": "const scanWindow = $('Compute Scan Window').first()?.json ?? {};\nconst ninetyDaysAgo = new Date(scanWindow.ninetyDaysAgo);\nconst fourteenDaysAgo = new Date(scanWindow.fourteenDaysAgo);\nconst currentYear = scanWindow.currentYear;\nconst busyStatuses = ['INTERVIEWING', 'OFFERED', 'PLACED'];\nconst currentPosting = $('SplitInBatches — Postings').first()?.json;\nconst currentCategory = currentPosting?.category;\n\nconst edges = $('Query Eligible Applications').first()?.json?.data?.applications?.edges ?? [];\nlet candidates = edges.map(e => e.node).filter(app => {\n  const c = app.candidate;\n  if (!c) return false;\n  if (c.consentStatus !== 'GRANTED') return false;\n  if (c.dataRetentionPolicy === 'PENDING_DELETION') return false;\n  if (c.lastActivityAt && new Date(c.lastActivityAt) < ninetyDaysAgo) return false;\n  if (currentCategory && app.jobPosting?.category !== currentCategory) return false;\n  const appStatuses = (c.applications?.edges ?? []).map(ae => ae.node?.status);\n  if (appStatuses.some(s => busyStatuses.includes(s))) return false;\n  if (app.reEngagedAt && new Date(app.reEngagedAt) > fourteenDaysAgo) return false;\n  return true;\n});\n\nconst tierOrder = { TOP_20: 0, SOLID: 1, DEVELOPING: 2 };\ncandidates.sort((a, b) => {\n  const ta = tierOrder[a.candidate?.strengthTier] ?? 3;\n  const tb = tierOrder[b.candidate?.strengthTier] ?? 3;\n  if (ta !== tb) return ta - tb;\n  const da = new Date(a.candidate?.lastActivityAt || 0);\n  const db = new Date(b.candidate?.lastActivityAt || 0);\n  return db - da;\n});\n\ncandidates = candidates.slice(0, 20);\nconst postingId = $('SplitInBatches — Postings').first()?.json?.id ?? '';\nreturn [{ json: { candidates, postingId } }];\n"
       }
     },
     {
@@ -613,7 +613,7 @@
         "operation": "executeQuery",
         "query": "INSERT INTO candidate_facts (twenty_candidate_id, facts)\nVALUES ('system-h-dedup', jsonb_build_object('h_processed_postings', jsonb_build_array($1::text)))\nON CONFLICT (twenty_candidate_id) DO UPDATE\n  SET facts = jsonb_set(\n    candidate_facts.facts,\n    '{h_processed_postings}',\n    COALESCE(candidate_facts.facts->'h_processed_postings', '[]'::jsonb) || jsonb_build_array($1::text)\n  ),\n  updated_at = NOW()",
         "options": {
-          "queryReplacement": "={{ [$('SplitInBatches — Postings').first()?.json?.id ?? ''] }}"
+          "queryReplacement": "={{ [$json.postingId ?? ''] }}"
         }
       }
     },
@@ -1095,6 +1095,58 @@
         "includeOtherFields": false,
         "options": {}
       }
+    },
+    {
+      "id": "h0000015d-015d-015d-015d-00000000015d",
+      "name": "Carry Posting ID — Skip",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3900,
+        420
+      ],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "carry-posting-skip",
+              "name": "postingId",
+              "value": "={{ $('SplitInBatches — Postings').first()?.json?.id ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000019b-019b-019b-019b-00000000019b",
+      "name": "Carry Posting ID — Back",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4730,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "carry-posting-back",
+              "name": "postingId",
+              "value": "={{ $('Enrich Candidate Item').first()?.json?.newPostingId ?? '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -1291,7 +1343,7 @@
         ],
         [
           {
-            "node": "SplitInBatches — Candidates",
+            "node": "Carry Posting ID — Skip",
             "type": "main",
             "index": 0
           }
@@ -1335,7 +1387,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Candidates",
+            "node": "Carry Posting ID — Back",
             "type": "main",
             "index": 0
           }
@@ -1539,6 +1591,28 @@
         [
           {
             "node": "Compose WA Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carry Posting ID — Skip": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches — Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Carry Posting ID — Back": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches — Candidates",
             "type": "main",
             "index": 0
           }

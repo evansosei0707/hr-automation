@@ -1,0 +1,1026 @@
+{
+  "name": "Workflow E — Social Posting",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "e000-0001-e001-0001-000000000001",
+      "name": "Cron — Poll Due Social Posts",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'query FindDueSocialPost { socialPosts(filter: { and: [{ platform: { in: [FACEBOOK, TELEGRAM] } }, { scheduledFor: { lte: \"' + new Date().toISOString() + '\" } }, { publishedAt: { is: NULL } }] }, orderBy: { scheduledFor: AscNullsLast }, first: 1) { edges { node { id body { markdown } platform scheduledFor } } } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "e000-0002-e002-0002-000000000002",
+      "name": "Query Due SocialPost",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-any-due",
+              "leftValue": "={{ $json.data?.socialPosts?.edges?.[0]?.node?.id ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e000-0003-e003-0003-000000000003",
+      "name": "Any Due?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {},
+      "id": "e000-0004-e004-0004-000000000004",
+      "name": "No Posts Due — Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [920, 420]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-postId",
+              "name": "postId",
+              "value": "={{ $json.data.socialPosts.edges[0].node.id }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-postBody",
+              "name": "postBody",
+              "value": "={{ $json.data.socialPosts.edges[0].node.body?.markdown ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-platform",
+              "name": "platform",
+              "value": "={{ $json.data.socialPosts.edges[0].node.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-scheduledFor",
+              "name": "scheduledFor",
+              "value": "={{ $json.data.socialPosts.edges[0].node.scheduledFor }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e000-0005-e005-0005-000000000005",
+      "name": "Set Post Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:social:' + $json.postId }}",
+        "propertyName": "value"
+      },
+      "id": "e000-0006-e006-0006-000000000006",
+      "name": "Check Social Lock",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1160, 300],
+      "credentials": {
+        "redis": {
+          "id": "",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-lock-free",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e000-0007-e007-0007-000000000007",
+      "name": "Lock Free?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1400, 300]
+    },
+    {
+      "parameters": {},
+      "id": "e000-0008-e008-0008-000000000008",
+      "name": "Lock Busy — Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1640, 420]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ 'hra:social:' + $('Set Post Context').first().json.postId }}",
+        "value": "={{ $execution.id }}",
+        "expire": true,
+        "ttl": 300
+      },
+      "id": "e000-0009-e009-0009-000000000009",
+      "name": "Acquire Social Lock",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [1640, 300],
+      "credentials": {
+        "redis": {
+          "id": "",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "outputKey": "FACEBOOK",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "cond-fb",
+                    "leftValue": "={{ $('Set Post Context').first().json.platform }}",
+                    "rightValue": "FACEBOOK",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            },
+            {
+              "outputKey": "TELEGRAM",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "cond-tg",
+                    "leftValue": "={{ $('Set Post Context').first().json.platform }}",
+                    "rightValue": "TELEGRAM",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "e000-0010-e010-0010-000000000010",
+      "name": "Switch on Platform",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1880, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, execution_id, level, event) VALUES ('workflow_e_social_posting', $1, 'info', 'platform_deferred')",
+        "options": {
+          "queryReplacement": "={{ [$execution.id] }}"
+        }
+      },
+      "id": "e000-0011-e011-0011-000000000011",
+      "name": "Log Platform Deferred",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [2120, 540],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Bookings DB"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e000-0012-e012-0012-000000000012",
+      "name": "Platform Stub — Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2360, 540]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-fbMsg",
+              "name": "fbMessage",
+              "value": "={{ $('Set Post Context').first().json.postBody.substring(0, 5000) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "efb01-fb01-efb1-fb01-000000000001",
+      "name": "Compose FB Body",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v20.0/{{ $env.META_PAGE_ID }}/feed",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { message: $json.fbMessage, access_token: $env.META_PAGE_ACCESS_TOKEN } }}",
+        "options": {
+          "timeout": 20000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 2000
+          }
+        }
+      },
+      "id": "efb02-fb02-efb2-fb02-000000000002",
+      "name": "Publish to Facebook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueErrorOutput",
+      "position": [2360, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation UpdateSocialPostFB($id: ID!, $publishedAt: DateTime!, $postId: String!) { updateSocialPost(id: $id, data: { publishedAt: $publishedAt externalPostId: $postId }) { id publishedAt externalPostId } }', variables: { id: $('Set Post Context').first().json.postId, publishedAt: new Date().toISOString(), postId: $json.id } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "efb03-fb03-efb3-fb03-000000000003",
+      "name": "Update Twenty — FB Published",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2600, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ('workflow_e_social_posting', $1, 'Publish to Facebook', $2, $3, $4::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [$execution.id, $('Publish to Facebook').first()?.json?.message ?? 'Unknown FB error', $('Publish to Facebook').first()?.json?.error?.stack?.split('\\n')[0] ?? '', '{\"postId\":\"' + $('Set Post Context').first().json.postId + '\",\"errorCode\":' + ($('Publish to Facebook').first()?.json?.error?.error?.code ?? 'null') + '}'] }}"
+        }
+      },
+      "id": "efb04-fb04-efb4-fb04-000000000004",
+      "name": "Log FB Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [2360, 480],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Bookings DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "cond-fb-190",
+              "leftValue": "={{ $('Publish to Facebook').first()?.json?.error?.error?.code ?? 0 }}",
+              "rightValue": 190,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "cond-fb-200",
+              "leftValue": "={{ $('Publish to Facebook').first()?.json?.error?.error?.code ?? 0 }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "efb05-fb05-efb5-fb05-000000000005",
+      "name": "Permanent FB Error?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2600, 480]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO system_incident (kind, severity, summary, context) VALUES ('social_post_permanent_failure', 'critical', $1, $2::jsonb)",
+        "options": {
+          "queryReplacement": "={{ ['Facebook API permanent error ' + ($('Publish to Facebook').first()?.json?.error?.error?.code ?? 'unknown') + ' for post ' + $('Set Post Context').first().json.postId, '{\"platform\":\"FACEBOOK\",\"errorCode\":' + ($('Publish to Facebook').first()?.json?.error?.error?.code ?? 'null') + ',\"postId\":\"' + $('Set Post Context').first().json.postId + '\"}'] }}"
+        }
+      },
+      "id": "efb06-fb06-efb6-fb06-000000000006",
+      "name": "Log FB System Incident",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [2840, 600],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Bookings DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:social:' + $('Set Post Context').first().json.postId }}",
+        "propertyName": "value"
+      },
+      "id": "efb07-fb07-efb7-fb07-000000000007",
+      "name": "Check Lock Before Release — FB",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [2840, 300],
+      "credentials": {
+        "redis": {
+          "id": "",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-fb-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "efb08-fb08-efb8-fb08-000000000008",
+      "name": "Token Match? — FB",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3080, 300]
+    },
+    {
+      "parameters": {},
+      "id": "efb09-fb09-efb9-fb09-000000000009",
+      "name": "Lock Expired — Exit FB",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3320, 420]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:social:' + $('Set Post Context').first().json.postId }}"
+      },
+      "id": "efb10-fb10-efb0-fb10-000000000010",
+      "name": "Release Social Lock — FB",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [3320, 300],
+      "credentials": {
+        "redis": {
+          "id": "",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "efb11-fb11-efb1-fb11-000000000011",
+      "name": "FB Complete — Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3560, 300]
+    },
+    {
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const SPECIAL = /[_*\\[\\]()~`>#+\\-=|{}.!\\\\]/g;\nconst raw = String($('Set Post Context').first().json.postBody ?? '');\nconst truncated = raw.length > 4000 ? raw.substring(0, 4000) + ' [...]' : raw;\nconst escaped = truncated.replace(SPECIAL, '\\\\$&');\nreturn [{ json: { ...$('Set Post Context').first().json, escapedBody: escaped } }];"
+      },
+      "id": "etg01-tg01-etg1-tg01-000000000001",
+      "name": "Escape MarkdownV2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2120, 720]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { chat_id: $env.TELEGRAM_CHANNEL_ID, text: $json.escapedBody, parse_mode: 'MarkdownV2', disable_web_page_preview: true } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "etg02-tg02-etg2-tg02-000000000002",
+      "name": "Publish to Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueErrorOutput",
+      "position": [2360, 720]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: 'mutation UpdateSocialPostTG($id: ID!, $publishedAt: DateTime!, $postId: String!) { updateSocialPost(id: $id, data: { publishedAt: $publishedAt externalPostId: $postId }) { id publishedAt externalPostId } }', variables: { id: $('Set Post Context').first().json.postId, publishedAt: new Date().toISOString(), postId: $json.result?.message_id?.toString() ?? '' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "etg03-tg03-etg3-tg03-000000000003",
+      "name": "Update Twenty — Telegram Published",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2600, 720]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ('workflow_e_social_posting', $1, 'Publish to Telegram', $2, $3, $4::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [$execution.id, $('Publish to Telegram').first()?.json?.message ?? 'Unknown Telegram error', $('Publish to Telegram').first()?.json?.error?.stack?.split('\\n')[0] ?? '', '{\"postId\":\"' + $('Set Post Context').first().json.postId + '\",\"statusCode\":' + ($('Publish to Telegram').first()?.json?.statusCode ?? 'null') + '}'] }}"
+        }
+      },
+      "id": "etg04-tg04-etg4-tg04-000000000004",
+      "name": "Log Telegram Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [2360, 900],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Bookings DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-tg-403",
+              "leftValue": "={{ $('Publish to Telegram').first()?.json?.statusCode ?? 0 }}",
+              "rightValue": 403,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "etg05-tg05-etg5-tg05-000000000005",
+      "name": "Permanent Telegram Error?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2600, 900]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO system_incident (kind, severity, summary, context) VALUES ('social_post_permanent_failure', 'critical', $1, $2::jsonb)",
+        "options": {
+          "queryReplacement": "={{ ['Telegram 403 bot removed from channel for post ' + $('Set Post Context').first().json.postId, '{\"platform\":\"TELEGRAM\",\"statusCode\":' + ($('Publish to Telegram').first()?.json?.statusCode ?? 403) + ',\"postId\":\"' + $('Set Post Context').first().json.postId + '\"}'] }}"
+        }
+      },
+      "id": "etg06-tg06-etg6-tg06-000000000006",
+      "name": "Log Telegram System Incident",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [2840, 1020],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Bookings DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ 'hra:social:' + $('Set Post Context').first().json.postId }}",
+        "propertyName": "value"
+      },
+      "id": "etg07-tg07-etg7-tg07-000000000007",
+      "name": "Check Lock Before Release — TG",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [2840, 720],
+      "credentials": {
+        "redis": {
+          "id": "",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-tg-token",
+              "leftValue": "={{ $json.value ?? '' }}",
+              "rightValue": "={{ $execution.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "etg08-tg08-etg8-tg08-000000000008",
+      "name": "Token Match? — TG",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3080, 720]
+    },
+    {
+      "parameters": {},
+      "id": "etg09-tg09-etg9-tg09-000000000009",
+      "name": "Lock Expired — Exit TG",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3320, 840]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ 'hra:social:' + $('Set Post Context').first().json.postId }}"
+      },
+      "id": "etg10-tg10-etg0-tg10-000000000010",
+      "name": "Release Social Lock — TG",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [3320, 720],
+      "credentials": {
+        "redis": {
+          "id": "",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "etg11-tg11-etg1-tg11-000000000011",
+      "name": "Telegram Complete — Exit",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [3560, 720]
+    },
+    {
+      "parameters": {},
+      "id": "eerr01-err1-err1-err1-000000000001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [200, 1200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ('workflow_e_social_posting', $1, $2, $3, $4, $5::jsonb)",
+        "options": {
+          "queryReplacement": "={{ [$json.execution?.id ?? '', $json.execution?.lastNodeExecuted ?? '', $json.execution?.error?.message ?? '', $json.execution?.error?.stack?.split('\\n')[0] ?? '', '{\"workflowId\":\"' + ($json.execution?.workflowId ?? '') + '\"}'] }}"
+        }
+      },
+      "id": "eerr02-err2-err2-err2-000000000002",
+      "name": "Write Error Trigger Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "position": [440, 1200],
+      "credentials": {
+        "postgres": {
+          "id": "",
+          "name": "Bookings DB"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron — Poll Due Social Posts": {
+      "main": [
+        [
+          { "node": "Query Due SocialPost", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Query Due SocialPost": {
+      "main": [
+        [
+          { "node": "Any Due?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Any Due?": {
+      "main": [
+        [
+          { "node": "Set Post Context", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "No Posts Due — Exit", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Set Post Context": {
+      "main": [
+        [
+          { "node": "Check Social Lock", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Check Social Lock": {
+      "main": [
+        [
+          { "node": "Lock Free?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Lock Free?": {
+      "main": [
+        [
+          { "node": "Acquire Social Lock", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Lock Busy — Exit", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Acquire Social Lock": {
+      "main": [
+        [
+          { "node": "Switch on Platform", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Switch on Platform": {
+      "main": [
+        [
+          { "node": "Compose FB Body", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Escape MarkdownV2", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Log Platform Deferred", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Platform Deferred": {
+      "main": [
+        [
+          { "node": "Platform Stub — Exit", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Compose FB Body": {
+      "main": [
+        [
+          { "node": "Publish to Facebook", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publish to Facebook": {
+      "main": [
+        [
+          { "node": "Update Twenty — FB Published", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Permanent FB Error?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Update Twenty — FB Published": {
+      "main": [
+        [
+          { "node": "Check Lock Before Release — FB", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Permanent FB Error?": {
+      "main": [
+        [
+          { "node": "Log FB System Incident", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Log FB Error", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log FB System Incident": {
+      "main": [
+        [
+          { "node": "Log FB Error", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log FB Error": {
+      "main": [
+        [
+          { "node": "Check Lock Before Release — FB", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Check Lock Before Release — FB": {
+      "main": [
+        [
+          { "node": "Token Match? — FB", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Token Match? — FB": {
+      "main": [
+        [
+          { "node": "Release Social Lock — FB", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Lock Expired — Exit FB", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Release Social Lock — FB": {
+      "main": [
+        [
+          { "node": "FB Complete — Exit", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Escape MarkdownV2": {
+      "main": [
+        [
+          { "node": "Publish to Telegram", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Publish to Telegram": {
+      "main": [
+        [
+          { "node": "Update Twenty — Telegram Published", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Permanent Telegram Error?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Update Twenty — Telegram Published": {
+      "main": [
+        [
+          { "node": "Check Lock Before Release — TG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Permanent Telegram Error?": {
+      "main": [
+        [
+          { "node": "Log Telegram System Incident", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Log Telegram Error", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Telegram System Incident": {
+      "main": [
+        [
+          { "node": "Log Telegram Error", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Telegram Error": {
+      "main": [
+        [
+          { "node": "Check Lock Before Release — TG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Check Lock Before Release — TG": {
+      "main": [
+        [
+          { "node": "Token Match? — TG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Token Match? — TG": {
+      "main": [
+        [
+          { "node": "Release Social Lock — TG", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Lock Expired — Exit TG", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Release Social Lock — TG": {
+      "main": [
+        [
+          { "node": "Telegram Complete — Exit", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          { "node": "Write Error Trigger Log", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "hr-automation" },
+    { "name": "workflow-e" },
+    { "name": "version-1mm" }
+  ],
+  "meta": {
+    "templateId": "workflow-e-social-posting"
+  }
+}

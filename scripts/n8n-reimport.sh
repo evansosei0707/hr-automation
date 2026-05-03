@@ -134,8 +134,10 @@ print('yes' if settings.get('errorWorkflow') == 'PLACEHOLDER_H_SELF_REF' else 'n
 import json, sys
 resp = json.loads(sys.stdin.read())
 resp['settings']['errorWorkflow'] = '$NEW_ID'
-# Strip fields the API rejects on PUT
-for k in ('createdAt','updatedAt','versionId','meta','pinData','tags'):
+# Strip fields the API rejects on PUT (read-only or ignored)
+for k in ('id','active','createdAt','updatedAt','versionId','meta','pinData','tags',
+          'activeVersionId','versionCounter','triggerCount','shared','activeVersion',
+          'isArchived','description'):
     resp.pop(k, None)
 print(json.dumps(resp))
 " <<< "$(n8n_get "workflows/$NEW_ID")")

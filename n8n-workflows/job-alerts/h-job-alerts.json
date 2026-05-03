@@ -93,7 +93,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "specifyBody": "json"
       }
     },
     {
@@ -246,7 +247,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "specifyBody": "json"
       }
     },
     {
@@ -467,7 +469,7 @@
         4080,
         200
       ],
-      "onError": "continueRegularOutput",
+      "onError": "continueErrorOutput",
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
@@ -494,7 +496,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "specifyBody": "json"
       }
     },
     {
@@ -708,7 +711,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "specifyBody": "json"
       }
     },
     {
@@ -766,7 +770,7 @@
         1480,
         700
       ],
-      "onError": "continueRegularOutput",
+      "onError": "continueErrorOutput",
       "parameters": {
         "method": "POST",
         "url": "={{ $env.TWENTY_API_URL }}/graphql",
@@ -793,7 +797,8 @@
             "maxTries": 2,
             "waitBetweenTries": 1000
           }
-        }
+        },
+        "specifyBody": "json"
       }
     },
     {
@@ -852,6 +857,30 @@
         "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ($1, $2, $3, $4, $5, $6)",
         "options": {
           "queryReplacement": "={{ [\n  'workflow_h_alerts',\n  $json.execution?.id ?? '',\n  $json.execution?.lastNodeExecuted ?? '',\n  $json.error?.message ?? 'unknown error',\n  $json.error?.stack?.split('\\n')?.[0] ?? '',\n  '{\"workflow\":\"workflow_h_alerts\"}'\n] }}"
+        }
+      }
+    },
+    {
+      "id": "h0000040-0040-0040-0040-000000000040",
+      "name": "Log H Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4080,
+        480
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ($1, $2, $3, $4, $5, $6)",
+        "options": {
+          "queryReplacement": "={{ [\n  'workflow_h_alerts',\n  $execution.id ?? '',\n  $node.name ?? '',\n  ($json.error?.message ?? ($json.message ?? 'HTTP error')).toString().substring(0, 500),\n  ($json.error?.stack?.split('\\n')?.[0] ?? '').toString().substring(0, 200),\n  '{\"source\":\"workflow_h_error_branch\"}'\n] }}"
         }
       }
     }
@@ -1070,6 +1099,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Log H Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1182,6 +1218,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Log H Error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -1209,7 +1252,8 @@
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "errorWorkflow": "spqsDI6gUcr2c4Lb"
   },
   "staticData": null
 }

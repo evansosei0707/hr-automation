@@ -223,6 +223,22 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-05-03** during Workflow E live test — `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID` were in `.env` but absent from the n8n service env block. FB URL evaluated to `…/undefined/feed`; Telegram URL to `…/botundefined/sendMessage`. Both publish nodes failed silently until the vars were added and the container recreated.
 
+31. **Every HTTP Request node with `sendBody: true` must have `specifyBody: "json"` set explicitly in its parameters.** n8n's HTTP Request typeVersion 4.x gates the `jsonBody` expression on `specifyBody === "json"`. Without it, the node defaults to `"keypair"` format: it builds an empty array of key-value pairs, calls `prepareRequestBody([])`, and sends `{}` as the POST body — the `jsonBody` expression is never evaluated. The receiving API (Twenty, etc.) returns HTTP 400, but if the node uses `onError: continueRegularOutput` the execution continues as "success" with an error item, making the failure invisible.
+
+    **Correct shape:**
+    ```json
+    {
+      "sendBody": true,
+      "specifyBody": "json",
+      "contentType": "json",
+      "jsonBody": "={{ { query: '...' } }}"
+    }
+    ```
+
+    **Audit script check:** `check_http_specify_body` in `scripts/audit-n8n-workflow.py` flags any HTTP Request node with `sendBody: true` that is missing `specifyBody: "json"`.
+
+    **Surfaced 2026-05-03** during Workflow H tester round 2 — all 5 HTTP nodes sent empty bodies to Twenty because `specifyBody` was absent, producing HTTP 400 on every execution. The `continueRegularOutput` setting masked the failures as zero-item results.
+
 30. **Never use GraphQL named variable references (`$varName`) inside n8n expression strings.** In an n8n expression like `={{ { query: 'query Foo($status: Enum!) { ... }', variables: { status: $json.val } } }}`, the `$status` inside the single-quoted GQL string is treated by n8n's expression engine as a variable reference (`$status` → undefined), not a literal GQL variable declaration. The resulting HTTP body is either `{"": ...}` (key becomes empty string) or malformed JSON, causing Twenty 400 errors.
 
     **Fix:** Inline all values directly via string concatenation. Remove named GQL variable declarations entirely:

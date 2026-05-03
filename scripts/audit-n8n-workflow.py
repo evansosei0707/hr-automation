@@ -269,6 +269,23 @@ def check_http_request_config(nodes: list[dict]) -> None:
 
 
 # ──────────────────────────────────────────────
+# Check 10 — HTTP Request nodes with sendBody:true missing specifyBody:"json"
+# Without specifyBody:"json", n8n typeVersion 4.x defaults to "keypair" and
+# sends an empty body regardless of jsonBody content (Rule #31).
+# ──────────────────────────────────────────────
+def check_http_specify_body(nodes: list[dict]) -> None:
+    for n in nodes:
+        if n.get("type") != "n8n-nodes-base.httpRequest":
+            continue
+        params = n.get("parameters", {})
+        if params.get("sendBody") and params.get("specifyBody") != "json":
+            flag(n["name"], n.get("id", ""), "HTTP_MISSING_SPECIFY_BODY",
+                 "HTTP Request node has sendBody:true but specifyBody is not 'json'. "
+                 "n8n typeVersion 4.x defaults to 'keypair' format and sends an empty body, "
+                 "ignoring jsonBody entirely. Add specifyBody:'json' to parameters (Rule #31).")
+
+
+# ──────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────
 def audit_file(path: str) -> int:
@@ -297,6 +314,7 @@ def audit_file(path: str) -> int:
     check_not_null_coverage(nodes)
     check_redis_get_propertyname(nodes)
     check_http_request_config(nodes)
+    check_http_specify_body(nodes)
 
     # Deduplicate by (node, check) — keep first occurrence
     seen = set()

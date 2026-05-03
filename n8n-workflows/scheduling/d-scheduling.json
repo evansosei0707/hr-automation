@@ -1277,7 +1277,7 @@
       },
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO scheduled_reminders (kind, fire_at, twenty_interview_id, candidate_id, application_id, payload) VALUES ('interview_24h', $1::timestamptz - INTERVAL '24 hours', $2, $3, $4, $5::jsonb), ('interview_2h', $1::timestamptz - INTERVAL '2 hours', $2, $3, $4, $5::jsonb) ON CONFLICT ON CONSTRAINT uq_scheduled_reminders_unique DO NOTHING",
+        "query": "INSERT INTO scheduled_reminders (kind, fire_at, twenty_interview_id, candidate_id, application_id, payload) VALUES ('interview_24h', $1::timestamptz - INTERVAL '24 hours', $2, $3, $4, $5::jsonb), ('interview_2h', $1::timestamptz - INTERVAL '2 hours', $2, $3, $4, $5::jsonb) ON CONFLICT (twenty_interview_id, kind) DO NOTHING",
         "options": {
           "queryReplacement": "={{ [$('Atomic Claim Slot').first()?.json?.starts_at ?? '', $('Create Interview in Twenty').first()?.json?.data?.createInterview?.id ?? '', $('Resolve Chosen Slot').first()?.json?.candidateId ?? '', $('Resolve Chosen Slot').first()?.json?.applicationId ?? '', JSON.stringify({ candidatePhone: $('Build Confirmation Message').first()?.json?.candidatePhone, interviewerName: $('Build Confirmation Message').first()?.json?.interviewerName, dateStr: $('Build Confirmation Message').first()?.json?.dateStr })] }}"
         }

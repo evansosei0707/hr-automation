@@ -274,11 +274,11 @@
           "conditions": [
             {
               "id": "cond-got-slots",
-              "leftValue": "={{ $items().length }}",
-              "rightValue": 0,
+              "leftValue": "={{ ($json.id ?? '') !== '' }}",
+              "rightValue": true,
               "operator": {
-                "type": "number",
-                "operation": "gt"
+                "operation": "equal",
+                "type": "boolean"
               }
             }
           ]
@@ -397,7 +397,7 @@
         300
       ],
       "parameters": {
-        "jsCode": "const inbox = $('Claim Scheduling Reply Row').first()?.json;\nconst messageBody = (inbox?.payload?.messageBody ?? '').trim();\nconst slots = $('Fetch Offered Slots for Application').all().map(i => i.json);\n\nconst regexMatch = messageBody.match(/^\\s*([123])\\s*$/);\nlet slotIndex = null;\nif (regexMatch) {\n  slotIndex = parseInt(regexMatch[1], 10);\n}\n\nconst ordinalMap = [\n  ['second', 2], ['2nd', 2], ['two', 2],\n  ['third', 3],  ['3rd', 3], ['three', 3],\n  ['first', 1],  ['1st', 1], ['one', 1]\n];\nif (!slotIndex) {\n  const lowerMsg = messageBody.toLowerCase();\n  for (const [word, idx] of ordinalMap) {\n    if (new RegExp('\\b' + word + '\\b').test(lowerMsg)) {\n      slotIndex = idx;\n      break;\n    }\n  }\n}\n\nreturn [{ json: {\n  messageBody,\n  slotIndex,\n  regexMatched: slotIndex !== null,\n  slots,\n  candidateId: inbox?.candidate_id ?? '',\n  applicationId: inbox?.application_id ?? '',\n  inboxId: inbox?.id,\n  repromptCount: inbox?.payload?.reprompt_count ?? 0\n} }];"
+        "jsCode": "const inbox = $('Claim Scheduling Reply Row').first()?.json;\nconst messageBody = (inbox?.payload?.messageBody ?? '').trim();\nconst slots = $('Fetch Offered Slots for Application').all().map(i => i.json);\n\nconst regexMatch = messageBody.match(/^\\s*([123])\\s*$/);\nlet slotIndex = null;\nif (regexMatch) {\n  slotIndex = parseInt(regexMatch[1], 10);\n}\n\nconst ordinalMap = [\n  ['second', 2], ['2nd', 2], ['two', 2],\n  ['third', 3],  ['3rd', 3], ['three', 3],\n  ['first', 1],  ['1st', 1], ['one', 1]\n];\nif (!slotIndex) {\n  const lowerMsg = messageBody.toLowerCase();\n  for (const [word, idx] of ordinalMap) {\n    if (new RegExp('\\\\b' + word + '\\\\b').test(lowerMsg)) {\n      slotIndex = idx;\n      break;\n    }\n  }\n}\n\nreturn [{ json: {\n  messageBody,\n  slotIndex,\n  regexMatched: slotIndex !== null,\n  slots,\n  candidateId: inbox?.candidate_id ?? '',\n  applicationId: inbox?.application_id ?? '',\n  inboxId: inbox?.id,\n  repromptCount: inbox?.payload?.reprompt_count ?? 0\n} }];"
       }
     },
     {
@@ -1030,7 +1030,8 @@
             "waitBetweenTries": 3000
           }
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "id": "dc00044-0044-dc44-0044-000000000044",

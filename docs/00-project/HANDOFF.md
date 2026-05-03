@@ -1,7 +1,7 @@
 # Project Handoff — HR Automation
 
 **Last updated:** 2026-05-03
-**Status:** Week 1 in progress. Workflows A + B + C + D live. Workflow E next.
+**Status:** Week 1 in progress. Workflows A + B + C + D + E + F complete. Workflow H next.
 **Repo:** `github.com/evansosei0707/hr-automation` (branch: `main`, user: `eofrimpong-collab`)
 
 ---
@@ -50,7 +50,7 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 | **C** | Blue-Collar Screening | Blue | ✅ Live (proven 2026-05-02) | `docs/02-workflows/c-blue-collar.md` |
 | **D** | Interview Scheduling | — | ✅ Live (proven 2026-05-03) | `docs/02-workflows/d-scheduling.md` |
 | **E** | Social Posting | — | ✅ Live (proven 2026-05-03) | `docs/02-workflows/e-social-posting.md` |
-| **F** | Reporting | — | ⬜ Not started | `docs/02-workflows/f-reporting.md` |
+| **F** | Reporting | — | ✅ Live (proven 2026-05-03) | `docs/02-workflows/f-reporting.md` |
 | **G** | Orchestration / Watchdog | — | ⬜ Not started | `docs/02-workflows/g-orchestration.md` |
 | **H** | Job Alerts / Re-engagement | — | ⬜ Not started | `docs/02-workflows/h-job-alerts.md` |
 
@@ -130,14 +130,22 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 - **2 pre-launch blockers (T2):** explicit approval gate T2-E-1 (V016 `isApproved` field), Telegram channel ID config fix (private chat → channel numeric ID)
 - Rule #29 added
 
+**Workflow F v1** (build + tester 2026-05-03):
+- Design note: `docs/02-workflows/f-reporting-design-v1.md`
+- JSON file: `f-reporting.json` (32 nodes, Monday 07:00 Africa/Accra cron, sequential metric queries with `onError: continueRegularOutput`, Claude Haiku narrative, wa-send delivery)
+- No migrations — audit trail uses existing `event_log` table
+- Tester AC-2/3/4 PASS; AC-1 FAIL = T2-F-1 (weekly_report Meta template not yet approved — pre-launch blocker, not a code bug). Degraded mode proven live (5 Twenty HTTP 400 → `— unavailable —`).
+- **2 pre-launch blockers (T2):** T2-F-1 (weekly_report Meta template approval), T2-F-2 (calibration-window pre-send ReviewTask gate on Haiku narrative)
+- `STAFF_WHATSAPP_NUMBER` (+233532751040) added to docker-compose n8n env block
+
 ---
 
 ## What's next
 
-1. **Workflow F architect dispatch** — spec at `docs/02-workflows/f-reporting.md`. Weekly Monday 07:00 Accra report to staff WhatsApp channel.
-2. **Workflow G** — orchestration/watchdog (includes engagement sampling deferred from E).
-3. **Workflow H** — job alerts / re-engagement.
-4. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager.
+1. **Workflow H architect dispatch** — spec at `docs/02-workflows/h-job-alerts.md`. Job alerts / re-engagement for strong-but-not-selected candidates.
+2. **Workflow G** — orchestration/watchdog (includes engagement sampling deferred from E). After H.
+3. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager.
+4. **WA template submission** (T2-F-1) — submit `weekly_report` to Meta Business Manager.
 
 ---
 
@@ -293,6 +301,9 @@ All 28 rules are in `.claude/rules/n8n-workflows.md`. The most operationally cri
 | ~~T2-22~~ | ~~Workflow A — route `blue_collar_reply` trigger_kind to Workflow C reply path~~ | CLOSED `2ea45ed` |
 | T2-23 | Workflow C — SkillTag loop deferred (no `skillTagId` source in v1) | Post-launch Week 2 |
 | T2-D-4 | Workflow D — calibration-window pre-send ReviewTask gate on interview confirmations | Pre-launch |
+| T2-E-1 | Workflow E — explicit `isApproved` gate on SocialPost publishing (V016 migration + poll filter) | Pre-launch |
+| T2-F-1 | Workflow F — `weekly_report` WhatsApp template needs Meta Business Manager approval | Pre-launch |
+| T2-F-2 | Workflow F — calibration-window pre-send ReviewTask gate on Claude Haiku narrative | Pre-launch |
 
 Full details: `plans/tier-2-followups.md`
 

@@ -246,6 +246,15 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** HRA Project Lead (Meta Business Manager access) + doc update once approved.
 - **Reference:** `docs/02-workflows/f-reporting-design-v1.md` §5 (Template requirement).
 
+### T2-F-2. Workflow F — calibration-window pre-send ReviewTask gate on Claude Haiku narrative
+
+- **Description:** Workflow F — calibration-window pre-send ReviewTask gate on Claude Haiku narrative (same pattern as T2-D-4). CLAUDE.md §"sixth rule" requires every user-facing AI output to be reviewed by a human during the two-week calibration window. Workflow F currently sends the Claude Haiku-narrated report directly to staff WhatsApp with no blocking review step. Fix: when `CALIBRATION_WINDOW_ACTIVE=true`, insert a ReviewTask (kind=`pre_send_review`) before `Send to Staff WA`, and either (a) poll for resolution before continuing or (b) log with `level='review_required'` and send to a human-review queue daily rather than blocking the Monday send. Pre-launch blocker.
+- **Files affected:** `n8n-workflows/reporting/f-reporting.json` — add ReviewTask INSERT + poll (or log-and-queue) gate between `Render Final Message` and `Send to Staff WA`, gated on `CALIBRATION_WINDOW_ACTIVE === 'true'`.
+- **Blocking:** Yes — pre-launch blocker for the calibration window. Outside calibration window (`CALIBRATION_WINDOW_ACTIVE=false`), the send can proceed automatically.
+- **Target window:** Before Workflow F goes live during calibration window.
+- **Owner:** workflow-builder.
+- **Reference:** Tester round 2026-05-03; CLAUDE.md §"Non-negotiable invariants" rule 6 (calibration window); analogous item T2-D-4 (Workflow D).
+
 ### T2-23. Workflow C — SkillTag loop deferred (createCandidateSkillTag)
 
 - **Description:** Workflow C's completion path was designed to tag the candidate in Twenty with a skill tag based on the job category (e.g. `driver`, `warehouse`). The `createCandidateSkillTag` mutation requires a `skillTagId` (the Twenty UUID for the matching SkillTag object). In v1 there is no lookup node to resolve `script_id → skillTagId`, so the loop was deferred. The candidate is scored and tiered but no SkillTag is written to Twenty.

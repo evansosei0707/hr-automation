@@ -1,8 +1,8 @@
 # Active Plan — Week 1
 
-**Current work:** Workflow F architect dispatch
-**Spec:** `docs/02-workflows/f-reporting.md`
-**Status:** Workflows A + B + C + D + E ✅ complete. Next: Workflow F (weekly reporting).
+**Current work:** Workflow H architect dispatch
+**Spec:** `docs/02-workflows/h-job-alerts.md`
+**Status:** Workflows A + B + C + D + E + F ✅ complete. Next: Workflow H (job alerts / re-engagement).
 
 ## Week 1 progress
 
@@ -14,7 +14,8 @@
 - [x] **Workflow A routing patch** — ✅ complete 2026-05-02. CASE WHEN EXISTS subquery routes `blue_collar_reply` vs `blue_collar_new` trigger_kind dynamically. Commit `2ea45ed`. T2-22 CLOSED.
 - [x] **Workflow D v1** — ✅ complete 2026-05-03. Architect (ADR-0012) + schema (V012–V015) + build (85 nodes) + tester 5/5 PASS. 7 bugs fixed across 5 rounds. T2-D-4 (calibration gate) pre-launch blocker. Rules #26–#28 added. Closing arc: `aac596d`..`cfdc353` + close-out commits.
 - [x] **Workflow E v1** — ✅ complete 2026-05-03. Architect design note + build (36 nodes) + tester 5/5 PASS. Post-build fixes: credential injection, TWENTY_API_KEY rename, Meta+Telegram env vars in docker-compose. T2-E-1 (approval gate) + Telegram channel ID pre-launch blockers. Rule #29 added. Closing arc: `1a44a16`..`5185437`.
-- [ ] **Workflow F architect dispatch** — spec at `docs/02-workflows/f-reporting.md`. Weekly Monday 07:00 Accra cron, staff WhatsApp summary. Dispatch `architect` first.
+- [x] **Workflow F v1** — ✅ complete 2026-05-03. Architect design note `f-reporting-design-v1.md` + build (32 nodes) + tester AC-2/3/4 PASS (AC-1 FAIL = T2-F-1 pre-launch blocker, not a code bug). Closing arc: `39765af` (architect) + `aec321c` (build). Pre-launch blockers: T2-F-1 (Meta template), T2-F-2 (calibration gate).
+- [ ] **Workflow H architect dispatch** — spec at `docs/02-workflows/h-job-alerts.md`. Job alerts / re-engagement for strong-but-not-selected candidates. Dispatch `architect` first.
 
 ---
 

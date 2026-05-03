@@ -5,7 +5,7 @@ Current build state. Updated at the end of every work session.
 ---
 
 **Last updated:** 2026-05-03
-**Current phase:** Week 1 — Workflow E v1 complete; Workflow F next
+**Current phase:** Week 1 — Workflow F v1 complete; Workflow H next
 **Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -50,11 +50,13 @@ Current build state. Updated at the end of every work session.
 - ✅ **Workflow E v1 (2026-05-03 build + live test PASSED).** Social posting to Facebook Page and Telegram channel. Design note at `docs/02-workflows/e-social-posting-design-v1.md`. JSON: `n8n-workflows/social/e-social-posting.json` (36 nodes, 2-min cron, per-platform isolation via single-record-per-tick FIFO + Redis lock `hra:social:{postId}`). Tester 5/5 PASS (after adding Meta + Telegram env vars to n8n container). Key build fix: credential injection for Postgres + Redis nodes post-import. Env var fix: `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHANNEL_ID` added to docker-compose.yml n8n env block. **Workflow E v1 DONE.**
   **Pre-launch blockers carried to T2:** (a) Explicit approval gate — `isApproved` field + V016 migration + poll filter update (T2-E-1). (b) `TELEGRAM_CHANNEL_ID` in `.env` points to a private chat, not a broadcast channel — correct to numeric channel ID (starts `-100`) before production.
 
+- ✅ **Workflow F v1 (2026-05-03 build + tester 3/4 PASS).** Weekly Monday 07:00 Africa/Accra reporting. Design note `docs/02-workflows/f-reporting-design-v1.md`. JSON: `n8n-workflows/reporting/f-reporting.json` (32 nodes). Tester: AC-2/3/4 PASS; AC-1 FAIL = T2-F-1 (weekly_report template not yet approved in Meta — known pre-launch blocker, not a code bug). All 26 Workflow F-internal nodes ran successfully. Degraded mode proven live (5 Twenty HTTP 400 → `— unavailable —`). **Pre-launch blockers:** T2-F-1 (weekly_report Meta template approval), T2-F-2 (calibration-window pre-send ReviewTask gate on Haiku narrative). **Workflow F v1 DONE.**
+
 ## What's next
 
-- **Workflow F** — weekly reporting. Spec at `docs/02-workflows/f-reporting.md`.
+- **Workflow H** — job alerts / re-engagement. Spec at `docs/02-workflows/h-job-alerts.md`.
 - **Workflow G** — orchestration/watchdog (includes engagement sampling deferred from E).
-- **Workflow H** — job alerts / re-engagement.
+- Workflow H before G — H is a discrete pipeline; G depends on all other workflows being live.
 
 ## What's blocked
 

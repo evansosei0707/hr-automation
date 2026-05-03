@@ -4,8 +4,8 @@ Current build state. Updated at the end of every work session.
 
 ---
 
-**Last updated:** 2026-05-02
-**Current phase:** Week 1 — Workflow C complete; Workflow A routing patch next
+**Last updated:** 2026-05-03
+**Current phase:** Week 1 — Workflow D v1 complete; Workflow E next
 **Active plan:** `plans/active-plan.md`
 **Tier 2 follow-ups:** `plans/tier-2-followups.md`
 
@@ -42,10 +42,14 @@ Current build state. Updated at the end of every work session.
 - ✅ **Workflow C v1 (2026-05-02) — complete.** Blue-collar screening state machine. Architect design note at `docs/02-workflows/c-blue-collar-design-v1.md`; ADR-0011 (`docs/05-decisions/ADR-0011-blue-collar-state-and-trigger.md`). Migrations V009 (blue_collar_screening), V010 (screening_scripts + driver_v1 seed), V011 (trigger_kind constraint). JSON: `n8n-workflows/screening/c-screening.json` (98 nodes, 3 cron contexts: 60s main, 300s Twenty poll, 1800s reminder/withdraw sweep). Tester 5/5 PASS. Eight bugs found and fixed during tester rounds (isEmpty operator, Workflow B row-stealing, collarType null mapping, splitInBatches v3 output semantics, IF boolean routing, withdraw chain resequencing, forward refs on lock keys). Rules #26+ not added — bugs captured in commit messages.
   **Pre-launch blockers carried to T2:** (a) WA templates `screening_reminder_24h` + `screening_withdrawn_72h` need Meta approval (T2-21). (b) Workflow A `workflow_reply` branch needs `trigger_kind='blue_collar_reply'` routing for candidates with active `blue_collar_screening` rows (T2-22). (c) `createCandidateSkillTag` loop deferred — no `skillTagId` source in v1 (T2-23). **Workflow C v1 DONE.**
 
+- ✅ **Workflow A routing patch (2026-05-02) — T2-22 closed.** `Enqueue Screening Inbox` (ac00200) — CASE WHEN EXISTS subquery routes `blue_collar_reply` vs `blue_collar_new` trigger_kind dynamically. Commit `2ea45ed`.
+
+- ✅ **Workflow D v1 (2026-05-02 build, 2026-05-03 live test PASSED).** Interview scheduling with atomic slot claim and Google Calendar integration. Spec at `docs/02-workflows/d-scheduling.md`; design note at `docs/02-workflows/d-scheduling-design-v1.md`; ADR-0012 (`docs/05-decisions/ADR-0012-slot-sourcing-hybrid.md`). Migrations V012–V015 applied. JSON: `n8n-workflows/scheduling/d-scheduling.json` (85 nodes, 3 cron entry chains: 2-min scheduling-reply poller, 2-min shortlisted offer poller, 05:00 Accra daily slot generator). Tester 5/5 PASS. Six bugs found and fixed across 4 tester rounds: isEmpty-on-null, Got Offered Slots? boolean-equal operator, Fetch Offered Slots missing offer_expires_at filter, Calendar branch[1] disconnected, Create Interview mutation invalid fields, ON CONFLICT ON CONSTRAINT vs UNIQUE INDEX. Audit script `scripts/audit-n8n-workflow.py` created (9 static checks). **Workflow D v1 DONE.**
+  **Pre-launch blockers carried to T2:** (a) Calibration gate for WA sends — T2-D-4.
+
 ## What's next
 
-- **Workflow A routing patch** — add `blue_collar_reply` trigger_kind detection to `a-communications.json`'s `workflow_reply` branch (T2-22). Candidates with active `blue_collar_screening` rows must route to Workflow C's reply path.
-- **Workflow D architect dispatch** — spec at `docs/02-workflows/d-scheduling.md`. Interview scheduling with atomic slot-claim and Google Calendar write.
+- **Workflow E** — social media posting. Spec at `docs/02-workflows/e-social-media.md`. FB + Telegram (ADR-0007: no IG; ADR-0008: no X yet).
 
 ## What's blocked
 

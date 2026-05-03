@@ -1,5 +1,5 @@
 {
-  "name": "Workflow H — Job Alerts / Re-Engagement",
+  "name": "Workflow H \u2014 Job Alerts / Re-Engagement",
   "tags": [
     {
       "name": "hr-automation"
@@ -14,7 +14,7 @@
   "nodes": [
     {
       "id": "h0000001-0001-0001-0001-000000000001",
-      "name": "Schedule Trigger — 5 min",
+      "name": "Schedule Trigger \u2014 5 min",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -199,7 +199,7 @@
     },
     {
       "id": "h0000009-0009-0009-0009-000000000009",
-      "name": "SplitInBatches — Postings",
+      "name": "SplitInBatches \u2014 Postings",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
@@ -262,7 +262,7 @@
       ],
       "parameters": {
         "language": "javaScript",
-        "jsCode": "const scanWindow = $('Compute Scan Window').first()?.json ?? {};\nconst ninetyDaysAgo = new Date(scanWindow.ninetyDaysAgo);\nconst fourteenDaysAgo = new Date(scanWindow.fourteenDaysAgo);\nconst currentYear = scanWindow.currentYear;\nconst busyStatuses = ['INTERVIEWING', 'OFFERED', 'PLACED'];\nconst currentPosting = $('SplitInBatches — Postings').first()?.json;\nconst currentCategory = currentPosting?.category;\n\nconst edges = $('Query Eligible Applications').first()?.json?.data?.applications?.edges ?? [];\nlet candidates = edges.map(e => e.node).filter(app => {\n  const c = app.candidate;\n  if (!c) return false;\n  if (c.consentStatus !== 'GRANTED') return false;\n  if (c.dataRetentionPolicy === 'PENDING_DELETION') return false;\n  if (c.lastActivityAt && new Date(c.lastActivityAt) < ninetyDaysAgo) return false;\n  if (currentCategory && app.jobPosting?.category !== currentCategory) return false;\n  const appStatuses = (c.applications?.edges ?? []).map(ae => ae.node?.status);\n  if (appStatuses.some(s => busyStatuses.includes(s))) return false;\n  if (app.reEngagedAt && new Date(app.reEngagedAt) > fourteenDaysAgo) return false;\n  return true;\n});\n\nconst tierOrder = { TOP_20: 0, SOLID: 1, DEVELOPING: 2 };\ncandidates.sort((a, b) => {\n  const ta = tierOrder[a.candidate?.strengthTier] ?? 3;\n  const tb = tierOrder[b.candidate?.strengthTier] ?? 3;\n  if (ta !== tb) return ta - tb;\n  const da = new Date(a.candidate?.lastActivityAt || 0);\n  const db = new Date(b.candidate?.lastActivityAt || 0);\n  return db - da;\n});\n\ncandidates = candidates.slice(0, 20);\nconst postingId = $('SplitInBatches — Postings').first()?.json?.id ?? '';\nreturn [{ json: { candidates, postingId } }];\n"
+        "jsCode": "const scanWindow = $('Compute Scan Window').first()?.json ?? {};\nconst ninetyDaysAgo = new Date(scanWindow.ninetyDaysAgo);\nconst fourteenDaysAgo = new Date(scanWindow.fourteenDaysAgo);\nconst currentYear = scanWindow.currentYear;\nconst busyStatuses = ['INTERVIEWING', 'OFFERED', 'PLACED'];\nconst currentPosting = $('SplitInBatches \u2014 Postings').first()?.json;\nconst currentCategory = currentPosting?.category;\n\nconst edges = $('Query Eligible Applications').first()?.json?.data?.applications?.edges ?? [];\nlet candidates = edges.map(e => e.node).filter(app => {\n  const c = app.candidate;\n  if (!c) return false;\n  if (c.consentStatus !== 'GRANTED') return false;\n  if (c.dataRetentionPolicy === 'PENDING_DELETION') return false;\n  if (c.lastActivityAt && new Date(c.lastActivityAt) < ninetyDaysAgo) return false;\n  if (currentCategory && app.jobPosting?.category !== currentCategory) return false;\n  const appStatuses = (c.applications?.edges ?? []).map(ae => ae.node?.status);\n  if (appStatuses.some(s => busyStatuses.includes(s))) return false;\n  if (app.reEngagedAt && new Date(app.reEngagedAt) > fourteenDaysAgo) return false;\n  return true;\n});\n\nconst tierOrder = { TOP_20: 0, SOLID: 1, DEVELOPING: 2 };\ncandidates.sort((a, b) => {\n  const ta = tierOrder[a.candidate?.strengthTier] ?? 3;\n  const tb = tierOrder[b.candidate?.strengthTier] ?? 3;\n  if (ta !== tb) return ta - tb;\n  const da = new Date(a.candidate?.lastActivityAt || 0);\n  const db = new Date(b.candidate?.lastActivityAt || 0);\n  return db - da;\n});\n\ncandidates = candidates.slice(0, 20);\nconst postingId = $('SplitInBatches \u2014 Postings').first()?.json?.id ?? '';\nreturn [{ json: { candidates, postingId } }];\n"
       }
     },
     {
@@ -299,7 +299,7 @@
     },
     {
       "id": "h0000013-0013-0013-0013-000000000013",
-      "name": "SplitInBatches — Candidates",
+      "name": "SplitInBatches \u2014 Candidates",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
@@ -404,7 +404,7 @@
             "model": "claude-haiku-4-5",
             "workflowName": "workflow_h_alerts",
             "maxTokens": 120,
-            "systemPrompt": "You are composing a short WhatsApp re-engagement message for a Ghanaian HR firm. Rules: 1) Address candidate by first name only. 2) Reference the previous role type and approximate timeframe (e.g. 'a few weeks ago', 'last month', 'recently') — never the client name. 3) Mention the new role title only — never the client name. 4) End with a clear YES or NO prompt. 5) 2-4 sentences maximum. 6) Plain Ghanaian English. 7) No emojis in body. 8) Never mention candidate score, tier, or salary.",
+            "systemPrompt": "You are composing a short WhatsApp re-engagement message for a Ghanaian HR firm. Rules: 1) Address candidate by first name only. 2) Reference the previous role type and approximate timeframe (e.g. 'a few weeks ago', 'last month', 'recently') \u2014 never the client name. 3) Mention the new role title only \u2014 never the client name. 4) End with a clear YES or NO prompt. 5) 2-4 sentences maximum. 6) Plain Ghanaian English. 7) No emojis in body. 8) Never mention candidate score, tier, or salary.",
             "messages": "={{ [{ role: 'user', content: 'Candidate first name: ' + ($json.candidateFirstName ?? 'there') + '\\nPrevious role: ' + ($json.prevJobTitle ?? 'a role we had earlier') + '\\nNew role: ' + ($json.newPostingTitle ?? 'a new opening') + '\\nWrite the WhatsApp re-engagement message now.' }] }}"
           },
           "matchingColumns": [],
@@ -643,7 +643,7 @@
     },
     {
       "id": "h0000030-0030-0030-0030-000000000030",
-      "name": "Schedule Trigger — Hourly",
+      "name": "Schedule Trigger \u2014 Hourly",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -749,7 +749,7 @@
     },
     {
       "id": "h0000034-0034-0034-0034-000000000034",
-      "name": "SplitInBatches — Expired",
+      "name": "SplitInBatches \u2014 Expired",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
@@ -960,7 +960,7 @@
     },
     {
       "id": "h0000017c-017c-017c-017c-00000000017c",
-      "name": "GQL Error? — Create",
+      "name": "GQL Error? \u2014 Create",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -992,7 +992,7 @@
     },
     {
       "id": "h0000035c-035c-035c-035c-00000000035c",
-      "name": "GQL Error? — Withdraw",
+      "name": "GQL Error? \u2014 Withdraw",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
@@ -1039,37 +1039,37 @@
             {
               "id": "enrich-cand-id",
               "name": "candidateId",
-              "value": "={{ $json.candidate?.id ?? '' }}",
+              "value": "={{ $('SplitInBatches — Candidates').first()?.json?.candidate?.id ?? '' }}",
               "type": "string"
             },
             {
               "id": "enrich-wa-num",
               "name": "whatsappNumber",
-              "value": "={{ ($json.candidate?.whatsappNumberE164 ?? '').trim() }}",
+              "value": "={{ ($('SplitInBatches — Candidates').first()?.json?.candidate?.whatsappNumberE164 ?? '').trim() }}",
               "type": "string"
             },
             {
               "id": "enrich-first-name",
               "name": "candidateFirstName",
-              "value": "={{ ($json.candidate?.name ?? 'there').split(' ')[0] }}",
+              "value": "={{ ($('SplitInBatches — Candidates').first()?.json?.candidate?.name ?? 'there').split(' ')[0] }}",
               "type": "string"
             },
             {
               "id": "enrich-prev-role",
               "name": "prevJobTitle",
-              "value": "={{ $json.jobPosting?.title ?? 'a role we had earlier' }}",
+              "value": "={{ $('SplitInBatches — Candidates').first()?.json?.jobPosting?.title ?? 'a role we had earlier' }}",
               "type": "string"
             },
             {
               "id": "enrich-posting-id",
               "name": "newPostingId",
-              "value": "={{ $('SplitInBatches — Postings').first()?.json?.id ?? '' }}",
+              "value": "={{ $('SplitInBatches \u2014 Postings').first()?.json?.id ?? '' }}",
               "type": "string"
             },
             {
               "id": "enrich-posting-title",
               "name": "newPostingTitle",
-              "value": "={{ $('SplitInBatches — Postings').first()?.json?.title ?? 'a new opening' }}",
+              "value": "={{ $('SplitInBatches \u2014 Postings').first()?.json?.title ?? 'a new opening' }}",
               "type": "string"
             },
             {
@@ -1098,7 +1098,7 @@
     },
     {
       "id": "h0000015d-015d-015d-015d-00000000015d",
-      "name": "Carry Posting ID — Skip",
+      "name": "Carry Posting ID \u2014 Skip",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -1113,7 +1113,7 @@
             {
               "id": "carry-posting-skip",
               "name": "postingId",
-              "value": "={{ $('SplitInBatches — Postings').first()?.json?.id ?? '' }}",
+              "value": "={{ $('SplitInBatches \u2014 Postings').first()?.json?.id ?? '' }}",
               "type": "string"
             }
           ]
@@ -1124,7 +1124,7 @@
     },
     {
       "id": "h0000019b-019b-019b-019b-00000000019b",
-      "name": "Carry Posting ID — Back",
+      "name": "Carry Posting ID \u2014 Back",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -1150,7 +1150,7 @@
     }
   ],
   "connections": {
-    "Schedule Trigger — 5 min": {
+    "Schedule Trigger \u2014 5 min": {
       "main": [
         [
           {
@@ -1240,7 +1240,7 @@
         []
       ]
     },
-    "SplitInBatches — Postings": {
+    "SplitInBatches \u2014 Postings": {
       "main": [
         [],
         [
@@ -1292,7 +1292,7 @@
         ]
       ]
     },
-    "SplitInBatches — Candidates": {
+    "SplitInBatches \u2014 Candidates": {
       "main": [
         [
           {
@@ -1343,7 +1343,7 @@
         ],
         [
           {
-            "node": "Carry Posting ID — Skip",
+            "node": "Carry Posting ID \u2014 Skip",
             "type": "main",
             "index": 0
           }
@@ -1365,7 +1365,7 @@
       "main": [
         [
           {
-            "node": "GQL Error? — Create",
+            "node": "GQL Error? \u2014 Create",
             "type": "main",
             "index": 0
           }
@@ -1387,7 +1387,7 @@
       "main": [
         [
           {
-            "node": "Carry Posting ID — Back",
+            "node": "Carry Posting ID \u2014 Back",
             "type": "main",
             "index": 0
           }
@@ -1409,14 +1409,14 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Postings",
+            "node": "SplitInBatches \u2014 Postings",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Schedule Trigger — Hourly": {
+    "Schedule Trigger \u2014 Hourly": {
       "main": [
         [
           {
@@ -1461,7 +1461,7 @@
         []
       ]
     },
-    "SplitInBatches — Expired": {
+    "SplitInBatches \u2014 Expired": {
       "main": [
         [],
         [
@@ -1477,7 +1477,7 @@
       "main": [
         [
           {
-            "node": "GQL Error? — Withdraw",
+            "node": "GQL Error? \u2014 Withdraw",
             "type": "main",
             "index": 0
           }
@@ -1488,7 +1488,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Expired",
+            "node": "SplitInBatches \u2014 Expired",
             "type": "main",
             "index": 0
           }
@@ -1521,7 +1521,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Candidates",
+            "node": "SplitInBatches \u2014 Candidates",
             "type": "main",
             "index": 0
           }
@@ -1532,7 +1532,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Expired",
+            "node": "SplitInBatches \u2014 Expired",
             "type": "main",
             "index": 0
           }
@@ -1543,14 +1543,14 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Postings",
+            "node": "SplitInBatches \u2014 Postings",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "GQL Error? — Create": {
+    "GQL Error? \u2014 Create": {
       "main": [
         [
           {
@@ -1568,7 +1568,7 @@
         ]
       ]
     },
-    "GQL Error? — Withdraw": {
+    "GQL Error? \u2014 Withdraw": {
       "main": [
         [
           {
@@ -1597,22 +1597,22 @@
         ]
       ]
     },
-    "Carry Posting ID — Skip": {
+    "Carry Posting ID \u2014 Skip": {
       "main": [
         [
           {
-            "node": "SplitInBatches — Candidates",
+            "node": "SplitInBatches \u2014 Candidates",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Carry Posting ID — Back": {
+    "Carry Posting ID \u2014 Back": {
       "main": [
         [
           {
-            "node": "SplitInBatches — Candidates",
+            "node": "SplitInBatches \u2014 Candidates",
             "type": "main",
             "index": 0
           }

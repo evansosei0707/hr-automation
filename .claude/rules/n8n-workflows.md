@@ -183,6 +183,38 @@ Load this rule when reading or editing any file under `n8n-workflows/`.
 
     **Surfaced 2026-05-01** — `b-screening.json` was not in the patch script's file list after initial build; `Extract Structured Facts — Claude Sonnet` and `Score Against Rubric — Claude Sonnet` retained stale Claude Call subflow IDs after wa-send was reimported, causing `"Workflow does not exist"` on the first happy-path test run.
 
+27. **HTTP Request nodes that have a designed failure branch MUST have `"onError": "continueErrorOutput"` at the node root level.** Without it, credential errors and HTTP 500s bypass the designed branch entirely and throw directly to the Error Trigger, leaving the failure path dead. Setting `continueRegularOutput` or omitting the field has the same effect: only 2xx responses follow the main output; all errors short-circuit to the global error handler.
+
+    **Correct shape:**
+    ```json
+    {
+      "name": "Create Google Calendar Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "onError": "continueErrorOutput",
+      "parameters": { ... }
+    }
+    ```
+
+    The error output (`main[1]`) must also have a connection in the `connections` object — setting `onError` without wiring `branch[1]` leaves the error items with nowhere to go and produces a silent no-op.
+
+    **Surfaced 2026-05-02** during Workflow D build — `Create Google Calendar Event` had `onError: continueErrorOutput` but `connections.main` only had `[0]` wired to `Calendar Created?`. The `[1]` error branch was unwired; Google credential errors bypassed `Calendar Created?` entirely and threw to the Error Trigger.
+
+28. **When `alwaysOutputData: true` is set on a Postgres `executeQuery` node, downstream IF nodes checking for results MUST test field existence (`$json.id ?? '' !== ''`), NOT `$items().length > 0`.** When the query returns zero rows, `alwaysOutputData: true` emits one empty item `{}` with no fields. `$items().length` sees 1 item and evaluates to `true`, routing every zero-row result as if data was found. The correct check tests for the presence of a specific field from the expected row (e.g. `id`, `status`, `candidate_id`).
+
+    **Correct IF condition:**
+    ```
+    leftValue:  {{ $json.id ?? '' }}
+    operator:   string / notEmpty
+    ```
+
+    **Wrong (always true on zero-row):**
+    ```
+    leftValue:  {{ $items().length > 0 }}
+    operator:   boolean / equal / true
+    ```
+
+    **Surfaced 2026-05-02** during Workflow D build — `Got Offered Slots?` used the length-check form; zero-row slot queries (candidates with no offered slots) routed into the "has slots" branch instead of the "no slots" exit.
+
 ## Before committing an n8n workflow
 
 Run the validator:

@@ -1,7 +1,7 @@
 # Project Handoff — HR Automation
 
-**Last updated:** 2026-05-02
-**Status:** Week 1 in progress. Workflows A + B + C live. Workflow A routing patch next, then Workflow D.
+**Last updated:** 2026-05-03
+**Status:** Week 1 in progress. Workflows A + B + C + D live. Workflow E next.
 **Repo:** `github.com/evansosei0707/hr-automation` (branch: `main`, user: `eofrimpong-collab`)
 
 ---
@@ -48,7 +48,7 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 | **A** | Communications | — | ✅ Live (proven 2026-05-01) | `docs/02-workflows/a-communications.md` |
 | **B** | White-Collar Screening | White | ✅ Live (proven 2026-05-01) | `docs/02-workflows/b-white-collar.md` |
 | **C** | Blue-Collar Screening | Blue | ✅ Live (proven 2026-05-02) | `docs/02-workflows/c-blue-collar.md` |
-| **D** | Interview Scheduling | — | ⬜ Not started | `docs/02-workflows/d-scheduling.md` |
+| **D** | Interview Scheduling | — | ✅ Live (proven 2026-05-03) | `docs/02-workflows/d-scheduling.md` |
 | **E** | Social Posting | — | ⬜ Not started | `docs/02-workflows/e-social-posting.md` |
 | **F** | Reporting | — | ⬜ Not started | `docs/02-workflows/f-reporting.md` |
 | **G** | Orchestration / Watchdog | — | ⬜ Not started | `docs/02-workflows/g-orchestration.md` |
@@ -85,7 +85,7 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 5. **Cross-cutting patterns** — Redis conv-lock 20/20 PASS (45s canary), observability queries with live evidence, backup drill (three DBs: twenty 245KB, bookings 7.8KB, n8n 42KB).
 6. **Go / no-go review** — GO. 20 findings reviewed; 13 closed; 7 in T2.
 
-### Week 1 (2026-04-30 to 2026-05-01) — CLOSED
+### Week 1 (2026-04-30 to 2026-05-03) — in progress
 
 **Workflow A v1** (build 2026-04-30, live test PASSED 2026-05-01):
 - End-to-end: WhatsApp message in → candidate lookup → consent flow → Claude Sonnet reply → WhatsApp delivery
@@ -107,16 +107,28 @@ A WhatsApp-first recruitment automation system for a small Ghanaian HR firm. Can
 - JSON file: `c-screening.json` (98 nodes, 3 cron contexts: 60s main, 300s Twenty poll, 1800s reminder/withdraw sweep)
 - Migrations V009 (`blue_collar_screening`), V010 (`screening_scripts` + `driver_v1` seed), V011 (trigger_kind constraint)
 - Tester 5/5 PASS. Eight bugs fixed across 4 tester rounds (isEmpty operator, splitInBatches v3 output semantics, IF boolean routing, withdraw chain sequencing, forward-reference lock keys)
-- **3 pre-launch blockers (T2):** WA template approvals (T2-21), Workflow A `blue_collar_reply` routing (T2-22), SkillTag loop deferred (T2-23)
+- **3 pre-launch blockers (T2):** WA template approvals (T2-21), Workflow A `blue_collar_reply` routing (T2-22, CLOSED `2ea45ed`), SkillTag loop deferred (T2-23)
+
+**Workflow A routing patch** (2026-05-02):
+- CASE WHEN EXISTS subquery routes `blue_collar_reply` vs `blue_collar_new` trigger_kind dynamically
+- Commit `2ea45ed`. T2-22 CLOSED.
+
+**Workflow D v1** (build 2026-05-02, live test PASSED 2026-05-03):
+- Design note: `docs/02-workflows/d-scheduling-design-v1.md`; ADR-0012 (slot-sourcing hybrid)
+- JSON file: `d-scheduling.json` (85 nodes, 3 cron chains: 2-min scheduling-reply poller, 2-min shortlisted offer poller, 05:00 Accra daily slot generator)
+- Migrations V012–V015 applied (interview slots, reminders, scheduled_reminders table)
+- Tester 5/5 PASS. Seven bugs fixed across 5 tester rounds (isEmpty/null, Got Offered Slots boolean-equal, expired slot filter, Calendar branch[1] disconnected, Interview mutation invalid fields, ON CONFLICT column-list syntax)
+- Static audit script `scripts/audit-n8n-workflow.py` created (9 checks)
+- **1 pre-launch blocker (T2):** calibration-gate ReviewTask for outbound WA sends (T2-D-4)
+- Rules #26–#28 added
 
 ---
 
 ## What's next
 
-1. **Workflow D architect dispatch** — spec at `docs/02-workflows/d-scheduling.md`. Interview scheduling with atomic slot-claim (V001 partial-unique-index pattern) and Google Calendar write. Dispatch `architect` before building.
-3. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager. Workflow C is blocked from sending real outbound messages until these are approved.
-4. **Workflow E** — social posting (FB + Telegram confirmed, IG/X deferred per ADR-0007/0008).
-5. **Workflows F, G, H** — reporting, orchestration/watchdog, job alerts.
+1. **Workflow E architect dispatch** — spec at `docs/02-workflows/e-social-media.md`. Social posting to FB + Telegram (IG deferred ADR-0007, X deferred ADR-0008).
+2. **WA template submissions** (T2-21) — submit `screening_reminder_24h` and `screening_withdrawn_72h` to Meta Business Manager. Workflow C is blocked from sending real outbound messages until these are approved.
+3. **Workflows F, G, H** — reporting, orchestration/watchdog, job alerts.
 
 ---
 
@@ -205,7 +217,7 @@ Expected: 7 services running — `hr-twenty-db`, `hr-bookings-db`, `hr-redis`, `
 
 **n8n credentials** are stored in n8n's internal DB (not in `.env`). They do not appear in workflow JSON exports. The encryption key is `N8N_ENCRYPTION_KEY` in `infrastructure/.env` — must match what's in the DB or all credentials break on restore.
 
-**Bookings DB migrations applied:** V001 (core tables), V003 (candidate_facts), V004 (twenty_schema_migrations), V005 (ai_call_log), V008 (screening_inbox), V009 (blue_collar_screening), V010 (screening_scripts), V011 (trigger_kind constraint). Check with:
+**Bookings DB migrations applied:** V001 (core tables), V003 (candidate_facts), V004 (twenty_schema_migrations), V005 (ai_call_log), V008 (screening_inbox), V009 (blue_collar_screening), V010 (screening_scripts), V011 (trigger_kind constraint), V012–V015 (interview slots, scheduled_reminders, slot foreign keys). Check with:
 ```
 docker exec hr-bookings-db psql -U n8n_bookings -d bookings -c "SELECT version, description FROM schema_migrations ORDER BY version;"
 ```
@@ -233,12 +245,14 @@ docker exec hr-bookings-db psql -U n8n_bookings -d bookings -c "SELECT version, 
 
 ### n8n workflow JSON conventions
 
-All 25 rules are in `.claude/rules/n8n-workflows.md`. The most operationally critical:
+All 28 rules are in `.claude/rules/n8n-workflows.md`. The most operationally critical:
 - **Rule #18**: `queryReplacement` array form `={{ [v1, v2] }}` for any user text or error strings (comma-split bug)
 - **Rule #19**: Execute Workflow uses `workflowInputs.value` (resourceMapper), not `fields.values`
 - **Rule #20**: Set nodes need `typeVersion: 3.4` for `assignments` format
 - **Rule #24**: `alwaysOutputData: true` goes at node root level, not inside `parameters.options`
 - **Rule #25**: New workflow files referencing subflows must be added to `patch-workflow-ids.sh`
+- **Rule #27**: HTTP Request nodes with designed failure branch MUST have `onError: continueErrorOutput` at node root
+- **Rule #28**: Downstream IF nodes after `alwaysOutputData: true` Postgres nodes must test field existence (`$json.id ?? '' !== ''`), not `$items().length > 0`
 
 ### Commit hygiene
 
@@ -269,6 +283,7 @@ All 25 rules are in `.claude/rules/n8n-workflows.md`. The most operationally cri
 | T2-21 | WA template approvals for Workflow C (`screening_reminder_24h` + `screening_withdrawn_72h`) | Pre-launch (C) |
 | ~~T2-22~~ | ~~Workflow A — route `blue_collar_reply` trigger_kind to Workflow C reply path~~ | CLOSED `2ea45ed` |
 | T2-23 | Workflow C — SkillTag loop deferred (no `skillTagId` source in v1) | Post-launch Week 2 |
+| T2-D-4 | Workflow D — calibration-window pre-send ReviewTask gate on interview confirmations | Pre-launch |
 
 Full details: `plans/tier-2-followups.md`
 
@@ -309,6 +324,7 @@ Running n8n 1.85.0 (via docker image tagged 2.18.5). Several workarounds are in 
 | ADR-0009 | Redis namespace strategy — `hra:` prefix, `hra:conv:`, `hra:dedupe:` |
 | ADR-0010 | CV parser: n8n Extract from File + Claude Sonnet (DPA-safe, no new container) |
 | ADR-0011 | Blue-collar screening: dedicated `blue_collar_screening` state table + dual-trigger (screening_inbox + Five-min Twenty poll) |
+| ADR-0012 | Interview slot sourcing: hybrid (DB-owned `slot` table + Google Calendar write) |
 
 Full records: `docs/05-decisions/`
 

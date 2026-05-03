@@ -1,0 +1,1196 @@
+{
+  "name": "Workflow F — Weekly Reporting",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 1"
+            }
+          ]
+        },
+        "timezone": "Africa/Accra"
+      },
+      "id": "f0000001-0001-0001-0001-000000000001",
+      "name": "Schedule Trigger — Mon 07:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {},
+      "id": "f0000002-0002-0002-0002-000000000002",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 480]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compute date range: last week Mon 00:00 to Sun 23:59:59 Africa/Accra.\n// n8n Code node has Date as a global — no require() needed.\n// Africa/Accra is UTC+0 (no DST), so UTC == local time.\n\nconst now = new Date();\n\n// Day of week: 0=Sun, 1=Mon ... 6=Sat\nconst todayDow = now.getUTCDay();\n\n// Days since last Monday (the START of CURRENT week)\n// If today is Monday (1), daysToCurrentMon = 0; Sun (0) = 6; Sat (6) = 5 etc.\nconst daysToCurrentMon = (todayDow === 0) ? 6 : (todayDow - 1);\n\n// Last week Monday = current week Monday - 7 days\nconst weekStart = new Date(now);\nweekStart.setUTCDate(now.getUTCDate() - daysToCurrentMon - 7);\nweekStart.setUTCHours(0, 0, 0, 0);\n\n// Last week Sunday = current week Monday - 1 day end of day\nconst weekEnd = new Date(now);\nweekEnd.setUTCDate(now.getUTCDate() - daysToCurrentMon - 1);\nweekEnd.setUTCHours(23, 59, 59, 999);\n\n// Prior week (for WoW delta on AI cost)\nconst priorWeekStart = new Date(weekStart);\npriorWeekStart.setUTCDate(weekStart.getUTCDate() - 7);\n\nconst priorWeekEnd = new Date(weekEnd);\npriorWeekEnd.setUTCDate(weekEnd.getUTCDate() - 7);\n\nconst toIso = (d) => d.toISOString();\n\nreturn [{\n  json: {\n    weekStartIso: toIso(weekStart),\n    weekEndIso: toIso(weekEnd),\n    priorWeekStartIso: toIso(priorWeekStart),\n    priorWeekEndIso: toIso(priorWeekEnd),\n    weekLabel: weekStart.toISOString().slice(0, 10) + ' to ' + weekEnd.toISOString().slice(0, 10)\n  }\n}];"
+      },
+      "id": "f0000003-0003-0003-0003-000000000003",
+      "name": "Compute Date Range",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 380]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-calibration",
+              "leftValue": "={{ $env.CALIBRATION_WINDOW_ACTIVE }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0000004-0004-0004-0004-000000000004",
+      "name": "Calibration Window Active?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COUNT(*) FILTER (WHERE resolution = 'agree') AS agree_count,\n  COUNT(*) AS total_decisions,\n  ROUND(\n    100.0 * COUNT(*) FILTER (WHERE resolution = 'agree') / NULLIF(COUNT(*), 0),\n    1\n  ) AS agree_pct\nFROM (\n  SELECT\n    CASE\n      WHEN el.data->>'ai_score' IS NOT NULL\n       AND wt.resolvedAt IS NOT NULL\n       AND ABS((el.data->>'ai_score')::numeric - (el.data->>'human_score')::numeric) <= 1\n      THEN 'agree'\n      ELSE 'disagree'\n    END AS resolution\n  FROM event_log el\n  JOIN (\n    SELECT id, \"resolvedAt\"\n    FROM information_schema.tables\n    WHERE 1=0\n  ) wt ON false\n  WHERE el.workflow_name IN ('workflow_b_screening', 'workflow_c_screening')\n    AND el.ts >= $1\n    AND el.ts < $2\n    AND el.event = 'screening_scored'\n) sub",
+        "options": {
+          "queryReplacement": "={{ [$('Compute Date Range').first()?.json?.weekStartIso, $('Compute Date Range').first()?.json?.weekEndIso] }}"
+        }
+      },
+      "id": "f0000005-0005-0005-0005-000000000005",
+      "name": "Query Calibration AI Agreement",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [920, 240],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS human_decisions\nFROM event_log\nWHERE workflow_name IN ('workflow_b_screening', 'workflow_c_screening')\n  AND event = 'human_review_resolved'\n  AND ts >= $1\n  AND ts < $2",
+        "options": {
+          "queryReplacement": "={{ [$('Compute Date Range').first()?.json?.weekStartIso, $('Compute Date Range').first()?.json?.weekEndIso] }}"
+        }
+      },
+      "id": "f0000006-0006-0006-0006-000000000006",
+      "name": "Query Calibration Human Decisions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [920, 380],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query { findManyCandidates(filter: { createdAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" } }) { totalCount } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "f0000007-0007-0007-0007-000000000007",
+      "name": "Query Twenty Candidates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [1160, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query { blueCollar: findManyApplications(filter: { createdAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" }, collarType: { eq: \"BLUE\" } }) { totalCount } whiteCollar: findManyApplications(filter: { createdAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" }, collarType: { eq: \"WHITE\" } }) { totalCount } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "f0000008-0008-0008-0008-000000000008",
+      "name": "Query Twenty Applications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [1160, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query { findManyInterviews(filter: { createdAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" } }) { totalCount } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "f0000009-0009-0009-0009-000000000009",
+      "name": "Query Twenty Interviews Scheduled",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [1160, 520]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query { findManyInterviews(filter: { status: { eq: COMPLETED }, scheduledAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" } }) { totalCount } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "f0000010-0010-0010-0010-000000000010",
+      "name": "Query Twenty Interviews Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [1160, 660]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query { findManyApplications(filter: { status: { eq: PLACED }, updatedAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" } }) { totalCount } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "f0000011-0011-0011-0011-000000000011",
+      "name": "Query Twenty Placements",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [1160, 800]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query { findManyReviewTasks(filter: { status: { eq: OPEN }, createdAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" } }) { totalCount } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "f0000012-0012-0012-0012-000000000012",
+      "name": "Query Twenty ReviewTasks Open",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [1400, 240]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query { findManyReviewTasks(filter: { status: { eq: RESOLVED }, updatedAt: { gte: \"' + $('Compute Date Range').first()?.json?.weekStartIso + '\", lte: \"' + $('Compute Date Range').first()?.json?.weekEndIso + '\" } }) { totalCount } }' } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      },
+      "id": "f0000013-0013-0013-0013-000000000013",
+      "name": "Query Twenty ReviewTasks Resolved",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [1400, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS count\nFROM event_log\nWHERE event IN ('screening_completed_b', 'screening_completed_c')\n  AND ts >= $1\n  AND ts < $2",
+        "options": {
+          "queryReplacement": "={{ [$('Compute Date Range').first()?.json?.weekStartIso, $('Compute Date Range').first()?.json?.weekEndIso] }}"
+        }
+      },
+      "id": "f0000014-0014-0014-0014-000000000014",
+      "name": "Query Screening Completions",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [1400, 520],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS count\nFROM workflow_errors\nWHERE occurred_at >= $1\n  AND occurred_at < $2",
+        "options": {
+          "queryReplacement": "={{ [$('Compute Date Range').first()?.json?.weekStartIso, $('Compute Date Range').first()?.json?.weekEndIso] }}"
+        }
+      },
+      "id": "f0000015-0015-0015-0015-000000000015",
+      "name": "Query Workflow Errors",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [1400, 660],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS count\nFROM event_log\nWHERE event = 'voice_note_routed_to_review'\n  AND ts >= $1\n  AND ts < $2",
+        "options": {
+          "queryReplacement": "={{ [$('Compute Date Range').first()?.json?.weekStartIso, $('Compute Date Range').first()?.json?.weekEndIso] }}"
+        }
+      },
+      "id": "f0000016-0016-0016-0016-000000000016",
+      "name": "Query Voice Note Review Queue",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [1400, 800],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ROUND(COALESCE(SUM(cost_usd), 0)::numeric, 4) AS total_usd\nFROM ai_call_log\nWHERE ts >= $1\n  AND ts < $2",
+        "options": {
+          "queryReplacement": "={{ [$('Compute Date Range').first()?.json?.weekStartIso, $('Compute Date Range').first()?.json?.weekEndIso] }}"
+        }
+      },
+      "id": "f0000017-0017-0017-0017-000000000017",
+      "name": "Query AI Cost This Week",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [1640, 240],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ROUND(COALESCE(SUM(cost_usd), 0)::numeric, 4) AS total_usd\nFROM ai_call_log\nWHERE ts >= $1\n  AND ts < $2",
+        "options": {
+          "queryReplacement": "={{ [$('Compute Date Range').first()?.json?.priorWeekStartIso, $('Compute Date Range').first()?.json?.priorWeekEndIso] }}"
+        }
+      },
+      "id": "f0000018-0018-0018-0018-000000000018",
+      "name": "Query AI Cost Last Week",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [1640, 380],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compose pre-formatted report body from all upstream metric nodes.\n// Uses nullish coalescing so a failed query shows '— unavailable —'.\n\nconst na = '\\u2014 unavailable \\u2014';\n\nconst weekLabel = $('Compute Date Range').first()?.json?.weekLabel ?? na;\n\n// Twenty metrics\nconst newCandidates    = $('Query Twenty Candidates').first()?.json?.data?.findManyCandidates?.totalCount ?? na;\nconst appsBlue         = $('Query Twenty Applications').first()?.json?.data?.blueCollar?.totalCount ?? na;\nconst appsWhite        = $('Query Twenty Applications').first()?.json?.data?.whiteCollar?.totalCount ?? na;\nconst interviewsSched  = $('Query Twenty Interviews Scheduled').first()?.json?.data?.findManyInterviews?.totalCount ?? na;\nconst interviewsComp   = $('Query Twenty Interviews Completed').first()?.json?.data?.findManyInterviews?.totalCount ?? na;\nconst placements       = $('Query Twenty Placements').first()?.json?.data?.findManyApplications?.totalCount ?? na;\nconst reviewOpen       = $('Query Twenty ReviewTasks Open').first()?.json?.data?.findManyReviewTasks?.totalCount ?? na;\nconst reviewResolved   = $('Query Twenty ReviewTasks Resolved').first()?.json?.data?.findManyReviewTasks?.totalCount ?? na;\n\n// Bookings DB metrics\nconst screeningDone    = $('Query Screening Completions').first()?.json?.count ?? na;\nconst workflowErrors   = $('Query Workflow Errors').first()?.json?.count ?? na;\nconst voiceNoteQueue   = $('Query Voice Note Review Queue').first()?.json?.count ?? na;\nconst aiCostThisWeek   = $('Query AI Cost This Week').first()?.json?.total_usd ?? na;\nconst aiCostLastWeek   = $('Query AI Cost Last Week').first()?.json?.total_usd ?? na;\n\n// WoW AI cost delta\nlet wowDelta = na;\nif (aiCostThisWeek !== na && aiCostLastWeek !== na) {\n  const diff = Number(aiCostThisWeek) - Number(aiCostLastWeek);\n  const sign = diff >= 0 ? '+' : '';\n  wowDelta = sign + diff.toFixed(4) + ' USD';\n}\n\n// Calibration block (only if the env var was active AND queries ran)\nconst calibrationActive = $env.CALIBRATION_WINDOW_ACTIVE === 'true';\nlet calibrationSection = '';\nif (calibrationActive) {\n  const agreePct     = $('Query Calibration AI Agreement').first()?.json?.agree_pct ?? na;\n  const humanDecisions = $('Query Calibration Human Decisions').first()?.json?.human_decisions ?? na;\n  if (agreePct !== na || humanDecisions !== na) {\n    calibrationSection = `\nCalibration (week 1-2 window):\n  AI vs human agreement: ${agreePct !== na ? agreePct + '%' : na}\n  Human review decisions: ${humanDecisions}`;\n  }\n}\n\nconst reportText = `Weekly HR Report — ${weekLabel}\n\nPipeline:\n  New candidates:        ${newCandidates}\n  New applications:      Blue-collar ${appsBlue}  White-collar ${appsWhite}\n  Screened this week:    ${screeningDone}\n  Interviews scheduled:  ${interviewsSched}\n  Interviews completed:  ${interviewsComp}\n  Placements:            ${placements}\n\nReview queue:\n  Tasks opened:          ${reviewOpen}\n  Tasks resolved:        ${reviewResolved}\n  Voice notes for human: ${voiceNoteQueue}\n\nSystem health:\n  Workflow errors:       ${workflowErrors}\n  AI cost this week:     ${aiCostThisWeek !== na ? aiCostThisWeek + ' USD' : na}\n  AI cost last week:     ${aiCostLastWeek !== na ? aiCostLastWeek + ' USD' : na}\n  WoW delta:             ${wowDelta}${calibrationSection}`;\n\nreturn [{ json: { reportText } }];"
+      },
+      "id": "f0000019-0019-0019-0019-000000000019",
+      "name": "Compose Report Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1880, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message)\nSELECT $1, $2, $3, $4\nWHERE $4 IS NOT NULL",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $execution.id, 'Query Twenty Candidates', ($('Query Twenty Candidates').first()?.json?.error ?? null)] }}"
+        }
+      },
+      "id": "f0000020-0020-0020-0020-000000000020",
+      "name": "Log Metric Failure — Candidates",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [2120, 120],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message)\nSELECT $1, $2, $3, $4\nWHERE $4 IS NOT NULL",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $execution.id, 'Query Twenty Applications', ($('Query Twenty Applications').first()?.json?.error ?? null)] }}"
+        }
+      },
+      "id": "f0000021-0021-0021-0021-000000000021",
+      "name": "Log Metric Failure — Applications",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [2120, 240],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message)\nSELECT $1, $2, $3, $4\nWHERE $4 IS NOT NULL",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $execution.id, 'Query Twenty Interviews Scheduled', ($('Query Twenty Interviews Scheduled').first()?.json?.error ?? null)] }}"
+        }
+      },
+      "id": "f0000022-0022-0022-0022-000000000022",
+      "name": "Log Metric Failure — Interviews Scheduled",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [2120, 360],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message)\nSELECT $1, $2, $3, $4\nWHERE $4 IS NOT NULL",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $execution.id, 'Query Twenty Interviews Completed', ($('Query Twenty Interviews Completed').first()?.json?.error ?? null)] }}"
+        }
+      },
+      "id": "f0000023-0023-0023-0023-000000000023",
+      "name": "Log Metric Failure — Interviews Completed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [2120, 480],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message)\nSELECT $1, $2, $3, $4\nWHERE $4 IS NOT NULL",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $execution.id, 'Query Twenty Placements', ($('Query Twenty Placements').first()?.json?.error ?? null)] }}"
+        }
+      },
+      "id": "f0000024-0024-0024-0024-000000000024",
+      "name": "Log Metric Failure — Placements",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [2120, 600],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message)\nSELECT $1, $2, $3, $4\nWHERE $4 IS NOT NULL",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $execution.id, 'Query Screening Completions', ($('Query Screening Completions').first()?.json?.error ?? null)] }}"
+        }
+      },
+      "id": "f0000025-0025-0025-0025-000000000025",
+      "name": "Log Metric Failure — Screening",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [2120, 720],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message)\nSELECT $1, $2, $3, $4\nWHERE $4 IS NOT NULL",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $execution.id, 'Query AI Cost This Week', ($('Query AI Cost This Week').first()?.json?.error ?? null)] }}"
+        }
+      },
+      "id": "f0000026-0026-0026-0026-000000000026",
+      "name": "Log Metric Failure — AI Cost",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [2120, 840],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "prompt": "={{ $('Compose Report Body').first()?.json?.reportText }}",
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": "200",
+            "workflowName": "workflow_f_reporting"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "model",
+              "displayName": "model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "max_tokens",
+              "displayName": "max_tokens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "f0000027-0027-0027-0027-000000000027",
+      "name": "Claude Haiku Narrative",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [2360, 380]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-final-message",
+              "name": "finalMessage",
+              "value": "={{ '*HR Weekly Report — ' + ($('Compute Date Range').first()?.json?.weekLabel ?? '') + '*\\n\\n' + ($('Claude Haiku Narrative').first()?.json?.content ?? '') + '\\n\\n---\\n' + ($('Compose Report Body').first()?.json?.reportText ?? '') + '\\n---\\nSent by HR Automation. Reply HELP for support.' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0000028-0028-0028-0028-000000000028",
+      "name": "Render Final Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2600, 380]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $env.STAFF_WHATSAPP_NUMBER }}",
+            "body": "={{ $('Render Final Message').first()?.json?.finalMessage }}",
+            "templateName": "weekly_report",
+            "conversationId": ""
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "templateName",
+              "displayName": "templateName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "conversationId",
+              "displayName": "conversationId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "id": "f0000029-0029-0029-0029-000000000029",
+      "name": "Send to Staff WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [2840, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, level, event, execution_id, message)\nVALUES ($1, $2, $3, $4, $5)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', 'info', 'report_run_completed', $execution.id, '{\"week\":\"' + $('Compute Date Range').first()?.json?.weekStartIso + '\"}'] }}"
+        }
+      },
+      "id": "f0000030-0030-0030-0030-000000000030",
+      "name": "Log Run to event_log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [3080, 380],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "f0000031-0031-0031-0031-000000000031",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [200, 680]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack)\nVALUES ($1, $2, $3, $4, $5)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_f_reporting', $json.execution?.id ?? '', $json.execution?.lastNodeExecuted ?? 'unknown', $json.execution?.error?.message ?? 'unknown error', ($json.execution?.error?.stack ?? '').split('\\n')[0]] }}"
+        }
+      },
+      "id": "f0000032-0032-0032-0032-000000000032",
+      "name": "Log Fatal Error to workflow_errors",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [440, 680],
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger — Mon 07:00": {
+      "main": [
+        [
+          {
+            "node": "Compute Date Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Compute Date Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Date Range": {
+      "main": [
+        [
+          {
+            "node": "Calibration Window Active?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calibration Window Active?": {
+      "main": [
+        [
+          {
+            "node": "Query Calibration AI Agreement",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Query Twenty Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Calibration AI Agreement": {
+      "main": [
+        [
+          {
+            "node": "Query Calibration Human Decisions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Calibration Human Decisions": {
+      "main": [
+        [
+          {
+            "node": "Query Twenty Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Twenty Candidates": {
+      "main": [
+        [
+          {
+            "node": "Query Twenty Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Twenty Applications": {
+      "main": [
+        [
+          {
+            "node": "Query Twenty Interviews Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Twenty Interviews Scheduled": {
+      "main": [
+        [
+          {
+            "node": "Query Twenty Interviews Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Twenty Interviews Completed": {
+      "main": [
+        [
+          {
+            "node": "Query Twenty Placements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Twenty Placements": {
+      "main": [
+        [
+          {
+            "node": "Query Twenty ReviewTasks Open",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Twenty ReviewTasks Open": {
+      "main": [
+        [
+          {
+            "node": "Query Twenty ReviewTasks Resolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Twenty ReviewTasks Resolved": {
+      "main": [
+        [
+          {
+            "node": "Query Screening Completions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Screening Completions": {
+      "main": [
+        [
+          {
+            "node": "Query Workflow Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Workflow Errors": {
+      "main": [
+        [
+          {
+            "node": "Query Voice Note Review Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Voice Note Review Queue": {
+      "main": [
+        [
+          {
+            "node": "Query AI Cost This Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query AI Cost This Week": {
+      "main": [
+        [
+          {
+            "node": "Query AI Cost Last Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query AI Cost Last Week": {
+      "main": [
+        [
+          {
+            "node": "Compose Report Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Report Body": {
+      "main": [
+        [
+          {
+            "node": "Log Metric Failure — Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Metric Failure — Candidates": {
+      "main": [
+        [
+          {
+            "node": "Log Metric Failure — Applications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Metric Failure — Applications": {
+      "main": [
+        [
+          {
+            "node": "Log Metric Failure — Interviews Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Metric Failure — Interviews Scheduled": {
+      "main": [
+        [
+          {
+            "node": "Log Metric Failure — Interviews Completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Metric Failure — Interviews Completed": {
+      "main": [
+        [
+          {
+            "node": "Log Metric Failure — Placements",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Metric Failure — Placements": {
+      "main": [
+        [
+          {
+            "node": "Log Metric Failure — Screening",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Metric Failure — Screening": {
+      "main": [
+        [
+          {
+            "node": "Log Metric Failure — AI Cost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Metric Failure — AI Cost": {
+      "main": [
+        [
+          {
+            "node": "Claude Haiku Narrative",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Haiku Narrative": {
+      "main": [
+        [
+          {
+            "node": "Render Final Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Final Message": {
+      "main": [
+        [
+          {
+            "node": "Send to Staff WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send to Staff WA": {
+      "main": [
+        [
+          {
+            "node": "Log Run to event_log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Log Fatal Error to workflow_errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    { "name": "hr-automation" },
+    { "name": "workflow-f" },
+    { "name": "version-1" }
+  ],
+  "pinData": {}
+}

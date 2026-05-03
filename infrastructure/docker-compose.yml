@@ -214,6 +214,9 @@ services:
       # Telegram Bot API — channel posting (Workflow E).
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHANNEL_ID: ${TELEGRAM_CHANNEL_ID}
+
+      # Workflow F — staff reporting number (E.164).
+      STAFF_WHATSAPP_NUMBER: ${STAFF_WHATSAPP_NUMBER}
     volumes:
       - n8n_data:/home/node/.n8n
     networks:

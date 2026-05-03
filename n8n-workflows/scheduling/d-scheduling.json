@@ -970,7 +970,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { query: 'mutation CreateInterview($data: InterviewCreateInput!) { createInterview(data: $data) { id } }', variables: { data: { application: { connect: { id: $('Resolve Chosen Slot').first()?.json?.applicationId ?? '' } }, candidate: { connect: { id: $('Resolve Chosen Slot').first()?.json?.candidateId ?? '' } }, interviewer: { connect: { id: $('Fetch Interviewer for Interview').first()?.json?.twenty_user_id ?? '' } }, scheduledAt: $('Atomic Claim Slot').first()?.json?.starts_at, bookingId: $('Atomic Claim Slot').first()?.json?.id, isReschedule: false, status: 'scheduled' } } } }}",
+        "jsonBody": "={{ { query: 'mutation CreateInterview($data: InterviewCreateInput!) { createInterview(data: $data) { id } }', variables: { data: { application: { connect: { id: $('Resolve Chosen Slot').first()?.json?.applicationId ?? '' } }, interviewer: { connect: { id: $('Fetch Interviewer for Interview').first()?.json?.twenty_user_id ?? '' } }, scheduledAt: $('Atomic Claim Slot').first()?.json?.starts_at, bookingId: $('Atomic Claim Slot').first()?.json?.id, status: 'CONFIRMED' } } } }}",
         "options": {
           "timeout": 15000,
           "retry": {
@@ -979,7 +979,8 @@
             "waitBetweenTries": 2000
           }
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "id": "dc00042-0042-dc42-0042-000000000042",
@@ -2564,6 +2565,13 @@
     },
     "Create Google Calendar Event": {
       "main": [
+        [
+          {
+            "node": "Calendar Created?",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Calendar Created?",

@@ -117,6 +117,35 @@ else:
   else
     echo "  [3/3] Active. Done: $WF_NAME @ $NEW_ID"
   fi
+
+  # ── Self-reference patch: fix errorWorkflow placeholder ──────────────────
+  # Some workflows set errorWorkflow to "PLACEHOLDER_H_SELF_REF" so that the
+  # self-reference can be resolved to the actual ID after import.
+  SELF_REF_CHECK=$(python3 -c "
+import json
+with open('$file') as f:
+    wf = json.load(f)
+settings = wf.get('settings', {})
+print('yes' if settings.get('errorWorkflow') == 'PLACEHOLDER_H_SELF_REF' else 'no')
+")
+  if [ "$SELF_REF_CHECK" = "yes" ]; then
+    echo "  [+] Patching errorWorkflow self-reference to $NEW_ID..."
+    PATCH_BODY=$(python3 -c "
+import json, sys
+resp = json.loads(sys.stdin.read())
+resp['settings']['errorWorkflow'] = '$NEW_ID'
+# Strip fields the API rejects on PUT
+for k in ('createdAt','updatedAt','versionId','meta','pinData','tags'):
+    resp.pop(k, None)
+print(json.dumps(resp))
+" <<< "$(n8n_get "workflows/$NEW_ID")")
+    curl -sf -X PUT "$N8N_URL/api/v1/workflows/$NEW_ID" \
+      -H "X-N8N-API-KEY: $API_KEY" -H "Content-Type: application/json" \
+      -d "$PATCH_BODY" > /dev/null 2>&1 \
+      && echo "  [+] errorWorkflow patched to $NEW_ID" \
+      || echo "  WARN: errorWorkflow self-reference patch failed (non-blocking)"
+  fi
+
   echo "$NEW_ID"
 }
 

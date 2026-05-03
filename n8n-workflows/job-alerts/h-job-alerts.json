@@ -883,6 +883,48 @@
           "queryReplacement": "={{ [\n  'workflow_h_alerts',\n  $execution.id ?? '',\n  $node.name ?? '',\n  ($json.error?.message ?? ($json.message ?? 'HTTP error')).toString().substring(0, 500),\n  ($json.error?.stack?.split('\\n')?.[0] ?? '').toString().substring(0, 200),\n  '{\"source\":\"workflow_h_error_branch\"}'\n] }}"
         }
       }
+    },
+    {
+      "id": "h0000007b-007b-007b-007b-00000000007b",
+      "name": "Unwrap Postings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1870,
+        200
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const postings = $json.postings ?? [];\nreturn postings.map(p => ({ json: p }));\n"
+      }
+    },
+    {
+      "id": "h0000012b-012b-012b-012b-00000000012b",
+      "name": "Unwrap Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2910,
+        200
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const candidates = $json.candidates ?? [];\nreturn candidates.map(c => ({ json: c }));\n"
+      }
+    },
+    {
+      "id": "h0000033b-033b-033b-033b-00000000033b",
+      "name": "Unwrap Expired Apps",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1090,
+        700
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const edges = $json.data?.applications?.edges ?? [];\nreturn edges.map(e => ({ json: { id: e.node.id } }));\n"
+      }
     }
   ],
   "connections": {
@@ -968,7 +1010,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Postings",
+            "node": "Unwrap Postings",
             "type": "main",
             "index": 0
           }
@@ -978,14 +1020,14 @@
     },
     "SplitInBatches — Postings": {
       "main": [
+        [],
         [
           {
             "node": "Query Eligible Applications",
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Query Eligible Applications": {
@@ -1014,7 +1056,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Candidates",
+            "node": "Unwrap Candidates",
             "type": "main",
             "index": 0
           }
@@ -1032,12 +1074,18 @@
       "main": [
         [
           {
-            "node": "Read Anti-Spam State",
+            "node": "Mark Posting Processed",
             "type": "main",
             "index": 0
           }
         ],
-        []
+        [
+          {
+            "node": "Read Anti-Spam State",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Read Anti-Spam State": {
@@ -1190,7 +1238,7 @@
       "main": [
         [
           {
-            "node": "SplitInBatches — Expired",
+            "node": "Unwrap Expired Apps",
             "type": "main",
             "index": 0
           }
@@ -1200,14 +1248,14 @@
     },
     "SplitInBatches — Expired": {
       "main": [
+        [],
         [
           {
             "node": "Withdraw Application",
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Withdraw Application": {
@@ -1249,11 +1297,44 @@
           }
         ]
       ]
+    },
+    "Unwrap Postings": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches — Postings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unwrap Candidates": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches — Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unwrap Expired Apps": {
+      "main": [
+        [
+          {
+            "node": "SplitInBatches — Expired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
     "executionOrder": "v1",
-    "errorWorkflow": "spqsDI6gUcr2c4Lb"
+    "errorWorkflow": "PLACEHOLDER_H_SELF_REF"
   },
   "staticData": null
 }

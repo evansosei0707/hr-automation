@@ -55,6 +55,7 @@ for filepath in [
     'n8n-workflows/screening/c-screening.json',
     'n8n-workflows/scheduling/d-scheduling.json',
     'n8n-workflows/reporting/f-reporting.json',
+    'n8n-workflows/job-alerts/h-job-alerts.json',
 ]:
     with open(filepath) as f:
         data = json.load(f)
@@ -108,6 +109,9 @@ for filepath in [
         # Workflow F — Weekly Reporting
         'Claude Haiku Narrative': cc_id,
         'Send to Staff WA': wa_id,
+        # Workflow H — Job Alerts / Re-Engagement
+        'Compose WA Message': cc_id,
+        'Send Re-engagement WA': wa_id,
     }
 
     for node in data.get('nodes', []):

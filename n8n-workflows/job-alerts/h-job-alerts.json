@@ -1,0 +1,988 @@
+{
+  "name": "Workflow H — Job Alerts / Re-Engagement",
+  "tags": [
+    { "name": "hr-automation" },
+    { "name": "workflow-h" },
+    { "name": "version-1" }
+  ],
+  "nodes": [
+    {
+      "id": "h0000001-0001-0001-0001-000000000001",
+      "name": "Schedule Trigger — 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 200],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "h0000002-0002-0002-0002-000000000002",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 380],
+      "parameters": {}
+    },
+    {
+      "id": "h0000003-0003-0003-0003-000000000003",
+      "name": "Compute Scan Window",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 200],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const now = new Date();\nconst windowStart = new Date(now.getTime() - 5 * 60 * 1000).toISOString();\nconst sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString();\nconst ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();\nconst fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();\nconst currentYear = now.getFullYear();\nreturn [{ json: { windowStart, sixMonthsAgo, ninetyDaysAgo, fourteenDaysAgo, currentYear } }];\n"
+      }
+    },
+    {
+      "id": "h0000004-0004-0004-0004-000000000004",
+      "name": "Query New Open JobPostings",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 200],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query NewPostings($windowStart: DateTime!, $status: JobPostingStatusEnum!) { jobPostings(filter: { status: { eq: $status }, postedAt: { gte: $windowStart } }) { edges { node { id title category collarType } } } }', variables: { windowStart: $json.windowStart, status: 'OPEN' } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      }
+    },
+    {
+      "id": "h0000005-0005-0005-0005-000000000005",
+      "name": "Any New Postings?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-postings-exist",
+              "leftValue": "={{ ($json.data?.jobPostings?.edges?.length ?? 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000006-0006-0006-0006-000000000006",
+      "name": "Read Dedup State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1220, 200],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT facts->>'h_processed_postings' AS processed FROM candidate_facts WHERE candidate_id = 'system-h-dedup'",
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000007-0007-0007-0007-000000000007",
+      "name": "Filter Unprocessed Postings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1480, 200],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const dedupRow = $('Read Dedup State').first()?.json;\nlet processed = [];\ntry { processed = JSON.parse(dedupRow?.processed || '[]'); } catch(e) { processed = []; }\nif (!Array.isArray(processed)) processed = [];\nconst allPostings = $('Query New Open JobPostings').first()?.json?.data?.jobPostings?.edges?.map(e => e.node) ?? [];\nconst unprocessed = allPostings.filter(p => !processed.includes(p.id));\nreturn [{ json: { postings: unprocessed } }];\n"
+      }
+    },
+    {
+      "id": "h0000008-0008-0008-0008-000000000008",
+      "name": "Any Unprocessed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1740, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-unprocessed-exist",
+              "leftValue": "={{ ($json.postings?.length ?? 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000009-0009-0009-0009-000000000009",
+      "name": "SplitInBatches — Postings",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [2000, 200],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000010-0010-0010-0010-000000000010",
+      "name": "Query Eligible Applications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2260, 200],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query EligibleApps($eligible: Boolean!, $since: DateTime!, $category: String!) { applications(filter: { reEngagementEligible: { eq: $eligible }, createdAt: { gte: $since }, jobPosting: { category: { eq: $category } } }) { edges { node { id reEngagedAt candidate { id name whatsappNumberE164 consentStatus lastActivityAt dataRetentionPolicy strengthTier } jobPosting { id title } applications { edges { node { status } } } } } } }', variables: { eligible: true, since: $('Compute Scan Window').first()?.json?.sixMonthsAgo, category: $json.category } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      }
+    },
+    {
+      "id": "h0000011-0011-0011-0011-000000000011",
+      "name": "Filter Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2520, 200],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const scanWindow = $('Compute Scan Window').first()?.json ?? {};\nconst ninetyDaysAgo = new Date(scanWindow.ninetyDaysAgo);\nconst fourteenDaysAgo = new Date(scanWindow.fourteenDaysAgo);\nconst currentYear = scanWindow.currentYear;\nconst busyStatuses = ['INTERVIEWING', 'OFFERED', 'PLACED'];\n\nconst edges = $('Query Eligible Applications').first()?.json?.data?.applications?.edges ?? [];\nlet candidates = edges.map(e => e.node).filter(app => {\n  const c = app.candidate;\n  if (!c) return false;\n  if (c.consentStatus !== 'GRANTED') return false;\n  if (c.dataRetentionPolicy === 'PENDING_DELETION') return false;\n  if (c.lastActivityAt && new Date(c.lastActivityAt) < ninetyDaysAgo) return false;\n  // busy check\n  const appStatuses = (app.applications?.edges ?? []).map(ae => ae.node?.status);\n  if (appStatuses.some(s => busyStatuses.includes(s))) return false;\n  // anti-spam proxy: reEngagedAt within 14 days\n  if (app.reEngagedAt && new Date(app.reEngagedAt) > fourteenDaysAgo) return false;\n  return true;\n});\n\n// Sort by strengthTier then recency\nconst tierOrder = { TOP_20: 0, SOLID: 1, DEVELOPING: 2 };\ncandidates.sort((a, b) => {\n  const ta = tierOrder[a.candidate?.strengthTier] ?? 3;\n  const tb = tierOrder[b.candidate?.strengthTier] ?? 3;\n  if (ta !== tb) return ta - tb;\n  const da = new Date(a.candidate?.lastActivityAt || 0);\n  const db = new Date(b.candidate?.lastActivityAt || 0);\n  return db - da;\n});\n\ncandidates = candidates.slice(0, 20);\nreturn [{ json: { candidates } }];\n"
+      }
+    },
+    {
+      "id": "h0000012-0012-0012-0012-000000000012",
+      "name": "Any Candidates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2780, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-candidates-exist",
+              "leftValue": "={{ ($json.candidates?.length ?? 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000013-0013-0013-0013-000000000013",
+      "name": "SplitInBatches — Candidates",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [3040, 200],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000014-0014-0014-0014-000000000014",
+      "name": "Read Anti-Spam State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [3300, 200],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT facts->>'last_reengaged_at' AS last_reengaged_at, (facts->>'reengagement_count_ytd')::int AS reengagement_count_ytd FROM candidate_facts WHERE candidate_id = $1",
+        "options": {
+          "queryReplacement": "={{ [$json.candidate?.id ?? '00000000-0000-0000-0000-000000000000'] }}"
+        }
+      }
+    },
+    {
+      "id": "h0000015a-015a-015a-015a-00000000015a",
+      "name": "Evaluate Anti-Spam Eligibility",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3560, 200],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const last = $json.last_reengaged_at;\nconst count = parseInt($json.reengagement_count_ytd ?? '0', 10);\nconst fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;\nconst notRecentlyEngaged = !last || new Date(last).getTime() < fourteenDaysAgo;\nconst underYearLimit = count < 4;\nreturn [{ json: { ...$input.item.json, spamCheckOk: (notRecentlyEngaged && underYearLimit) ? 'yes' : '' } }];\n"
+      }
+    },
+    {
+      "id": "h0000015-0015-0015-0015-000000000015",
+      "name": "Anti-Spam Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [3780, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-spam-ok",
+              "leftValue": "={{ $json.spamCheckOk ?? '' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000016-0016-0016-0016-000000000016",
+      "name": "Compose WA Message",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [4040, 200],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "model": "claude-haiku-4-5",
+            "workflowName": "workflow_h_alerts",
+            "maxTokens": 120,
+            "systemPrompt": "You are composing a short WhatsApp re-engagement message for a Ghanaian HR firm. Rules: 1) Address candidate by first name only. 2) Reference the previous role type and approximate timeframe (e.g. 'a few weeks ago', 'last month', 'recently') — never the client name. 3) Mention the new role title only — never the client name. 4) End with a clear YES or NO prompt. 5) 2-4 sentences maximum. 6) Plain Ghanaian English. 7) No emojis in body. 8) Never mention candidate score, tier, or salary.",
+            "messages": "={{ [{ role: 'user', content: 'Candidate first name: ' + ($('SplitInBatches — Candidates').first()?.json?.candidate?.name?.split(' ')?.[0] ?? 'there') + '\\nPrevious role: ' + ($('SplitInBatches — Candidates').first()?.json?.jobPosting?.title ?? 'a role we had earlier') + '\\nNew role: ' + ($('SplitInBatches — Postings').first()?.json?.title ?? 'a new opening') + '\\nWrite the WhatsApp re-engagement message now.' }] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "model",
+              "displayName": "model",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "maxTokens",
+              "displayName": "maxTokens",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "systemPrompt",
+              "displayName": "systemPrompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messages",
+              "displayName": "messages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "array",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "h0000017-0017-0017-0017-000000000017",
+      "name": "Create Application",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4080, 200],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'mutation CreateApp($candidateId: UUID!, $postingId: UUID!, $now: DateTime!) { createApplication(data: { candidate: { connect: { id: $candidateId } }, jobPosting: { connect: { id: $postingId } }, status: RE_ENGAGEMENT_OFFERED, reEngagedAt: $now }) { id } }', variables: { candidateId: $('SplitInBatches — Candidates').first()?.json?.candidate?.id ?? '', postingId: $('SplitInBatches — Postings').first()?.json?.id ?? '', now: new Date().toISOString() } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      }
+    },
+    {
+      "id": "h0000018-0018-0018-0018-000000000018",
+      "name": "Send Re-engagement WA",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [4340, 200],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_WA_SEND_ID",
+          "mode": "id"
+        },
+        "options": {},
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "to": "={{ $('SplitInBatches — Candidates').first()?.json?.candidate?.whatsappNumberE164 ?? '' }}",
+            "body": "={{ $('Compose WA Message').first()?.json?.content?.[0]?.text ?? $('Compose WA Message').first()?.json?.content ?? '' }}",
+            "templateName": "re_engagement_v1",
+            "conversationId": ""
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "to",
+              "displayName": "to",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "templateName",
+              "displayName": "templateName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "conversationId",
+              "displayName": "conversationId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "h0000019-0019-0019-0019-000000000019",
+      "name": "Update Anti-Spam State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [4600, 200],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO candidate_facts (candidate_id, facts)\nVALUES ($1, jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int))\nON CONFLICT (candidate_id) DO UPDATE\n  SET facts = candidate_facts.facts\n    || jsonb_build_object('last_reengaged_at', $2::text, 'reengagement_count_ytd', $3::int),\n    updated_at = NOW()",
+        "options": {
+          "queryReplacement": "={{ [\n  $('SplitInBatches — Candidates').first()?.json?.candidate?.id ?? '00000000-0000-0000-0000-000000000000',\n  new Date().toISOString(),\n  (() => {\n    const prevCount = parseInt($('Read Anti-Spam State').first()?.json?.reengagement_count_ytd ?? '0', 10);\n    const prevDate = $('Read Anti-Spam State').first()?.json?.last_reengaged_at;\n    const currentYear = $('Compute Scan Window').first()?.json?.currentYear;\n    const prevYear = prevDate ? new Date(prevDate).getFullYear() : 0;\n    return prevYear < currentYear ? 1 : prevCount + 1;\n  })()\n] }}"
+        }
+      }
+    },
+    {
+      "id": "h0000020-0020-0020-0020-000000000020",
+      "name": "Mark Posting Processed",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [4860, 200],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO candidate_facts (candidate_id, facts)\nVALUES ('system-h-dedup', jsonb_build_object('h_processed_postings', jsonb_build_array($1::text)))\nON CONFLICT (candidate_id) DO UPDATE\n  SET facts = jsonb_set(\n    candidate_facts.facts,\n    '{h_processed_postings}',\n    COALESCE(candidate_facts.facts->'h_processed_postings', '[]'::jsonb) || jsonb_build_array($1::text)\n  ),\n  updated_at = NOW()",
+        "options": {
+          "queryReplacement": "={{ [$('SplitInBatches — Postings').first()?.json?.id ?? ''] }}"
+        }
+      }
+    },
+    {
+      "id": "h0000021-0021-0021-0021-000000000021",
+      "name": "Log Run",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [5120, 200],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, level, event, execution_id) VALUES ($1, $2, $3, $4)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_h_alerts', 'info', 're_engagement_run_completed', $execution.id] }}"
+        }
+      }
+    },
+    {
+      "id": "h0000030-0030-0030-0030-000000000030",
+      "name": "Schedule Trigger — Hourly",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 700],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "h0000031-0031-0031-0031-000000000031",
+      "name": "Compute Timeout Cutoff",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 700],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const now = new Date();\nconst seventyTwoHoursAgo = new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString();\nreturn [{ json: { seventyTwoHoursAgo } }];\n"
+      }
+    },
+    {
+      "id": "h0000032-0032-0032-0032-000000000032",
+      "name": "Query Expired Offers",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 700],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'query ExpiredOffers($status: ApplicationStatusEnum!, $cutoff: DateTime!) { applications(filter: { status: { eq: $status }, reEngagedAt: { lt: $cutoff } }) { edges { node { id } } } }', variables: { status: 'RE_ENGAGEMENT_OFFERED', cutoff: $json.seventyTwoHoursAgo } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      }
+    },
+    {
+      "id": "h0000033-0033-0033-0033-000000000033",
+      "name": "Any Expired?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [960, 700],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "cond-expired-exist",
+              "leftValue": "={{ ($json.data?.applications?.edges?.length ?? 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000034-0034-0034-0034-000000000034",
+      "name": "SplitInBatches — Expired",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1220, 700],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "h0000035-0035-0035-0035-000000000035",
+      "name": "Withdraw Application",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 700],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.TWENTY_API_URL }}/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.TWENTY_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ { query: 'mutation Withdraw($id: UUID!) { updateApplication(id: $id, data: { status: WITHDRAWN }) { id } }', variables: { id: $json.id } } }}",
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "enabled": true,
+            "maxTries": 2,
+            "waitBetweenTries": 1000
+          }
+        }
+      }
+    },
+    {
+      "id": "h0000036-0036-0036-0036-000000000036",
+      "name": "Log Timeout",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1740, 700],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO event_log (workflow_name, level, event, execution_id) VALUES ($1, $2, $3, $4)",
+        "options": {
+          "queryReplacement": "={{ ['workflow_h_alerts', 'info', 're_engagement_timeout', $execution.id] }}"
+        }
+      }
+    },
+    {
+      "id": "h0000099-0099-0099-0099-000000000099",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [200, 1100],
+      "parameters": {}
+    },
+    {
+      "id": "h0000100-0100-0100-0100-000000000100",
+      "name": "Log Workflow Error",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [440, 1100],
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "PLACEHOLDER_POSTGRES",
+          "name": "Bookings DB (n8n_bookings)"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_errors (workflow_name, execution_id, node_name, error_message, error_stack, context) VALUES ($1, $2, $3, $4, $5, $6)",
+        "options": {
+          "queryReplacement": "={{ [\n  'workflow_h_alerts',\n  $json.execution?.id ?? '',\n  $json.execution?.lastNodeExecuted ?? '',\n  $json.error?.message ?? 'unknown error',\n  $json.error?.stack?.split('\\n')?.[0] ?? '',\n  '{\"workflow\":\"workflow_h_alerts\"}'\n] }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger — 5 min": {
+      "main": [
+        [
+          { "node": "Compute Scan Window", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          { "node": "Compute Scan Window", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Compute Scan Window": {
+      "main": [
+        [
+          { "node": "Query New Open JobPostings", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Query New Open JobPostings": {
+      "main": [
+        [
+          { "node": "Any New Postings?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Any New Postings?": {
+      "main": [
+        [
+          { "node": "Read Dedup State", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "Read Dedup State": {
+      "main": [
+        [
+          { "node": "Filter Unprocessed Postings", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Filter Unprocessed Postings": {
+      "main": [
+        [
+          { "node": "Any Unprocessed?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Any Unprocessed?": {
+      "main": [
+        [
+          { "node": "SplitInBatches — Postings", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "SplitInBatches — Postings": {
+      "main": [
+        [
+          { "node": "Query Eligible Applications", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "Query Eligible Applications": {
+      "main": [
+        [
+          { "node": "Filter Candidates", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Filter Candidates": {
+      "main": [
+        [
+          { "node": "Any Candidates?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Any Candidates?": {
+      "main": [
+        [
+          { "node": "SplitInBatches — Candidates", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "Mark Posting Processed", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "SplitInBatches — Candidates": {
+      "main": [
+        [
+          { "node": "Read Anti-Spam State", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "Read Anti-Spam State": {
+      "main": [
+        [
+          { "node": "Evaluate Anti-Spam Eligibility", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Evaluate Anti-Spam Eligibility": {
+      "main": [
+        [
+          { "node": "Anti-Spam Check", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Anti-Spam Check": {
+      "main": [
+        [
+          { "node": "Compose WA Message", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "SplitInBatches — Candidates", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Compose WA Message": {
+      "main": [
+        [
+          { "node": "Create Application", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Create Application": {
+      "main": [
+        [
+          { "node": "Send Re-engagement WA", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Send Re-engagement WA": {
+      "main": [
+        [
+          { "node": "Update Anti-Spam State", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Update Anti-Spam State": {
+      "main": [
+        [
+          { "node": "SplitInBatches — Candidates", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Mark Posting Processed": {
+      "main": [
+        [
+          { "node": "Log Run", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Run": {
+      "main": [
+        [
+          { "node": "SplitInBatches — Postings", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Schedule Trigger — Hourly": {
+      "main": [
+        [
+          { "node": "Compute Timeout Cutoff", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Compute Timeout Cutoff": {
+      "main": [
+        [
+          { "node": "Query Expired Offers", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Query Expired Offers": {
+      "main": [
+        [
+          { "node": "Any Expired?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Any Expired?": {
+      "main": [
+        [
+          { "node": "SplitInBatches — Expired", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "SplitInBatches — Expired": {
+      "main": [
+        [
+          { "node": "Withdraw Application", "type": "main", "index": 0 }
+        ],
+        []
+      ]
+    },
+    "Withdraw Application": {
+      "main": [
+        [
+          { "node": "Log Timeout", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Log Timeout": {
+      "main": [
+        [
+          { "node": "SplitInBatches — Expired", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          { "node": "Log Workflow Error", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null
+}

@@ -228,6 +228,15 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** workflow-builder.
 - **Reference:** Tester round flagged 2026-05-02; CLAUDE.md §"Non-negotiable invariants" rule 6.
 
+### T2-E-1. Workflow E — Explicit approval gate for SocialPost publishing
+
+- **Description:** Workflow E currently auto-publishes any SocialPost where `scheduledFor <= NOW()` and `publishedAt IS NULL`. The spec invariant says "No post goes out without an explicit human approval in Twenty." The design note resolved draft authoring as fully manual (operator creates the SocialPost record, which is the implicit approval), but this does not satisfy the calibration-window requirement that every user-facing output be reviewed before it fires. A `status` field does not exist on SocialPost in the current schema. Fix: add `isApproved: BOOLEAN DEFAULT FALSE` to the SocialPost Twenty object (new migration V016), update the Workflow E poll query to filter `isApproved: { eq: true }`, and document the operator step in the runbook: "Set isApproved=true in Twenty UI to release a post for publishing."
+- **Files affected:** new `twenty-schema/migrations/V016__social_post_approved.json` (add `isApproved` BOOLEAN field to SocialPost); `n8n-workflows/social/e-social-posting.json` (add `isApproved: { eq: true }` to the GraphQL filter in `Query Due SocialPost` node); `docs/04-operations/runbook.md` (add Workflow E operating procedure).
+- **Blocking:** Yes — pre-launch blocker. Without this gate, any SocialPost record created by any operator or future automation will publish immediately without review.
+- **Target window:** Before Workflow E goes live on real traffic.
+- **Owner:** schema-designer (V016 migration) + workflow-builder (poll query update).
+- **Reference:** Tester round 2026-05-03; spec invariant §"No post goes out without explicit human approval"; CLAUDE.md §"Non-negotiable invariants" rule 6 (calibration window).
+
 ### T2-23. Workflow C — SkillTag loop deferred (createCandidateSkillTag)
 
 - **Description:** Workflow C's completion path was designed to tag the candidate in Twenty with a skill tag based on the job category (e.g. `driver`, `warehouse`). The `createCandidateSkillTag` mutation requires a `skillTagId` (the Twenty UUID for the matching SkillTag object). In v1 there is no lookup node to resolve `script_id → skillTagId`, so the loop was deferred. The candidate is scored and tiered but no SkillTag is written to Twenty.

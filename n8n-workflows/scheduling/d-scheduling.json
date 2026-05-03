@@ -274,11 +274,11 @@
           "conditions": [
             {
               "id": "cond-got-slots",
-              "leftValue": "={{ ($json.id ?? '') !== '' }}",
-              "rightValue": true,
+              "leftValue": "={{ $json.id ?? '' }}",
+              "rightValue": "",
               "operator": {
-                "operation": "equal",
-                "type": "boolean"
+                "operation": "notEmpty",
+                "type": "string"
               }
             }
           ]

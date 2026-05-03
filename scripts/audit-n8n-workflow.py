@@ -69,6 +69,19 @@ def check_isempty_on_redis_output(nodes: list[dict]) -> None:
             flag(n["name"], n.get("id", ""), "ISEMPTY_ON_VALUE",
                  "IF node uses isEmpty on a .value expression — "
                  "use 'equals \"\"' to handle null from Redis GET correctly.")
+        # Catch boolean-equal operator used with JS expression in leftValue.
+        # In n8n 2.18.5, operator 'equal' with type:'boolean' and a JS boolean expression
+        # in leftValue routes ALL items to false regardless of the expression value.
+        # Use string notEmpty (leftValue: $json.field ?? '', operator: notEmpty) instead.
+        if '"equal"' in raw and '"boolean"' in raw:
+            # Check if leftValue contains a JS expression (starts with ={{ )
+            for cond_list in n.get("parameters", {}).get("conditions", {}).get("conditions", []):
+                lv = cond_list.get("leftValue", "")
+                if lv.startswith("={{") and cond_list.get("operator", {}).get("type") == "boolean":
+                    flag(n["name"], n.get("id", ""), "BOOLEAN_EQUAL_JS_EXPR",
+                         f"IF node uses boolean-equal operator with JS expression leftValue='{lv}'. "
+                         "n8n 2.18.5 routes all items to false. "
+                         "Use string notEmpty: leftValue={{ $json.field ?? '' }}, operator=notEmpty.")
 
 
 # ──────────────────────────────────────────────

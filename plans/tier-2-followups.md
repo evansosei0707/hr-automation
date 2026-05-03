@@ -237,6 +237,15 @@ The big Tier 2 elevation (NUMERIC + RATING in audit's `STRING_DEFAULT_TYPES`) wa
 - **Owner:** schema-designer (V016 migration) + workflow-builder (poll query update).
 - **Reference:** Tester round 2026-05-03; spec invariant §"No post goes out without explicit human approval"; CLAUDE.md §"Non-negotiable invariants" rule 6 (calibration window).
 
+### T2-F-1. Workflow F — weekly_report WhatsApp template needs Meta Business Manager approval
+
+- **Description:** Workflow F — weekly_report WhatsApp template needs Meta Business Manager approval before the report can reach staff outside the 24h service window. Pre-launch blocker. wa-send subflow falls back to this template for out-of-window delivery.
+- **Files affected:** new `reference/whatsapp-templates/weekly_report.md` (create per whatsapp-templates rule); no workflow code change needed once approved — template name `weekly_report` is already wired into the Send to Staff WA node's `templateName` parameter.
+- **Blocking:** Yes — for Workflow F go-live on staff devices that have not messaged the bot within 24h (which is almost always true on Monday mornings).
+- **Target window:** Pre-launch (Workflow F). Submit to Meta Business Manager immediately; approval typically < 1h for Utility category.
+- **Owner:** HRA Project Lead (Meta Business Manager access) + doc update once approved.
+- **Reference:** `docs/02-workflows/f-reporting-design-v1.md` §5 (Template requirement).
+
 ### T2-23. Workflow C — SkillTag loop deferred (createCandidateSkillTag)
 
 - **Description:** Workflow C's completion path was designed to tag the candidate in Twenty with a skill tag based on the job category (e.g. `driver`, `warehouse`). The `createCandidateSkillTag` mutation requires a `skillTagId` (the Twenty UUID for the matching SkillTag object). In v1 there is no lookup node to resolve `script_id → skillTagId`, so the loop was deferred. The candidate is scored and tiered but no SkillTag is written to Twenty.

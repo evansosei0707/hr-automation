@@ -1,0 +1,118 @@
+Workflow H — Round 8 Tester Result
+Date: 2026-05-05
+n8n workflow ID: 21cugCs8ICNFjXiM
+
+AC-1 — No-new-postings exit: PASS
+  Execution ID: 18289
+  Evidence: Schedule Trigger — 5 min fired at 14:00:50. Exactly 4 nodes ran:
+    Schedule Trigger — 5 min → Compute Scan Window → Query New Open JobPostings → Any New Postings?
+    Execution stopped at Any New Postings? false branch. No further nodes ran.
+    Posting e53f1b85 had postedAt=2026-05-05T12:00:00Z (2 hours before window start of ~14:00).
+
+AC-2 — Dedup skip: PASS
+  Execution ID: 18323
+  Evidence: Set e53f1b85 to postedAt=2026-05-05T14:04:57Z (within 5-min window).
+    Added e53f1b85-6edc-4620-8528-6a34bbc17bb1 to system-h-dedup h_processed_postings array.
+    Trigger fired at 14:05:50. 7 nodes ran:
+    Schedule Trigger → Compute Scan Window → Query New Open JobPostings → Any New Postings?
+    → Read Dedup State → Filter Unprocessed Postings → Any Unprocessed?
+    Stopped at Any Unprocessed? false branch. No application created. No WA sent.
+    Filter Unprocessed Postings correctly identified 0 unprocessed postings.
+
+AC-3 — Happy path: FAIL
+  Execution ID: 18357
+  Evidence: Posting e53f1b85 set to postedAt=2026-05-05T14:07:44Z. Candidate facts reset to
+    {reengagement_count_ytd: 0}. e53f1b85 removed from dedup list.
+    Trigger fired at 14:10:50. 23 nodes ran. Execution errored at Send Re-engagement WA.
+  Sub-criterion results:
+    [PASS] Enrich Candidate Item output: candidateId=7cd48b06-3cd7-4e38-a907-ad38952c1429,
+      whatsappNumber=+233201234567 (correct values resolved via back-reference chain).
+    [PASS] Compose WA Message: non-empty Claude-generated message produced (57 output tokens):
+      "Hi Kofi, we have a Frontend Developer opportunity that might interest you..."
+    [FAIL] Create Application in Twenty: node returned {error: "invalid syntax"}. No application
+      row created. Root cause: jsonBody uses $('Enrich Candidate Item').first()?.json?.candidateId
+      inside SplitInBatches — Candidates loop body — Rule #32 cross-node ref failure.
+      Twenty query confirms 0 RE_ENGAGEMENT_OFFERED applications created after this execution.
+    [FAIL] Send Re-engagement WA: errored — WhatsApp API rejected request with
+      "missing 'messaging_product'" from Force Template — Window Expired node in wa-send.json.
+    [FAIL] candidate_facts for 7cd48b06: last_reengaged_at not set, reengagement_count_ytd
+      still 0. Update Anti-Spam State never reached (WA error terminated chain).
+    [FAIL] system-h-dedup: e53f1b85 UUID not in h_processed_postings. Mark Posting Processed
+      never reached.
+  Fault sites:
+    n8n-workflows/job-alerts/h-job-alerts.json node "Create Application" — jsonBody uses
+      $('Enrich Candidate Item').first()?.json?.candidateId inside SplitInBatches loop (Rule #32).
+    n8n-workflows/communications/wa-send.json node "Force Template — Window Expired" — missing
+      messaging_product in WhatsApp API request body.
+
+AC-4 — Anti-spam gate: FAIL
+  Execution ID: 18393
+  Evidence: candidate_facts set to {reengagement_count_ytd: 4, last_reengaged_at: "2026-03-01T00:00:00Z"}.
+    Posting e53f1b85 set to postedAt=2026-05-05T14:13:54Z. e53f1b85 NOT in dedup list.
+    Trigger fired at 14:15:50. 24 nodes ran. Execution errored at Send Re-engagement WA.
+  Anti-spam behavior for Kofi (7cd48b06):
+    [PASS] Anti-Spam Check correctly routed to skip. Evaluate Anti-Spam Eligibility:
+      underYearLimit = (4 < 4) = false → spamCheckOk=''. Anti-Spam Check Branch 1 (false) →
+      Carry Posting ID — Skip → SplitInBatches — Candidates (loop continue).
+      No application created for Kofi. No WA to Kofi.
+  Overall AC-4 failures:
+    [FAIL] Mark Posting Processed: never ran. e53f1b85 not in dedup list post-execution.
+      Execution errored before reaching it due to WA send failure on second candidate.
+    [FAIL] Execution did not complete cleanly. A second candidate (Abena Asante,
+      9e1663e9-9699-43d5-86f2-6c888a9e123d) with reengagement_count_ytd=0 was also in the
+      eligible pool and was NOT blocked by anti-spam, causing the execution to reach the
+      failing WA send path and error.
+  Fault sites: same as AC-3.
+
+AC-5 — 72h timeout: PASS
+  Execution ID: 18290
+  Evidence: Schedule Trigger — Hourly fired at 14:00:55. Application 45a8421a-8b9b-4272-b03d-78c766e74cfb
+    had status=RE_ENGAGEMENT_OFFERED, reEngagedAt=2026-05-02T12:00:00Z (74h before trigger).
+    72h threshold: 2026-05-02T14:00:55Z. 12:00 < 14:00 → expired.
+    9 nodes ran: Schedule Trigger — Hourly → Compute Timeout Cutoff → Query Expired Offers
+    → Any Expired? → Unwrap Expired Apps → Withdraw Application → GQL Error? — Withdraw
+    → Log Timeout → SplitInBatches — Expired (loop end).
+    Withdraw Application mutation: returned {id: "45a8421a-8b9b-4272-b03d-78c766e74cfb"}.
+    GQL Error? — Withdraw Branch 0 (errors) = 0 items; Branch 1 (normal) = 1 item. No error.
+    Application status in Twenty = WITHDRAWN after execution (confirmed by query at 14:04 UTC).
+
+Overall: 3/5 (AC-1 PASS, AC-2 PASS, AC-3 FAIL, AC-4 FAIL, AC-5 PASS)
+
+Notes:
+  1. CALIBRATION WINDOW BREACH: Workflow H has no human review step between Claude composing
+     the re-engagement WA message and outbound send. The wa-send subflow fires directly with no
+     approval gate. Per CLAUDE.md invariant #6 (calibration window), every AI decision path must
+     have a pre-send review step. This is a calibration-gate bypass. No outbound messages are
+     reaching candidates currently due to the WA API error (missing messaging_product), but the
+     structural bypass exists and must be treated as a FAIL for the calibration guard.
+
+  2. ROOT CAUSE — Create Application failure (AC-3, AC-4): The node "Create Application" in
+     h-job-alerts.json constructs its jsonBody using $('Enrich Candidate Item').first()?.json
+     expressions inside the SplitInBatches — Candidates loop body. Per Rule #32, these
+     cross-node references produce {error: "invalid syntax"} inside SplitInBatches, silently
+     corrupting the GQL mutation body. The candidateId and newPostingId fields never reach the
+     Twenty API. Fix: bake these values into each SplitInBatches input item via a Set node
+     placed BEFORE SplitInBatches — Candidates, then read $json.candidateId inside the loop.
+
+  3. ROOT CAUSE — WA send failure (AC-3, AC-4): wa-send.json node "Force Template — Window
+     Expired" is missing the messaging_product field in the WhatsApp Cloud API request body.
+     This causes HTTP 400 from Meta: "Your request has violated JSON schema constraint
+     'required' for messaging_product". This is a separate bug from the Create Application
+     issue.
+
+  4. AC-4 anti-spam partial success: The anti-spam gate for Kofi specifically works correctly
+     (count=4 → underYearLimit=false → skip path). However a second eligible candidate (Abena
+     Asante) was present in the pool with count=0 and was not blocked, causing the execution
+     to error before reaching Mark Posting Processed. The AC-4 criterion "Mark Posting
+     Processed still runs" therefore fails.
+
+  5. Orphan records: No new orphan RE_ENGAGEMENT_OFFERED applications were created during
+     this test session (Create Application node failure prevented creation). Two pre-existing
+     orphan RE_ENGAGEMENT_OFFERED applications with null candidateId remain in Twenty from
+     prior tester rounds: 77d38cf9 and c8754bf9 (created 2026-05-03). These should be cleaned
+     up.
+
+  6. n8n REST API note: The triggering command in the spec (POST /api/v1/workflows/{id}/run)
+     returns HTTP 405 Method Not Allowed on n8n 2.18.5. All executions used the schedule
+     triggers instead. The schedule-based approach provides equivalent evidence since the
+     workflow state was precisely controlled before each trigger window.

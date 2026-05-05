@@ -1,5 +1,5 @@
 {
-  "name": "Workflow F — Weekly Reporting",
+  "name": "Workflow F \u2014 Weekly Reporting",
   "nodes": [
     {
       "parameters": {
@@ -14,10 +14,13 @@
         "timezone": "Africa/Accra"
       },
       "id": "f0000001-0001-0001-0001-000000000001",
-      "name": "Schedule Trigger — Mon 07:00",
+      "name": "Schedule Trigger \u2014 Mon 07:00",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [200, 300]
+      "position": [
+        200,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -25,17 +28,23 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [200, 480]
+      "position": [
+        200,
+        480
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Compute date range: last week Mon 00:00 to Sun 23:59:59 Africa/Accra.\n// n8n Code node has Date as a global — no require() needed.\n// Africa/Accra is UTC+0 (no DST), so UTC == local time.\n\nconst now = new Date();\n\n// Day of week: 0=Sun, 1=Mon ... 6=Sat\nconst todayDow = now.getUTCDay();\n\n// Days since last Monday (the START of CURRENT week)\n// If today is Monday (1), daysToCurrentMon = 0; Sun (0) = 6; Sat (6) = 5 etc.\nconst daysToCurrentMon = (todayDow === 0) ? 6 : (todayDow - 1);\n\n// Last week Monday = current week Monday - 7 days\nconst weekStart = new Date(now);\nweekStart.setUTCDate(now.getUTCDate() - daysToCurrentMon - 7);\nweekStart.setUTCHours(0, 0, 0, 0);\n\n// Last week Sunday = current week Monday - 1 day end of day\nconst weekEnd = new Date(now);\nweekEnd.setUTCDate(now.getUTCDate() - daysToCurrentMon - 1);\nweekEnd.setUTCHours(23, 59, 59, 999);\n\n// Prior week (for WoW delta on AI cost)\nconst priorWeekStart = new Date(weekStart);\npriorWeekStart.setUTCDate(weekStart.getUTCDate() - 7);\n\nconst priorWeekEnd = new Date(weekEnd);\npriorWeekEnd.setUTCDate(weekEnd.getUTCDate() - 7);\n\nconst toIso = (d) => d.toISOString();\n\nreturn [{\n  json: {\n    weekStartIso: toIso(weekStart),\n    weekEndIso: toIso(weekEnd),\n    priorWeekStartIso: toIso(priorWeekStart),\n    priorWeekEndIso: toIso(priorWeekEnd),\n    weekLabel: weekStart.toISOString().slice(0, 10) + ' to ' + weekEnd.toISOString().slice(0, 10)\n  }\n}];"
+        "jsCode": "// Compute date range: last week Mon 00:00 to Sun 23:59:59 Africa/Accra.\n// n8n Code node has Date as a global \u2014 no require() needed.\n// Africa/Accra is UTC+0 (no DST), so UTC == local time.\n\nconst now = new Date();\n\n// Day of week: 0=Sun, 1=Mon ... 6=Sat\nconst todayDow = now.getUTCDay();\n\n// Days since last Monday (the START of CURRENT week)\n// If today is Monday (1), daysToCurrentMon = 0; Sun (0) = 6; Sat (6) = 5 etc.\nconst daysToCurrentMon = (todayDow === 0) ? 6 : (todayDow - 1);\n\n// Last week Monday = current week Monday - 7 days\nconst weekStart = new Date(now);\nweekStart.setUTCDate(now.getUTCDate() - daysToCurrentMon - 7);\nweekStart.setUTCHours(0, 0, 0, 0);\n\n// Last week Sunday = current week Monday - 1 day end of day\nconst weekEnd = new Date(now);\nweekEnd.setUTCDate(now.getUTCDate() - daysToCurrentMon - 1);\nweekEnd.setUTCHours(23, 59, 59, 999);\n\n// Prior week (for WoW delta on AI cost)\nconst priorWeekStart = new Date(weekStart);\npriorWeekStart.setUTCDate(weekStart.getUTCDate() - 7);\n\nconst priorWeekEnd = new Date(weekEnd);\npriorWeekEnd.setUTCDate(weekEnd.getUTCDate() - 7);\n\nconst toIso = (d) => d.toISOString();\n\nreturn [{\n  json: {\n    weekStartIso: toIso(weekStart),\n    weekEndIso: toIso(weekEnd),\n    priorWeekStartIso: toIso(priorWeekStart),\n    priorWeekEndIso: toIso(priorWeekEnd),\n    weekLabel: weekStart.toISOString().slice(0, 10) + ' to ' + weekEnd.toISOString().slice(0, 10)\n  }\n}];"
       },
       "id": "f0000003-0003-0003-0003-000000000003",
       "name": "Compute Date Range",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 380]
+      "position": [
+        440,
+        380
+      ]
     },
     {
       "parameters": {
@@ -64,7 +73,10 @@
       "name": "Calibration Window Active?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 380]
+      "position": [
+        680,
+        380
+      ]
     },
     {
       "parameters": {
@@ -80,7 +92,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [920, 240],
+      "position": [
+        920,
+        240
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -102,7 +117,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [920, 380],
+      "position": [
+        920,
+        380
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -144,7 +162,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
-      "position": [1160, 240]
+      "position": [
+        1160,
+        240
+      ]
     },
     {
       "parameters": {
@@ -180,7 +201,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
-      "position": [1160, 380]
+      "position": [
+        1160,
+        380
+      ]
     },
     {
       "parameters": {
@@ -216,7 +240,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
-      "position": [1160, 520]
+      "position": [
+        1160,
+        520
+      ]
     },
     {
       "parameters": {
@@ -252,7 +279,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
-      "position": [1160, 660]
+      "position": [
+        1160,
+        660
+      ]
     },
     {
       "parameters": {
@@ -288,7 +318,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
-      "position": [1160, 800]
+      "position": [
+        1160,
+        800
+      ]
     },
     {
       "parameters": {
@@ -324,7 +357,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
-      "position": [1400, 240]
+      "position": [
+        1400,
+        240
+      ]
     },
     {
       "parameters": {
@@ -360,7 +396,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
-      "position": [1400, 380]
+      "position": [
+        1400,
+        380
+      ]
     },
     {
       "parameters": {
@@ -376,7 +415,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [1400, 520],
+      "position": [
+        1400,
+        520
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -398,7 +440,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [1400, 660],
+      "position": [
+        1400,
+        660
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -420,7 +465,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [1400, 800],
+      "position": [
+        1400,
+        800
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -442,7 +490,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [1640, 240],
+      "position": [
+        1640,
+        240
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -464,7 +515,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [1640, 380],
+      "position": [
+        1640,
+        380
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -474,13 +528,16 @@
     },
     {
       "parameters": {
-        "jsCode": "// Compose pre-formatted report body from all upstream metric nodes.\n// Uses nullish coalescing so a failed query shows '— unavailable —'.\n\nconst na = '\\u2014 unavailable \\u2014';\n\nconst weekLabel = $('Compute Date Range').first()?.json?.weekLabel ?? na;\n\n// Twenty metrics\nconst newCandidates    = $('Query Twenty Candidates').first()?.json?.data?.findManyCandidates?.totalCount ?? na;\nconst appsBlue         = $('Query Twenty Applications').first()?.json?.data?.blueCollar?.totalCount ?? na;\nconst appsWhite        = $('Query Twenty Applications').first()?.json?.data?.whiteCollar?.totalCount ?? na;\nconst interviewsSched  = $('Query Twenty Interviews Scheduled').first()?.json?.data?.findManyInterviews?.totalCount ?? na;\nconst interviewsComp   = $('Query Twenty Interviews Completed').first()?.json?.data?.findManyInterviews?.totalCount ?? na;\nconst placements       = $('Query Twenty Placements').first()?.json?.data?.findManyApplications?.totalCount ?? na;\nconst reviewOpen       = $('Query Twenty ReviewTasks Open').first()?.json?.data?.findManyReviewTasks?.totalCount ?? na;\nconst reviewResolved   = $('Query Twenty ReviewTasks Resolved').first()?.json?.data?.findManyReviewTasks?.totalCount ?? na;\n\n// Bookings DB metrics\nconst screeningDone    = $('Query Screening Completions').first()?.json?.count ?? na;\nconst workflowErrors   = $('Query Workflow Errors').first()?.json?.count ?? na;\nconst voiceNoteQueue   = $('Query Voice Note Review Queue').first()?.json?.count ?? na;\nconst aiCostThisWeek   = $('Query AI Cost This Week').first()?.json?.total_usd ?? na;\nconst aiCostLastWeek   = $('Query AI Cost Last Week').first()?.json?.total_usd ?? na;\n\n// WoW AI cost delta\nlet wowDelta = na;\nif (aiCostThisWeek !== na && aiCostLastWeek !== na) {\n  const diff = Number(aiCostThisWeek) - Number(aiCostLastWeek);\n  const sign = diff >= 0 ? '+' : '';\n  wowDelta = sign + diff.toFixed(4) + ' USD';\n}\n\n// Calibration block (only if the env var was active AND queries ran)\nconst calibrationActive = $env.CALIBRATION_WINDOW_ACTIVE === 'true';\nlet calibrationSection = '';\nif (calibrationActive) {\n  const agreePct     = $('Query Calibration AI Agreement').first()?.json?.agree_pct ?? na;\n  const humanDecisions = $('Query Calibration Human Decisions').first()?.json?.human_decisions ?? na;\n  if (agreePct !== na || humanDecisions !== na) {\n    calibrationSection = `\nCalibration (week 1-2 window):\n  AI vs human agreement: ${agreePct !== na ? agreePct + '%' : na}\n  Human review decisions: ${humanDecisions}`;\n  }\n}\n\nconst reportText = `Weekly HR Report — ${weekLabel}\n\nPipeline:\n  New candidates:        ${newCandidates}\n  New applications:      Blue-collar ${appsBlue}  White-collar ${appsWhite}\n  Screened this week:    ${screeningDone}\n  Interviews scheduled:  ${interviewsSched}\n  Interviews completed:  ${interviewsComp}\n  Placements:            ${placements}\n\nReview queue:\n  Tasks opened:          ${reviewOpen}\n  Tasks resolved:        ${reviewResolved}\n  Voice notes for human: ${voiceNoteQueue}\n\nSystem health:\n  Workflow errors:       ${workflowErrors}\n  AI cost this week:     ${aiCostThisWeek !== na ? aiCostThisWeek + ' USD' : na}\n  AI cost last week:     ${aiCostLastWeek !== na ? aiCostLastWeek + ' USD' : na}\n  WoW delta:             ${wowDelta}${calibrationSection}`;\n\nreturn [{ json: { reportText } }];"
+        "jsCode": "// Compose pre-formatted report body from all upstream metric nodes.\n// Uses nullish coalescing so a failed query shows '\u2014 unavailable \u2014'.\n\nconst na = '\\u2014 unavailable \\u2014';\n\nconst weekLabel = $('Compute Date Range').first()?.json?.weekLabel ?? na;\n\n// Twenty metrics\nconst newCandidates    = $('Query Twenty Candidates').first()?.json?.data?.findManyCandidates?.totalCount ?? na;\nconst appsBlue         = $('Query Twenty Applications').first()?.json?.data?.blueCollar?.totalCount ?? na;\nconst appsWhite        = $('Query Twenty Applications').first()?.json?.data?.whiteCollar?.totalCount ?? na;\nconst interviewsSched  = $('Query Twenty Interviews Scheduled').first()?.json?.data?.findManyInterviews?.totalCount ?? na;\nconst interviewsComp   = $('Query Twenty Interviews Completed').first()?.json?.data?.findManyInterviews?.totalCount ?? na;\nconst placements       = $('Query Twenty Placements').first()?.json?.data?.findManyApplications?.totalCount ?? na;\nconst reviewOpen       = $('Query Twenty ReviewTasks Open').first()?.json?.data?.findManyReviewTasks?.totalCount ?? na;\nconst reviewResolved   = $('Query Twenty ReviewTasks Resolved').first()?.json?.data?.findManyReviewTasks?.totalCount ?? na;\n\n// Bookings DB metrics\nconst screeningDone    = $('Query Screening Completions').first()?.json?.count ?? na;\nconst workflowErrors   = $('Query Workflow Errors').first()?.json?.count ?? na;\nconst voiceNoteQueue   = $('Query Voice Note Review Queue').first()?.json?.count ?? na;\nconst aiCostThisWeek   = $('Query AI Cost This Week').first()?.json?.total_usd ?? na;\nconst aiCostLastWeek   = $('Query AI Cost Last Week').first()?.json?.total_usd ?? na;\n\n// WoW AI cost delta\nlet wowDelta = na;\nif (aiCostThisWeek !== na && aiCostLastWeek !== na) {\n  const diff = Number(aiCostThisWeek) - Number(aiCostLastWeek);\n  const sign = diff >= 0 ? '+' : '';\n  wowDelta = sign + diff.toFixed(4) + ' USD';\n}\n\n// Calibration block (only if the env var was active AND queries ran)\nconst calibrationActive = $env.CALIBRATION_WINDOW_ACTIVE === 'true';\nlet calibrationSection = '';\nif (calibrationActive) {\n  const agreePct     = $('Query Calibration AI Agreement').first()?.json?.agree_pct ?? na;\n  const humanDecisions = $('Query Calibration Human Decisions').first()?.json?.human_decisions ?? na;\n  if (agreePct !== na || humanDecisions !== na) {\n    calibrationSection = `\nCalibration (week 1-2 window):\n  AI vs human agreement: ${agreePct !== na ? agreePct + '%' : na}\n  Human review decisions: ${humanDecisions}`;\n  }\n}\n\nconst reportText = `Weekly HR Report \u2014 ${weekLabel}\n\nPipeline:\n  New candidates:        ${newCandidates}\n  New applications:      Blue-collar ${appsBlue}  White-collar ${appsWhite}\n  Screened this week:    ${screeningDone}\n  Interviews scheduled:  ${interviewsSched}\n  Interviews completed:  ${interviewsComp}\n  Placements:            ${placements}\n\nReview queue:\n  Tasks opened:          ${reviewOpen}\n  Tasks resolved:        ${reviewResolved}\n  Voice notes for human: ${voiceNoteQueue}\n\nSystem health:\n  Workflow errors:       ${workflowErrors}\n  AI cost this week:     ${aiCostThisWeek !== na ? aiCostThisWeek + ' USD' : na}\n  AI cost last week:     ${aiCostLastWeek !== na ? aiCostLastWeek + ' USD' : na}\n  WoW delta:             ${wowDelta}${calibrationSection}`;\n\nreturn [{ json: { reportText } }];"
       },
       "id": "f0000019-0019-0019-0019-000000000019",
       "name": "Compose Report Body",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1880, 380]
+      "position": [
+        1880,
+        380
+      ]
     },
     {
       "parameters": {
@@ -491,12 +548,15 @@
         }
       },
       "id": "f0000020-0020-0020-0020-000000000020",
-      "name": "Log Metric Failure — Candidates",
+      "name": "Log Metric Failure \u2014 Candidates",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [2120, 120],
+      "position": [
+        2120,
+        120
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -513,12 +573,15 @@
         }
       },
       "id": "f0000021-0021-0021-0021-000000000021",
-      "name": "Log Metric Failure — Applications",
+      "name": "Log Metric Failure \u2014 Applications",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [2120, 240],
+      "position": [
+        2120,
+        240
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -535,12 +598,15 @@
         }
       },
       "id": "f0000022-0022-0022-0022-000000000022",
-      "name": "Log Metric Failure — Interviews Scheduled",
+      "name": "Log Metric Failure \u2014 Interviews Scheduled",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [2120, 360],
+      "position": [
+        2120,
+        360
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -557,12 +623,15 @@
         }
       },
       "id": "f0000023-0023-0023-0023-000000000023",
-      "name": "Log Metric Failure — Interviews Completed",
+      "name": "Log Metric Failure \u2014 Interviews Completed",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [2120, 480],
+      "position": [
+        2120,
+        480
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -579,12 +648,15 @@
         }
       },
       "id": "f0000024-0024-0024-0024-000000000024",
-      "name": "Log Metric Failure — Placements",
+      "name": "Log Metric Failure \u2014 Placements",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [2120, 600],
+      "position": [
+        2120,
+        600
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -601,12 +673,15 @@
         }
       },
       "id": "f0000025-0025-0025-0025-000000000025",
-      "name": "Log Metric Failure — Screening",
+      "name": "Log Metric Failure \u2014 Screening",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [2120, 720],
+      "position": [
+        2120,
+        720
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -623,12 +698,15 @@
         }
       },
       "id": "f0000026-0026-0026-0026-000000000026",
-      "name": "Log Metric Failure — AI Cost",
+      "name": "Log Metric Failure \u2014 AI Cost",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [2120, 840],
+      "position": [
+        2120,
+        840
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -641,7 +719,7 @@
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_CLAUDE_CALL_ID",
+          "value": "aaX1BK1N0yFZ8ydt",
           "mode": "id"
         },
         "options": {},
@@ -700,7 +778,10 @@
       "name": "Claude Haiku Narrative",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [2360, 380]
+      "position": [
+        2360,
+        380
+      ]
     },
     {
       "parameters": {
@@ -709,7 +790,7 @@
             {
               "id": "assign-final-message",
               "name": "finalMessage",
-              "value": "={{ '*HR Weekly Report — ' + ($('Compute Date Range').first()?.json?.weekLabel ?? '') + '*\\n\\n' + ($('Claude Haiku Narrative').first()?.json?.content ?? '') + '\\n\\n---\\n' + ($('Compose Report Body').first()?.json?.reportText ?? '') + '\\n---\\nSent by HR Automation. Reply HELP for support.' }}",
+              "value": "={{ '*HR Weekly Report \u2014 ' + ($('Compute Date Range').first()?.json?.weekLabel ?? '') + '*\\n\\n' + ($('Claude Haiku Narrative').first()?.json?.content ?? '') + '\\n\\n---\\n' + ($('Compose Report Body').first()?.json?.reportText ?? '') + '\\n---\\nSent by HR Automation. Reply HELP for support.' }}",
               "type": "string"
             }
           ]
@@ -720,14 +801,17 @@
       "name": "Render Final Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [2600, 380]
+      "position": [
+        2600,
+        380
+      ]
     },
     {
       "parameters": {
         "source": "database",
         "workflowId": {
           "__rl": true,
-          "value": "PLACEHOLDER_WA_SEND_ID",
+          "value": "7XU0LaNGK2WLUhPE",
           "mode": "id"
         },
         "options": {},
@@ -786,7 +870,10 @@
       "name": "Send to Staff WA",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [2840, 380]
+      "position": [
+        2840,
+        380
+      ]
     },
     {
       "parameters": {
@@ -802,7 +889,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [3080, 380],
+      "position": [
+        3080,
+        380
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -816,7 +906,10 @@
       "name": "Error Trigger",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
-      "position": [200, 680]
+      "position": [
+        200,
+        680
+      ]
     },
     {
       "parameters": {
@@ -832,7 +925,10 @@
       "typeVersion": 2.6,
       "alwaysOutputData": true,
       "onError": "continueRegularOutput",
-      "position": [440, 680],
+      "position": [
+        440,
+        680
+      ],
       "credentials": {
         "postgres": {
           "id": "PLACEHOLDER_POSTGRES",
@@ -842,7 +938,7 @@
     }
   ],
   "connections": {
-    "Schedule Trigger — Mon 07:00": {
+    "Schedule Trigger \u2014 Mon 07:00": {
       "main": [
         [
           {
@@ -1051,80 +1147,80 @@
       "main": [
         [
           {
-            "node": "Log Metric Failure — Candidates",
+            "node": "Log Metric Failure \u2014 Candidates",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Metric Failure — Candidates": {
+    "Log Metric Failure \u2014 Candidates": {
       "main": [
         [
           {
-            "node": "Log Metric Failure — Applications",
+            "node": "Log Metric Failure \u2014 Applications",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Metric Failure — Applications": {
+    "Log Metric Failure \u2014 Applications": {
       "main": [
         [
           {
-            "node": "Log Metric Failure — Interviews Scheduled",
+            "node": "Log Metric Failure \u2014 Interviews Scheduled",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Metric Failure — Interviews Scheduled": {
+    "Log Metric Failure \u2014 Interviews Scheduled": {
       "main": [
         [
           {
-            "node": "Log Metric Failure — Interviews Completed",
+            "node": "Log Metric Failure \u2014 Interviews Completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Metric Failure — Interviews Completed": {
+    "Log Metric Failure \u2014 Interviews Completed": {
       "main": [
         [
           {
-            "node": "Log Metric Failure — Placements",
+            "node": "Log Metric Failure \u2014 Placements",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Metric Failure — Placements": {
+    "Log Metric Failure \u2014 Placements": {
       "main": [
         [
           {
-            "node": "Log Metric Failure — Screening",
+            "node": "Log Metric Failure \u2014 Screening",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Metric Failure — Screening": {
+    "Log Metric Failure \u2014 Screening": {
       "main": [
         [
           {
-            "node": "Log Metric Failure — AI Cost",
+            "node": "Log Metric Failure \u2014 AI Cost",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Log Metric Failure — AI Cost": {
+    "Log Metric Failure \u2014 AI Cost": {
       "main": [
         [
           {
@@ -1188,9 +1284,15 @@
   },
   "staticData": null,
   "tags": [
-    { "name": "hr-automation" },
-    { "name": "workflow-f" },
-    { "name": "version-1" }
+    {
+      "name": "hr-automation"
+    },
+    {
+      "name": "workflow-f"
+    },
+    {
+      "name": "version-1"
+    }
   ],
   "pinData": {}
 }

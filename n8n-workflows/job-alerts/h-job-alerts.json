@@ -1039,25 +1039,25 @@
             {
               "id": "enrich-cand-id",
               "name": "candidateId",
-              "value": "={{ $('SplitInBatches — Candidates').first()?.json?.candidate?.id ?? '' }}",
+              "value": "={{ $('SplitInBatches \u2014 Candidates').first()?.json?.candidate?.id ?? '' }}",
               "type": "string"
             },
             {
               "id": "enrich-wa-num",
               "name": "whatsappNumber",
-              "value": "={{ ($('SplitInBatches — Candidates').first()?.json?.candidate?.whatsappNumberE164 ?? '').trim() }}",
+              "value": "={{ ($('SplitInBatches \u2014 Candidates').first()?.json?.candidate?.whatsappNumberE164 ?? '').trim() }}",
               "type": "string"
             },
             {
               "id": "enrich-first-name",
               "name": "candidateFirstName",
-              "value": "={{ ($('SplitInBatches — Candidates').first()?.json?.candidate?.name ?? 'there').split(' ')[0] }}",
+              "value": "={{ ($('SplitInBatches \u2014 Candidates').first()?.json?.candidate?.name ?? 'there').split(' ')[0] }}",
               "type": "string"
             },
             {
               "id": "enrich-prev-role",
               "name": "prevJobTitle",
-              "value": "={{ $('SplitInBatches — Candidates').first()?.json?.jobPosting?.title ?? 'a role we had earlier' }}",
+              "value": "={{ $('SplitInBatches \u2014 Candidates').first()?.json?.jobPosting?.title ?? 'a role we had earlier' }}",
               "type": "string"
             },
             {
